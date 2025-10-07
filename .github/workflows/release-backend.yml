@@ -4,5 +4,21 @@
 # 1) build a docker image
 # 2) push to ECR
 # 3) release to ECS
-
+#
 # use `npm version minor`, we want to have 0.x.0 until the delivery - we deliver 1.0.0
+
+name: Manual no-op: release-backend
+
+on:
+	workflow_dispatch: {}
+
+jobs:
+	noop:
+		name: No-op (manual trigger)
+		runs-on: ubuntu-latest
+		steps:
+			- name: Manual no-op
+				run: |
+					echo "This workflow is configured to run only when manually triggered."
+					echo "It intentionally performs no actions."
+					exit 0

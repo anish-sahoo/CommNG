@@ -1,6 +1,6 @@
 # # change `backend/` and `frontend/` later, those are placeholder names
 # name: CI
-
+#
 # on:
 #   push:
 #     paths-ignore:
@@ -18,10 +18,10 @@
 #       - '*.sql'
 #       - '.github/**'
 #       - '*.md'
-
+#
 # env:
 #   NODE_VERSION: 24
-
+#
 # jobs:
 #   detect-changes:
 #     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@
 #         run: |
 #           echo "backend=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/' || true)" >> $GITHUB_OUTPUT
 #           echo "frontend=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/' || true)" >> $GITHUB_OUTPUT
-
+#
 #   backend:
 #     runs-on: ubuntu-latest
 #     needs: detect-changes
@@ -53,7 +53,7 @@
 #       - run: npm install
 #       - run: npm run lint
 #       - run: npm test
-
+#
 #   frontend:
 #     runs-on: ubuntu-latest
 #     needs: detect-changes
@@ -72,3 +72,19 @@
 #       - run: npm run lint
 #       - run: npm test
 #       - run: npm run build
+
+name: Manual no-op: build
+
+on:
+	workflow_dispatch: {}
+
+jobs:
+	noop:
+		name: No-op (manual trigger)
+		runs-on: ubuntu-latest
+		steps:
+			- name: Manual no-op
+				run: |
+					echo "This workflow is configured to run only when manually triggered."
+					echo "It intentionally performs no actions."
+					exit 0

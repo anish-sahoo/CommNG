@@ -2,3 +2,19 @@
 #
 # 0) verify terraform
 # 1) run `terraform apply`
+
+name: Manual no-op: tf-apply
+
+on:
+	workflow_dispatch: {}
+
+jobs:
+	noop:
+		name: No-op (manual trigger)
+		runs-on: ubuntu-latest
+		steps:
+			- name: Manual no-op
+				run: |
+					echo "This workflow is configured to run only when manually triggered."
+					echo "It intentionally performs no actions."
+					exit 0
