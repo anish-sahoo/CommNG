@@ -1,0 +1,8 @@
+# todo - add the following:
+#
+# 0) CI action
+# 1) build a docker image
+# 2) push to ECR
+# 3) release to ECS
+
+# use `npm version minor`, we want to have 0.x.0 until the delivery - we deliver 1.0.0

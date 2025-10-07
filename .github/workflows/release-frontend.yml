@@ -1,0 +1,6 @@
+# todo - add the following:
+#
+# 0) CI action
+# 1) build a docker image
+# 2) push to ECR
+# 3) release to ECS

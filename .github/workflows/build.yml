@@ -1,0 +1,74 @@
+# # change `backend/` and `frontend/` later, those are placeholder names
+# name: CI
+
+# on:
+#   push:
+#     paths-ignore:
+#       - 'docs/**'
+#       - 'infra/**'
+#       - 'data/**'
+#       - '*.sql'
+#       - '.github/**'
+#       - '*.md'
+#   pull_request:
+#     paths-ignore:
+#       - 'docs/**'
+#       - 'infra/**'
+#       - 'data/**'
+#       - '*.sql'
+#       - '.github/**'
+#       - '*.md'
+
+# env:
+#   NODE_VERSION: 24
+
+# jobs:
+#   detect-changes:
+#     runs-on: ubuntu-latest
+#     outputs:
+#       backend_changed: ${{ steps.check.outputs.backend }}
+#       frontend_changed: ${{ steps.check.outputs.frontend }}
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Check which folders changed
+#         id: check
+#         run: |
+#           echo "backend=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^backend/' || true)" >> $GITHUB_OUTPUT
+#           echo "frontend=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^frontend/' || true)" >> $GITHUB_OUTPUT
+
+#   backend:
+#     runs-on: ubuntu-latest
+#     needs: detect-changes
+#     if: ${{ steps.check.outputs.backend != '' }}
+#     defaults:
+#       run:
+#         working-directory: backend
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ env.NODE_VERSION }}
+#           cache: 'npm'
+#       - run: npm install
+#       - run: npm run lint
+#       - run: npm test
+
+#   frontend:
+#     runs-on: ubuntu-latest
+#     needs: detect-changes
+#     if: ${{ steps.check.outputs.frontend != '' }}
+#     defaults:
+#       run:
+#         working-directory: frontend
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: ${{ env.NODE_VERSION }}
+#           cache: 'npm'
+#       - run: npm install
+#       - run: npm run lint
+#       - run: npm test
+#       - run: npm run build
