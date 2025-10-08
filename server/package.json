@@ -1,0 +1,16 @@
+{
+  "name": "server",
+  "type": "module",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "npx tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tsx": "^4.20.6"
+  }
+}
