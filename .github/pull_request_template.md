@@ -7,7 +7,7 @@
 ## Type of Change
 - [ ] Bug fix
 - [ ] Feature
-- [ ] Refactor
+- [ ] Chore
 - [ ] Docs
 
 ## Scope of Change:
