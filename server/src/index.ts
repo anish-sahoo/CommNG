@@ -1,18 +1,11 @@
-import { publicProcedure, router } from './trpc.js';
+import { appRouter } from './trpc/app_router.js';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-
-const appRouter = router({
-  userList: publicProcedure
-    .query(async () => { 
-    const result = "Hello World";
-      return result;
-    }),
-});
-
-export type AppRouter = typeof appRouter;
 
 const server = createHTTPServer({
   router: appRouter,
 });
- 
-server.listen(3000);
+
+const port = Number(process.env.PORT) || 3000;
+server.listen(port, () => {
+  console.log(`tRPC server running at http://localhost:${port}`);
+});
