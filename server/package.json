@@ -8,7 +8,8 @@
     "dev": "npx tsx watch src/index.ts",
     "test": "vitest",
     "format": "npx @biomejs/biome format --write",
-    "lint:fix": "npx @biomejs/biome lint --write"
+    "lint": "npx @biomejs/biome check",
+    "lintfix": "npx @biomejs/biome check --write"
   },
   "author": "",
   "license": "ISC",
