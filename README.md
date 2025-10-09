@@ -44,6 +44,7 @@ Establishing meaningful connections and organizational transparency between lead
 - PostgreSQL
 
 ### Setup
+0. Install node and docker
 
 1. Clone and install dependencies:
 ```bash
@@ -52,7 +53,14 @@ cd CommNG/server && npm install
 cd ../web && npm install
 ```
 
-2. Start development servers:
+2. Setup backend databases
+```bash
+cd CommNG/
+cp .example.env .env # and populate this file with credentials
+docker compose up -d # starts docker containers for redis
+```
+
+1. Start development servers:
 ```bash
 # Backend
 cd server && npm run dev
