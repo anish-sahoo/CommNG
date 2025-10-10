@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "npx dotenv -e ../.env -- tsx watch src/index.ts",
     "test": "vitest",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts",
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
     "lintfix": "npx @biomejs/biome check --write"
@@ -36,8 +39,8 @@
     "cors": "^2.8.5",
     "drizzle-orm": "^0.44.6",
     "express": "^5.1.0",
-    "pg": "^8.16.3",
     "pino": "^10.0.0",
+    "pg": "^8.16.3",
     "redis": "^5.8.3"
   }
 }

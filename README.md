@@ -44,6 +44,16 @@ Establishing meaningful connections and organizational transparency between lead
 - PostgreSQL
 
 ### Setup
+
+1. Clone and install dependencies:
+```bash
+git clone <repository-url>
+cd CommNG/server && npm install
+cd ../web && npm install
+```
+
+2. Start development servers:
+```bash
 0. Install node and docker
 
 1. Clone and install dependencies:
