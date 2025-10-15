@@ -79,14 +79,25 @@ cd server && npm run dev
 cd web && npm run dev
 ```
 
-4. Access:
+4. Populate DB:
+
+Note: Only run these lines if the DB isn't initialized yet
+```bash
+cd server
+npm run db:migrate
+npm run db:seed # only run this line if you want mock data
+```
+
+5. Access:
 - Frontend: http://localhost:3000
 - API: http://localhost:3000/api/trpc
 - tRPC UI: http://localhost:3000/trpc-ui
 
-5. Troubleshooting
+
+### Troubleshooting
 ```bash
 docker compose down -v # deleting docker containers (only when something goes wrong, otherwise just stop it in the Docker Desktop UI)
+docker compose up -d # re-creates everything
 ```
 
 ## Development
@@ -96,6 +107,13 @@ docker compose down -v # deleting docker containers (only when something goes wr
 - `npm run test` - Run tests
 - `npm run lint` - Lint code
 - `npm run format` - Format code
+- `npm run lintfix` - Format code
+
+#### Backend specific:
+- `npm run db:generate` - Create a migration, run this after changing things in the db schema
+- `db:migrate` - Apply latest migration to the db
+- `db:studio` - Drizzle Studio UI
+- `db:seed` - Seed the db with some random data
 
 ### Standards
 - Biome for formatting/linting
@@ -104,7 +122,7 @@ docker compose down -v # deleting docker containers (only when something goes wr
 - Follow DoD security standards
 
 ### Git Workflow
-- Branch naming: `feature/NAME`, `bugfix/NAME`, `hotfix/NAME`
+- Branch naming: `feature/NAME`, `bugfix/NAME`, `hotfix/NAME`, `chore/NAME`
 - All changes require PR approval
 - Squash merge only
 - Present tense commit messages

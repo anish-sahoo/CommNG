@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -24,6 +25,13 @@ export const mentorStatusEnum = pgEnum("mentor_status_enum", [
   "active",
 ]);
 
+export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
+  "global",
+  "channel",
+  "mentor",
+  "feature",
+]);
+
 // USERS
 export const users = pgTable(
   "users",
@@ -31,6 +39,7 @@ export const users = pgTable(
     userId: integer("user_id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull(),
     email: text("email").notNull(),
+    password: text("password").notNull(),
     phoneNumber: text("phone_number"),
     clearanceLevel: text("clearance_level"),
     department: text("department"),
@@ -44,13 +53,6 @@ export const users = pgTable(
   },
   (table) => [uniqueIndex("ux_users_email").on(table.email)],
 );
-
-// ATTRIBUTES
-export const attributes = pgTable("attributes", {
-  attrId: integer("attr_id").primaryKey().generatedAlwaysAsIdentity(),
-  attributeKey: text("attribute_key").notNull(),
-  attributeValue: text("attribute_value").notNull(),
-});
 
 // CHANNELS
 export const channels = pgTable(
@@ -66,40 +68,81 @@ export const channels = pgTable(
   (table) => [uniqueIndex("ux_channels_name").on(table.name)],
 );
 
-// USER <-> ATTRIBUTES
-export const userAttributes = pgTable(
-  "user_attributes",
+/**
+ * ROLES (shared role descriptors that can be attached to users)
+ *
+ * subjectId:
+ * - Purpose: a free-text scope identifier that further scopes a role inside its namespace.
+ * - Required: must be non-NULL for any namespace other than "global" (enforced by ck_roles_subject_presence).
+ * - Format / conventions:
+ *   - Use short, stable, kebab-case tokens (e.g. "reporting", "mentorship", "messages").
+ *   - Do not embed numeric primary keys if a proper FK exists (e.g. channelId).
+ *   - Avoid storing PII or transient values; prefer descriptive logical names.
+ * - Examples:
+ *   - namespace = "global"  -> subjectId = NULL
+ *   - namespace = "feature" -> subjectId = "reporting"
+ *   - namespace = "mentor"  -> subjectId = "mentorship" (shared mentorship subject)
+ *   - namespace = "channel" -> subjectId = "messages" (channelId must also be set)
+ *
+ * Notes:
+ * - Use subjectId to express the logical area the role controls; combine with namespace and action
+ *   (and channelId when relevant) to form a stable roleKey.
+ */
+export const roles = pgTable(
+  "roles",
+  {
+    roleId: integer("role_id").primaryKey().generatedAlwaysAsIdentity(),
+    namespace: roleNamespaceEnum("namespace").notNull(),
+    subjectId: text("subject_id"),
+    action: text("action").notNull(),
+    roleKey: text("role_key").notNull(),
+    channelId: integer("channel_id").references(() => channels.channelId, {
+      onDelete: "cascade",
+    }),
+    metadata: jsonb("metadata"),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    sql`CONSTRAINT ck_roles_channel_namespace CHECK (${table.namespace.name} <> 'channel' OR ${table.channelId.name} IS NOT NULL)`,
+    sql`CONSTRAINT ck_roles_subject_presence CHECK (${table.namespace.name} = 'global' OR ${table.subjectId.name} IS NOT NULL)`,
+    sql`CONSTRAINT ck_roles_role_key CHECK (${table.roleKey.name} <> '')`,
+    uniqueIndex("ux_roles_role_key").on(table.roleKey),
+    index("ix_roles_namespace_subject").on(table.namespace, table.subjectId),
+    index("ix_roles_channel_id").on(table.channelId),
+  ],
+);
+
+// USER <-> ROLES (assign users to reusable roles)
+export const userRoles = pgTable(
+  "user_roles",
   {
     userId: integer("user_id")
       .references(() => users.userId, { onDelete: "cascade" })
       .notNull(),
-    attrId: integer("attr_id")
-      .references(() => attributes.attrId, { onDelete: "cascade" })
+    roleId: integer("role_id")
+      .references(() => roles.roleId, { onDelete: "cascade" })
       .notNull(),
+    assignedAt: timestamp("assigned_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    assignedBy: integer("assigned_by").references(() => users.userId, {
+      onDelete: "set null",
+    }),
+    metadata: jsonb("metadata"),
   },
   (table) => [
-    // composite primary key
-    sql`PRIMARY KEY (${table.userId.name}, ${table.attrId.name})`,
-    index("ix_user_attributes_user_id").on(table.userId),
-    index("ix_user_attributes_attr_id").on(table.attrId),
-  ],
-);
-
-// CHANNEL <-> REQUIRED ATTRIBUTES
-export const channelAttributes = pgTable(
-  "channel_attributes",
-  {
-    channelId: integer("channel_id")
-      .references(() => channels.channelId, { onDelete: "cascade" })
-      .notNull(),
-    attrId: integer("attr_id")
-      .references(() => attributes.attrId, { onDelete: "cascade" })
-      .notNull(),
-  },
-  (table) => [
-    sql`PRIMARY KEY (${table.channelId.name}, ${table.attrId.name})`,
-    index("ix_channel_attributes_channel_id").on(table.channelId),
-    index("ix_channel_attributes_attr_id").on(table.attrId),
+    primaryKey({
+      columns: [table.userId, table.roleId],
+      name: "pk_user_roles",
+    }),
+    index("ix_user_roles_role_id").on(table.roleId),
+    index("ix_user_roles_user_assigned_by").on(table.userId, table.assignedBy),
   ],
 );
 
@@ -212,3 +255,12 @@ export const mentorshipMatches = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Role = typeof roles.$inferSelect;
+export type NewRole = typeof roles.$inferInsert;
+
+// const roleKeys = await db
+//   .select({ roleKey: roles.roleKey })
+//   .from(userRoles)
+//   .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
+//   .where(eq(userRoles.userId, userId));
+// engine.hasAccess(roleKeys, `channel:${channelId}:read`);
