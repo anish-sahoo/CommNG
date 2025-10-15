@@ -1,7 +1,13 @@
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
+import { useTRPC } from "@/lib/trpc";
 
 export default function Home() {
+  // this is the pattern for using trpc routes in our frontend
+  const trpc = useTRPC();
+  const _test = useQuery(trpc.comms.ping.queryOptions());
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
