@@ -271,7 +271,7 @@ export const userDevices = pgTable(
   (table) => [
     index("ix_user_devices_user_id").on(table.userId),
     index("ix_user_devices_token").on(table.deviceToken),
-  ]
+  ],
 );
 
 export type User = typeof users.$inferSelect;
