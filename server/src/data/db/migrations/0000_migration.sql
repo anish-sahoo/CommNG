@@ -62,6 +62,15 @@ CREATE TABLE "roles" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "user_devices" (
+	"device_id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "user_devices_device_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"user_id" integer NOT NULL,
+	"device_type" text NOT NULL,
+	"device_token" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "user_roles" (
 	"user_id" integer NOT NULL,
 	"role_id" integer NOT NULL,
@@ -93,6 +102,7 @@ ALTER TABLE "mentorship_matches" ADD CONSTRAINT "mentorship_matches_mentor_user_
 ALTER TABLE "messages" ADD CONSTRAINT "messages_channel_id_channels_channel_id_fk" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("channel_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "messages" ADD CONSTRAINT "messages_sender_id_users_user_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "roles" ADD CONSTRAINT "roles_channel_id_channels_channel_id_fk" FOREIGN KEY ("channel_id") REFERENCES "public"."channels"("channel_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_devices" ADD CONSTRAINT "user_devices_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_users_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_roles_role_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("role_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_assigned_by_users_user_id_fk" FOREIGN KEY ("assigned_by") REFERENCES "public"."users"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
@@ -109,6 +119,8 @@ CREATE INDEX "ix_messages_sender_id" ON "messages" USING btree ("sender_id");-->
 CREATE UNIQUE INDEX "ux_roles_role_key" ON "roles" USING btree ("role_key");--> statement-breakpoint
 CREATE INDEX "ix_roles_namespace_subject" ON "roles" USING btree ("namespace","subject_id");--> statement-breakpoint
 CREATE INDEX "ix_roles_channel_id" ON "roles" USING btree ("channel_id");--> statement-breakpoint
+CREATE INDEX "ix_user_devices_user_id" ON "user_devices" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "ix_user_devices_token" ON "user_devices" USING btree ("device_token");--> statement-breakpoint
 CREATE INDEX "ix_user_roles_role_id" ON "user_roles" USING btree ("role_id");--> statement-breakpoint
 CREATE INDEX "ix_user_roles_user_assigned_by" ON "user_roles" USING btree ("user_id","assigned_by");--> statement-breakpoint
 CREATE UNIQUE INDEX "ux_users_email" ON "users" USING btree ("email");

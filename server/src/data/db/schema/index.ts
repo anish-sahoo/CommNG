@@ -253,8 +253,31 @@ export const mentorshipMatches = pgTable(
   ],
 );
 
+// USER DEVICES: track devices for push notifications
+export const userDevices = pgTable(
+  "user_devices",
+  {
+    deviceId: integer("device_id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer("user_id")
+      .references(() => users.userId, { onDelete: "cascade" })
+      .notNull(),
+    deviceType: text("device_type").notNull(), // "ios", "android", "web"
+    deviceToken: text("device_token").notNull(), // FCM/APNS token
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+  },
+  (table) => [
+    index("ix_user_devices_user_id").on(table.userId),
+    index("ix_user_devices_token").on(table.deviceToken),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type UserDevice = typeof userDevices.$inferSelect;
+export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
 
