@@ -10,7 +10,7 @@ import {
 import log from "../utils/logger.js";
 
 export function handleProcedureError(error: unknown, context: string): never {
-  log.error(error, `${context} failed`);
+  log.error(`${context}: ${error}`);
 
   if (error instanceof NotFoundError) {
     throw new TRPCError({

@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { connectRedis } from "./data/db/redis.js";
 import { connectPostgres } from "./data/db/sql.js";
+import { policyEngine } from "./service/policy-engine.js";
 import { appRouter } from "./trpc/app_router.js";
 import log from "./utils/logger.js";
 import { registerTrpcUiRoute } from "./utils/trpc-ui.js";
@@ -20,6 +21,7 @@ app.use(
 
 await connectPostgres();
 await connectRedis();
+await policyEngine.populateCache(60 * 60 * 12, 5000);
 
 if (process.env.NODE_ENV !== "production" || process.env.TRPC_UI === "true") {
   registerTrpcUiRoute(app, appRouter, port);
