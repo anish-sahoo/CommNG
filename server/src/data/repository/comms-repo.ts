@@ -71,4 +71,28 @@ export class CommsRepository {
 
     return device;
   }
+
+  // Channel creation method
+  async createChannel(name: string, metadata?: Record<string, unknown>) {
+    // Check if channel with this name already exists
+    const existingChannel = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.name, name))
+      .limit(1);
+
+    if (existingChannel.length > 0) {
+      throw new ConflictError("Channel with this name already exists");
+    }
+
+    const [channel] = await db
+      .insert(channels)
+      .values({
+        name,
+        metadata: metadata || null,
+      })
+      .returning();
+
+    return channel;
+  }
 }

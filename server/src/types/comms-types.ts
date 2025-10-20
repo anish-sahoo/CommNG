@@ -12,3 +12,14 @@ export const registerDeviceSchema = z.object({
 });
 
 export type RegisterDeviceInput = z.infer<typeof registerDeviceSchema>;
+
+// Channel creation schema
+export const createChannelSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Channel name cannot be empty")
+    .max(100, "Channel name too long"),
+  metadata: z.record(z.unknown()).optional(), // Optional JSON metadata
+});
+
+export type CreateChannelInput = z.infer<typeof createChannelSchema>;
