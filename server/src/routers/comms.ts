@@ -8,6 +8,7 @@ import {
   deleteSubscriptionSchema,
   getUserSubscriptionsSchema,
   postPostSchema,
+  registerDeviceSchema,
 } from "../types/comms-types.js";
 import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
 import log from "../utils/logger.js";
@@ -19,6 +20,20 @@ const ping = procedure.query(() => {
   log.debug("ping");
   return "pong from comms";
 });
+
+const registerDevice = procedure
+  .input(registerDeviceSchema)
+  .mutation(({ input }) =>
+    withErrorHandling("registerDevice", async () => {
+      log.debug({ deviceType: input.deviceType }, "registerDevice");
+
+      return await commsRepo.registerDevice(
+        1, // TODO: get from auth context
+        input.deviceType,
+        input.deviceToken,
+      );
+    }),
+  );
 
 /**
  * createPost
@@ -114,6 +129,7 @@ const getUserSubscriptions = procedure
 
 export const commsRouter = router({
   ping,
+  registerDevice,
   createPost,
   createSubscription,
   deleteSubscription,

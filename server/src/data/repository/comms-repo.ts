@@ -4,6 +4,7 @@ import {
   channelSubscriptions,
   channels,
   messages,
+  userDevices,
 } from "../db/schema/index.js";
 import { db } from "../db/sql.js";
 
@@ -130,5 +131,22 @@ export class CommsRepository {
         eq(channelSubscriptions.channelId, channels.channelId),
       )
       .where(eq(channelSubscriptions.userId, userId));
+  }
+
+  async registerDevice(
+    userId: number,
+    deviceType: string,
+    deviceToken: string,
+  ) {
+    const [device] = await db
+      .insert(userDevices)
+      .values({
+        userId,
+        deviceType,
+        deviceToken,
+      })
+      .returning();
+
+    return device;
   }
 }

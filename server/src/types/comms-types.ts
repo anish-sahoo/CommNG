@@ -6,6 +6,11 @@ export const postPostSchema = z.object({
   attachmentUrl: z.string().url().optional(),
 });
 
+export const registerDeviceSchema = z.object({
+  deviceType: z.string(),
+  deviceToken: z.string(),
+});
+
 // Channel subscription schemas
 export const createSubscriptionSchema = z.object({
   channelId: z.coerce.number().int().positive(),
@@ -21,6 +26,7 @@ export const getUserSubscriptionsSchema = z.object({
   userId: z.coerce.number().int().positive().optional(), // Optional for getting current user's subscriptions
 });
 
+export type RegisterDeviceInput = z.infer<typeof registerDeviceSchema>;
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type GetUserSubscriptionsInput = z.infer<
