@@ -133,18 +133,18 @@ vi.mock("../src/trpc/app_router.js", () => {
           },
 
           // Subscription endpoints
-          async createSubscription(input: { 
-            channelId: number; 
-            permission: "read" | "write" | "both"; 
+          async createSubscription(input: {
+            channelId: number;
+            permission: "read" | "write" | "both";
             notificationsEnabled: boolean;
           }) {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
-            
+
             const uid = ctx.userId as number;
-            
+
             // Check if subscription already exists
             const existing = mem.channelSubscriptions.find(
-              s => s.user_id === uid && s.channel_id === input.channelId
+              (s) => s.user_id === uid && s.channel_id === input.channelId,
             );
             if (existing) throw new Error("CONFLICT");
 
@@ -169,17 +169,17 @@ vi.mock("../src/trpc/app_router.js", () => {
 
           async deleteSubscription(input: { subscriptionId: number }) {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
-            
+
             const uid = ctx.userId as number;
             const subscriptionIndex = mem.channelSubscriptions.findIndex(
-              s => s.id === input.subscriptionId && s.user_id === uid
+              (s) => s.id === input.subscriptionId && s.user_id === uid,
             );
-            
+
             if (subscriptionIndex === -1) throw new Error("NOT_FOUND");
-            
+
             const deleted = mem.channelSubscriptions[subscriptionIndex];
             mem.channelSubscriptions.splice(subscriptionIndex, 1);
-            
+
             return {
               subscriptionId: deleted.id,
               userId: deleted.user_id,
@@ -189,14 +189,16 @@ vi.mock("../src/trpc/app_router.js", () => {
             };
           },
 
-          async getUserSubscriptions(input: { userId?: number }) {
+          async getUserSubscriptions(_input: { userId?: number }) {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
-            
+
             const uid = ctx.userId as number;
             const userSubscriptions = mem.channelSubscriptions
-              .filter(s => s.user_id === uid)
-              .map(s => {
-                const channel = mem.channels.find(c => c.channel_id === s.channel_id);
+              .filter((s) => s.user_id === uid)
+              .map((s) => {
+                const channel = mem.channels.find(
+                  (c) => c.channel_id === s.channel_id,
+                );
                 return {
                   subscriptionId: s.id,
                   channelId: s.channel_id,
@@ -423,7 +425,7 @@ describe("commsRouter subscription endpoints", () => {
         user: ctxUser(authedUserId),
         userId: authedUserId,
       });
-      
+
       // First subscription
       await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
@@ -457,7 +459,7 @@ describe("commsRouter subscription endpoints", () => {
         user: ctxUser(authedUserId),
         userId: authedUserId,
       });
-      
+
       // Create a subscription to delete
       const subscription = await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
@@ -487,9 +489,9 @@ describe("commsRouter subscription endpoints", () => {
   describe("getUserSubscriptions", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
       const caller = appRouter.createCaller({ user: undefined, userId: null });
-      await expect(
-        caller.comms.getUserSubscriptions({}),
-      ).rejects.toThrow(/UNAUTHORIZED/i);
+      await expect(caller.comms.getUserSubscriptions({})).rejects.toThrow(
+        /UNAUTHORIZED/i,
+      );
     });
 
     it("returns user's subscriptions", async () => {
@@ -499,26 +501,26 @@ describe("commsRouter subscription endpoints", () => {
         user: ctxUser(authedUserId),
         userId: authedUserId,
       });
-      
+
       // Create a subscription first
       await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
         permission: "read",
         notificationsEnabled: true,
       });
-      
+
       const subscriptions = await caller.comms.getUserSubscriptions({});
 
       expect(subscriptions).toBeDefined();
       expect(Array.isArray(subscriptions)).toBe(true);
       expect(subscriptions.length).toBeGreaterThan(0);
-      
+
       const subscription = subscriptions[0];
-      expect(subscription).toHaveProperty('subscriptionId');
-      expect(subscription).toHaveProperty('channelId');
-      expect(subscription).toHaveProperty('permission');
-      expect(subscription).toHaveProperty('notificationsEnabled');
-      expect(subscription).toHaveProperty('channelName');
+      expect(subscription).toHaveProperty("subscriptionId");
+      expect(subscription).toHaveProperty("channelId");
+      expect(subscription).toHaveProperty("permission");
+      expect(subscription).toHaveProperty("notificationsEnabled");
+      expect(subscription).toHaveProperty("channelName");
     });
 
     it("returns empty array for user with no subscriptions", async () => {
