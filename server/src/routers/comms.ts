@@ -6,6 +6,7 @@ import { procedure, router } from "../trpc/trpc.js";
 import {
   createChannelSchema,
   createSubscriptionSchema,
+  deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
   getUserSubscriptionsSchema,
@@ -121,6 +122,26 @@ const editPost = procedure
 
     return updatedPost;
   });
+/**
+ * deletePost
+ * Allows an authenticated user to delete a previously posted message if they authored it or if they are an admin.
+ */
+const deletePost = procedure
+  .input(deletePostSchema)
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.userId ?? ctx.user?.userId ?? null;
+    if (!userId) {
+      throw new UnauthorizedError("Sign in required");
+    }
+
+    const deletedPost = await commsService.deleteMessage(
+      userId,
+      input.channelId,
+      input.messageId,
+    );
+
+    return deletedPost;
+  });
 // Channel subscription endpoints
 const createSubscription = procedure
   .input(createSubscriptionSchema)
@@ -184,6 +205,7 @@ export const commsRouter = router({
   createPost,
   createChannel,
   editPost,
+  deletePost,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,

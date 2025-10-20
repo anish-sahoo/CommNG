@@ -114,6 +114,31 @@ export class CommsRepository {
 
     return updated;
   }
+
+  async deleteMessage(message_id: number, channel_id: number) {
+    const [deleted] = await db
+      .delete(messages)
+      .where(
+        and(
+          eq(messages.messageId, message_id),
+          eq(messages.channelId, channel_id),
+        ),
+      )
+      .returning({
+        messageId: messages.messageId,
+        channelId: messages.channelId,
+        senderId: messages.senderId,
+        message: messages.message,
+        attachmentUrl: messages.attachmentUrl,
+        createdAt: messages.createdAt,
+      });
+
+    if (!deleted) {
+      throw new NotFoundError("Message not found");
+    }
+
+    return deleted;
+  }
   // Channel subscription methods
   async createSubscription(
     userId: number,

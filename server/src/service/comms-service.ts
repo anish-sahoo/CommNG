@@ -1,5 +1,6 @@
 import { CommsRepository } from "../data/repository/comms-repo.js";
 import { BadRequestError, ForbiddenError } from "../types/errors.js";
+import { policyEngine } from "./policy-engine.js";
 
 export class CommsService {
   private commsRepo: CommsRepository;
@@ -59,8 +60,6 @@ export class CommsService {
       throw new BadRequestError("Cannot have decimal points in User ID");
     }
 
-    await this.getChannelById(channel_id);
-
     const existingMessage = await this.commsRepo.getMessageById(message_id);
 
     if (existingMessage.channelId !== channel_id) {
@@ -81,5 +80,42 @@ export class CommsService {
       content,
       attachment_url,
     );
+  }
+
+  async deleteMessage(user_id: number, channel_id: number, message_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+
+    if (message_id !== Math.trunc(message_id)) {
+      throw new BadRequestError("Cannot have decimal points in Message ID");
+    }
+
+    if (user_id !== Math.trunc(user_id)) {
+      throw new BadRequestError("Cannot have decimal points in User ID");
+    }
+
+    const existingMessage = await this.commsRepo.getMessageById(message_id);
+
+    if (existingMessage.channelId !== channel_id) {
+      throw new BadRequestError(
+        "Message does not belong to the specified channel",
+      );
+    }
+
+    if (existingMessage.senderId !== user_id) {
+      const isAdmin = await policyEngine.validate(
+        user_id,
+        `channel:${channel_id}:admin`,
+      );
+
+      if (!isAdmin) {
+        throw new ForbiddenError(
+          "Only the original poster or a channel admin can delete this message",
+        );
+      }
+    }
+
+    return this.commsRepo.deleteMessage(message_id, channel_id);
   }
 }

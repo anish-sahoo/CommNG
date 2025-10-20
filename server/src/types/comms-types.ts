@@ -12,6 +12,11 @@ export const editPostSchema = z.object({
   content: z.string().min(1, "Post content cannot be empty"),
   attachmentUrl: z.string().url().optional(),
 });
+
+export const deletePostSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+  messageId: z.coerce.number().int().positive(),
+});
 export const registerDeviceSchema = z.object({
   deviceType: z.string(),
   deviceToken: z.string(),
@@ -38,6 +43,7 @@ export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type GetUserSubscriptionsInput = z.infer<
   typeof getUserSubscriptionsSchema
 >;
+export type DeletePostInput = z.infer<typeof deletePostSchema>;
 
 // Channel creation schema
 export const createChannelSchema = z.object({
