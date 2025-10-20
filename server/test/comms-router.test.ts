@@ -210,6 +210,40 @@ vi.mock("../src/trpc/app_router.js", () => {
 
             return userSubscriptions;
           },
+
+          // Channel creation endpoint
+          async createChannel(input: {
+            name: string;
+            metadata?: Record<string, unknown>;
+          }) {
+            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+
+            // Validate input (simulate Zod validation)
+            if (!input.name || input.name.length === 0) {
+              throw new Error("Channel name cannot be empty");
+            }
+            if (input.name.length > 100) {
+              throw new Error("Channel name too long");
+            }
+
+            // Check if channel with this name already exists
+            const existing = mem.channels.find((c) => c.name === input.name);
+            if (existing) throw new Error("CONFLICT");
+
+            const channel = {
+              channelId: ++mem._ids.channel,
+              name: input.name,
+              metadata: input.metadata || null,
+              createdAt: new Date(),
+            };
+
+            mem.channels.push({
+              channel_id: channel.channelId,
+              name: channel.name,
+            });
+
+            return channel;
+          },
         },
       };
     },
@@ -533,6 +567,131 @@ describe("commsRouter subscription endpoints", () => {
       expect(subscriptions).toBeDefined();
       expect(Array.isArray(subscriptions)).toBe(true);
       expect(subscriptions.length).toBe(0);
+    });
+  });
+});
+
+// Channel Creation Tests
+describe("commsRouter.createChannel", () => {
+  let authedUserId: number;
+
+  function ctxUser(
+    userId: number,
+    name = "Test User",
+    email = "test@example.com",
+  ) {
+    const now = new Date();
+    return {
+      userId,
+      name,
+      email,
+      createdAt: now,
+      updatedAt: now,
+      phoneNumber: null as string | null,
+      clearanceLevel: null as string | null,
+      department: null as string | null,
+      branch: null as string | null,
+    };
+  }
+
+  beforeAll(async () => {
+    const u1 = createUser(
+      "Test User",
+      `test-${Date.now()}@example.com`,
+      "test-password",
+    );
+    authedUserId = u1.user_id;
+
+    createUser(
+      "Other User",
+      `other-${Date.now()}@example.com`,
+      "test-password",
+    );
+  });
+
+  describe("createChannel", () => {
+    it("throws UNAUTHORIZED if no user in context", async () => {
+      const caller = appRouter.createCaller({ user: undefined, userId: null });
+      await expect(
+        caller.comms.createChannel({
+          name: "test-channel",
+        }),
+      ).rejects.toThrow(/UNAUTHORIZED/i);
+    });
+
+    it("creates channel successfully", async () => {
+      const caller = appRouter.createCaller({
+        user: ctxUser(authedUserId),
+        userId: authedUserId,
+      });
+      const channel = await caller.comms.createChannel({
+        name: `test-channel-${Date.now()}`,
+        metadata: { description: "Test channel", type: "public" },
+      });
+
+      expect(channel).toBeDefined();
+      expect(channel.name).toBe(`test-channel-${Date.now()}`);
+      expect(channel.metadata).toEqual({
+        description: "Test channel",
+        type: "public",
+      });
+      expect(channel).toHaveProperty("channelId");
+      expect(channel).toHaveProperty("createdAt");
+    });
+
+    it("creates channel without metadata", async () => {
+      const caller = appRouter.createCaller({
+        user: ctxUser(authedUserId),
+        userId: authedUserId,
+      });
+      const channel = await caller.comms.createChannel({
+        name: `simple-channel-${Date.now()}`,
+      });
+
+      expect(channel).toBeDefined();
+      expect(channel.name).toBe(`simple-channel-${Date.now()}`);
+      expect(channel.metadata).toBeNull();
+    });
+
+    it("throws CONFLICT for duplicate channel name", async () => {
+      const channelName = `duplicate-test-${Date.now()}`;
+      const caller = appRouter.createCaller({
+        user: ctxUser(authedUserId),
+        userId: authedUserId,
+      });
+
+      // First channel creation
+      await caller.comms.createChannel({
+        name: channelName,
+      });
+
+      // Second channel with same name should fail
+      await expect(
+        caller.comms.createChannel({
+          name: channelName,
+        }),
+      ).rejects.toThrow(/CONFLICT/i);
+    });
+
+    it("validates channel name requirements", async () => {
+      const caller = appRouter.createCaller({
+        user: ctxUser(authedUserId),
+        userId: authedUserId,
+      });
+
+      // Test empty name (should be caught by Zod validation)
+      await expect(
+        caller.comms.createChannel({
+          name: "",
+        }),
+      ).rejects.toThrow();
+
+      // Test very long name (should be caught by Zod validation)
+      await expect(
+        caller.comms.createChannel({
+          name: "a".repeat(101), // Over 100 character limit
+        }),
+      ).rejects.toThrow();
     });
   });
 });
