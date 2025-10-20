@@ -1,5 +1,5 @@
 import { CommsRepository } from "../data/repository/comms-repo.js";
-import { BadRequestError } from "../types/errors.js";
+import { BadRequestError, ForbiddenError } from "../types/errors.js";
 
 export class CommsService {
   private commsRepo: CommsRepository;
@@ -32,6 +32,54 @@ export class CommsService {
       throw new BadRequestError("Cannot have decimal points in User ID");
     }
 
-    this.commsRepo.createMessage(user_id, channel_id, content, attachment_url);
+    return this.commsRepo.createMessage(
+      user_id,
+      channel_id,
+      content,
+      attachment_url,
+    );
+  }
+
+  async editMessage(
+    user_id: number,
+    channel_id: number,
+    message_id: number,
+    content: string,
+    attachment_url?: string,
+  ) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+
+    if (message_id !== Math.trunc(message_id)) {
+      throw new BadRequestError("Cannot have decimal points in Message ID");
+    }
+
+    if (user_id !== Math.trunc(user_id)) {
+      throw new BadRequestError("Cannot have decimal points in User ID");
+    }
+
+    await this.getChannelById(channel_id);
+
+    const existingMessage = await this.commsRepo.getMessageById(message_id);
+
+    if (existingMessage.channelId !== channel_id) {
+      throw new BadRequestError(
+        "Message does not belong to the specified channel",
+      );
+    }
+
+    if (existingMessage.senderId !== user_id) {
+      throw new ForbiddenError(
+        "Only the original poster can edit this message",
+      );
+    }
+
+    return this.commsRepo.updateMessage(
+      message_id,
+      channel_id,
+      content,
+      attachment_url,
+    );
   }
 }

@@ -7,6 +7,7 @@ import {
   createChannelSchema,
   createSubscriptionSchema,
   deleteSubscriptionSchema,
+  editPostSchema,
   getUserSubscriptionsSchema,
   postPostSchema,
   registerDeviceSchema,
@@ -61,7 +62,7 @@ const createPost = procedure
       );
     }
 
-    const createdPost = commsService.createMessage(
+    const createdPost = await commsService.createMessage(
       userId,
       input.channelId,
       input.content,
@@ -87,6 +88,39 @@ const createChannel = procedure
     }),
   );
 
+/**
+ * editPost
+ * Allows an authenticated user to edit a previously posted message if they authored it.
+ */
+const editPost = procedure
+  .input(editPostSchema)
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.userId ?? ctx.user?.userId ?? null;
+    if (!userId) {
+      throw new UnauthorizedError("Sign in required");
+    }
+
+    const canPost = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:post`,
+    );
+
+    if (!canPost) {
+      throw new ForbiddenError(
+        "You do not have permission to edit posts in this channel",
+      );
+    }
+
+    const updatedPost = await commsService.editMessage(
+      userId,
+      input.channelId,
+      input.messageId,
+      input.content,
+      input.attachmentUrl,
+    );
+
+    return updatedPost;
+  });
 // Channel subscription endpoints
 const createSubscription = procedure
   .input(createSubscriptionSchema)
@@ -149,6 +183,7 @@ export const commsRouter = router({
   registerDevice,
   createPost,
   createChannel,
+  editPost,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,
