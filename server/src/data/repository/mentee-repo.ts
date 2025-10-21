@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
-import type { 
-  CreateMenteeOutput, 
-  GetMenteeOutput, 
-  UpdateMenteeOutput 
+import type {
+  CreateMenteeOutput,
+  GetMenteeOutput,
+  UpdateMenteeOutput,
 } from "../../types/mentee-types.js";
 import { mentees } from "../db/schema/index.js";
 import { db } from "../db/sql.js";
@@ -17,7 +17,7 @@ export class MenteeRepository {
     learningGoals?: string,
     experienceLevel?: string,
     preferredMentorType?: string,
-    status: "active" | "inactive" | "matched" = "active"
+    status: "active" | "inactive" | "matched" = "active",
   ): Promise<CreateMenteeOutput> {
     // Check if mentee already exists for this user
     const existingMentee = await db
@@ -104,15 +104,17 @@ export class MenteeRepository {
     learningGoals?: string,
     experienceLevel?: string,
     preferredMentorType?: string,
-    status?: "active" | "inactive" | "matched"
+    status?: "active" | "inactive" | "matched",
   ): Promise<UpdateMenteeOutput> {
     const updateData: Partial<typeof mentees.$inferInsert> = {
       updatedAt: new Date(),
     };
 
     if (learningGoals !== undefined) updateData.learningGoals = learningGoals;
-    if (experienceLevel !== undefined) updateData.experienceLevel = experienceLevel;
-    if (preferredMentorType !== undefined) updateData.preferredMentorType = preferredMentorType;
+    if (experienceLevel !== undefined)
+      updateData.experienceLevel = experienceLevel;
+    if (preferredMentorType !== undefined)
+      updateData.preferredMentorType = preferredMentorType;
     if (status !== undefined) updateData.status = status;
 
     const [updated] = await db
@@ -148,7 +150,9 @@ export class MenteeRepository {
     }
   }
 
-  async getMenteesByStatus(status: "active" | "inactive" | "matched"): Promise<GetMenteeOutput[]> {
+  async getMenteesByStatus(
+    status: "active" | "inactive" | "matched",
+  ): Promise<GetMenteeOutput[]> {
     return await db
       .select({
         menteeId: mentees.menteeId,

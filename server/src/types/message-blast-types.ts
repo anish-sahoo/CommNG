@@ -21,7 +21,10 @@ export const createMessageBlastInputSchema = z.object({
   content: z.string().min(1),
   targetAudience: z.record(z.unknown()).optional(),
   scheduledAt: z.date().optional(),
-  status: z.enum(["draft", "scheduled", "sent", "failed"]).optional().default("draft"),
+  status: z
+    .enum(["draft", "scheduled", "sent", "failed"])
+    .optional()
+    .default("draft"),
 });
 
 export const updateMessageBlastInputSchema = z.object({
@@ -46,11 +49,19 @@ export const scheduleMessageBlastInputSchema = z.object({
   scheduledAt: z.date(),
 });
 
-export type CreateMessageBlastInput = z.infer<typeof createMessageBlastInputSchema>;
-export type UpdateMessageBlastInput = z.infer<typeof updateMessageBlastInputSchema>;
+export type CreateMessageBlastInput = z.infer<
+  typeof createMessageBlastInputSchema
+>;
+export type UpdateMessageBlastInput = z.infer<
+  typeof updateMessageBlastInputSchema
+>;
 export type GetMessageBlastInput = z.infer<typeof getMessageBlastInputSchema>;
-export type GetMessageBlastsBySenderInput = z.infer<typeof getMessageBlastsBySenderInputSchema>;
-export type ScheduleMessageBlastInput = z.infer<typeof scheduleMessageBlastInputSchema>;
+export type GetMessageBlastsBySenderInput = z.infer<
+  typeof getMessageBlastsBySenderInputSchema
+>;
+export type ScheduleMessageBlastInput = z.infer<
+  typeof scheduleMessageBlastInputSchema
+>;
 
 export type CreateMessageBlastOutput = {
   blastId: number;

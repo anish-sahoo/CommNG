@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
-import type { 
-  CreateMessageBlastOutput, 
-  GetMessageBlastOutput, 
-  UpdateMessageBlastOutput 
+import type {
+  CreateMessageBlastOutput,
+  GetMessageBlastOutput,
+  UpdateMessageBlastOutput,
 } from "../../types/message-blast-types.js";
 import { messageBlasts } from "../db/schema/index.js";
 import { db } from "../db/sql.js";
@@ -18,7 +18,7 @@ export class MessageBlastRepository {
     content: string,
     targetAudience?: Record<string, unknown>,
     scheduledAt?: Date,
-    status: "draft" | "scheduled" | "sent" | "failed" = "draft"
+    status: "draft" | "scheduled" | "sent" | "failed" = "draft",
   ): Promise<CreateMessageBlastOutput> {
     const [created] = await db
       .insert(messageBlasts)
@@ -75,7 +75,9 @@ export class MessageBlastRepository {
     return blast;
   }
 
-  async getMessageBlastsBySender(senderId: number): Promise<GetMessageBlastOutput[]> {
+  async getMessageBlastsBySender(
+    senderId: number,
+  ): Promise<GetMessageBlastOutput[]> {
     return await db
       .select({
         blastId: messageBlasts.blastId,
@@ -99,7 +101,7 @@ export class MessageBlastRepository {
     content?: string,
     targetAudience?: Record<string, unknown>,
     scheduledAt?: Date,
-    status?: "draft" | "scheduled" | "sent" | "failed"
+    status?: "draft" | "scheduled" | "sent" | "failed",
   ): Promise<UpdateMessageBlastOutput> {
     const updateData: Partial<typeof messageBlasts.$inferInsert> = {
       updatedAt: new Date(),
@@ -107,7 +109,8 @@ export class MessageBlastRepository {
 
     if (title !== undefined) updateData.title = title;
     if (content !== undefined) updateData.content = content;
-    if (targetAudience !== undefined) updateData.targetAudience = targetAudience;
+    if (targetAudience !== undefined)
+      updateData.targetAudience = targetAudience;
     if (scheduledAt !== undefined) updateData.scheduledAt = scheduledAt;
     if (status !== undefined) updateData.status = status;
 
@@ -135,7 +138,10 @@ export class MessageBlastRepository {
     return updated;
   }
 
-  async scheduleMessageBlast(blastId: number, scheduledAt: Date): Promise<UpdateMessageBlastOutput> {
+  async scheduleMessageBlast(
+    blastId: number,
+    scheduledAt: Date,
+  ): Promise<UpdateMessageBlastOutput> {
     const [updated] = await db
       .update(messageBlasts)
       .set({
@@ -232,7 +238,9 @@ export class MessageBlastRepository {
     }
   }
 
-  async getMessageBlastsByStatus(status: "draft" | "scheduled" | "sent" | "failed"): Promise<GetMessageBlastOutput[]> {
+  async getMessageBlastsByStatus(
+    status: "draft" | "scheduled" | "sent" | "failed",
+  ): Promise<GetMessageBlastOutput[]> {
     return await db
       .select({
         blastId: messageBlasts.blastId,
@@ -270,7 +278,7 @@ export class MessageBlastRepository {
           eq(messageBlasts.status, "scheduled"),
           // This would need a proper date comparison in a real implementation
           // For now, we'll get all scheduled blasts
-        )
+        ),
       );
   }
 }

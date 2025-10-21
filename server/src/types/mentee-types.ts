@@ -18,7 +18,10 @@ export const createMenteeInputSchema = z.object({
   learningGoals: z.string().optional(),
   experienceLevel: z.string().optional(),
   preferredMentorType: z.string().optional(),
-  status: z.enum(["active", "inactive", "matched"]).optional().default("active"),
+  status: z
+    .enum(["active", "inactive", "matched"])
+    .optional()
+    .default("active"),
 });
 
 export const updateMenteeInputSchema = z.object({
