@@ -25,6 +25,19 @@ export const mentorStatusEnum = pgEnum("mentor_status_enum", [
   "active",
 ]);
 
+export const menteeStatusEnum = pgEnum("mentee_status_enum", [
+  "active",
+  "inactive",
+  "matched",
+]);
+
+export const messageBlastStatusEnum = pgEnum("message_blast_status_enum", [
+  "draft",
+  "scheduled",
+  "sent",
+  "failed",
+]);
+
 export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "global",
   "channel",
@@ -274,12 +287,69 @@ export const userDevices = pgTable(
   ],
 );
 
+// MENTEES: track mentees seeking mentorship
+export const mentees = pgTable(
+  "mentees",
+  {
+    menteeId: integer("mentee_id").primaryKey().generatedAlwaysAsIdentity(),
+    userId: integer("user_id")
+      .references(() => users.userId, { onDelete: "cascade" })
+      .notNull(),
+    learningGoals: text("learning_goals"),
+    experienceLevel: text("experience_level"),
+    preferredMentorType: text("preferred_mentor_type"),
+    status: menteeStatusEnum("status").default("active").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ix_mentees_user_id").on(table.userId),
+    index("ix_mentees_status").on(table.status),
+  ],
+);
+
+// MESSAGE BLASTS: track broadcast messages
+export const messageBlasts = pgTable(
+  "message_blasts",
+  {
+    blastId: integer("blast_id").primaryKey().generatedAlwaysAsIdentity(),
+    senderId: integer("sender_id")
+      .references(() => users.userId, { onDelete: "cascade" })
+      .notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    targetAudience: jsonb("target_audience"),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: false }),
+    sentAt: timestamp("sent_at", { withTimezone: false }),
+    status: messageBlastStatusEnum("status").default("draft").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ix_message_blasts_sender_id").on(table.senderId),
+    index("ix_message_blasts_status").on(table.status),
+    index("ix_message_blasts_scheduled_at").on(table.scheduledAt),
+  ],
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserDevice = typeof userDevices.$inferSelect;
 export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
+export type Mentee = typeof mentees.$inferSelect;
+export type NewMentee = typeof mentees.$inferInsert;
+export type MessageBlast = typeof messageBlasts.$inferSelect;
+export type NewMessageBlast = typeof messageBlasts.$inferInsert;
 
 // const roleKeys = await db
 //   .select({ roleKey: roles.roleKey })
