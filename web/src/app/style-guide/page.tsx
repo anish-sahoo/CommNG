@@ -113,7 +113,7 @@ export default function StyleGuidePage() {
                       className="{className}"
                     </code>
                   </div>
-                )
+                ),
               )}
             </div>
           </section>
@@ -147,7 +147,7 @@ export default function StyleGuidePage() {
                     </div>
                     <code className="text-xs text-neutral">bg-{token}</code>
                   </div>
-                )
+                ),
               )}
             </div>
           </section>

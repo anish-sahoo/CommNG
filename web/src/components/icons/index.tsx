@@ -1,4 +1,3 @@
-import type { ComponentType, SVGProps } from "react";
 import {
   Bars3Icon,
   BellAlertIcon,
@@ -20,6 +19,7 @@ import {
   UserPlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/solid";
+import type { ComponentType, SVGProps } from "react";
 
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -28,6 +28,8 @@ const ToggleOffIcon: HeroIcon = ({ className, ...props }) => (
     viewBox="0 0 48 24"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
+    aria-hidden="true"
+    focusable="false"
     {...props}
   >
     <rect
@@ -49,6 +51,8 @@ const ToggleOnIcon: HeroIcon = ({ className, ...props }) => (
     viewBox="0 0 48 24"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
+    aria-hidden="true"
+    focusable="false"
     {...props}
   >
     <rect
