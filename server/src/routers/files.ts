@@ -1,7 +1,7 @@
-import express, { type Request, type Response } from "express";
-import busboy from "busboy";
-import type { FileInfo } from "busboy";
 import type { Readable } from "node:stream";
+import type { FileInfo } from "busboy";
+import busboy from "busboy";
+import express, { type Request, type Response } from "express";
 import { FileRepository } from "../data/repository/file-repo.js";
 import { FileService } from "../service/file-service.js";
 import { policyEngine } from "../service/policy-engine.js";
@@ -13,7 +13,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const fileRepo = new FileRepository();
 const fileEngine = new FileService(fileRepo);
 
-async function getUserFromReq(req: Request) {
+async function getUserFromReq(_req: Request) {
   // const auth = req.headers.authorization?.split(" ")[1];
   // if (!auth) return null;
   return { userId: 1 };
@@ -164,7 +164,7 @@ fileRouter.get("/:fileId", async (req: Request, res: Response) => {
   if (!fileId) {
     return res.status(400).json({ error: "File ID is required" });
   }
-
+  log.info(`GET api/files/${fileId}`);
   try {
     const fileData = await fileEngine.getFileStream(fileId);
 
@@ -172,11 +172,11 @@ fileRouter.get("/:fileId", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "File not found" });
     }
 
-    const { stream, fileName } = fileData;
+    const { stream, fileName, contentType } = fileData;
 
     // Set headers for file download
     res.setHeader("Content-Disposition", `inline; filename="${fileName}"`);
-    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader("Content-Type", contentType ?? "application/octet-stream");
 
     // Pipe the stream to response (non-blocking, efficient)
     stream.pipe(res);
@@ -188,9 +188,12 @@ fileRouter.get("/:fileId", async (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to stream file" });
       }
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     log.error(err, "File retrieval failed");
-    res.status(500).json({ error: "Failed to retrieve file", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve file", details: message });
   }
 });
 

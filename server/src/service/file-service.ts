@@ -1,16 +1,18 @@
+import path from "node:path";
 import type { Readable } from "node:stream";
-import { FileRepository } from "../data/repository/file-repo.js";
+import {
+  type FileRecord,
+  FileRepository,
+} from "../data/repository/file-repo.js";
 import { FileSystemStorageAdapter } from "../storage/filesystem-adapter.js";
 import { S3Adapter } from "../storage/s3-adapter.js";
 import type {
   FileInputStreamOptions,
   StorageAdapter,
 } from "../storage/storage-adapter.js";
+import { NotFoundError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
-/**
- * Policy Engine that handles everything related to access control (checking access, granting access, etc.)
- */
 export class FileService {
   private fileRepository: FileRepository;
   private adapter: StorageAdapter;
@@ -25,30 +27,141 @@ export class FileService {
 
   public async storeFileFromStream(
     userId: number,
-    fileName: string,
+    originalFileName: string,
     file: Readable,
     opts?: FileInputStreamOptions,
   ): Promise<string> {
-    log.info(`INSERT ${fileName} ${opts?.contentType} for user ${userId}`);
-    fileName = fileName.replace(/\s+/g, "-").replace(/[^\x00-\x7F]/g, "");
+    const safeOriginalName = this.normaliseOriginalName(originalFileName);
+    const fileId = await this.fileRepository.generateFileId();
+    const extension = this.resolveExtension(
+      safeOriginalName,
+      opts?.contentType,
+    );
+    const storageName = extension ? `${fileId}${extension}` : fileId;
 
-    const { path: filePath } = await this.adapter.storeStream(
-      fileName,
+    log.info(
+      `Store file ${safeOriginalName} for user ${userId} as ${storageName} (${opts?.contentType ?? "unknown"})`,
+    );
+
+    const { path: relativePath } = await this.adapter.storeStream(
+      storageName,
       file,
       opts,
     );
 
-    const fileId = await this.fileRepository.insertFile(filePath, fileName);
+    await this.fileRepository.insertFile({
+      fileId,
+      fileName: safeOriginalName,
+      location: relativePath,
+      metadata: {
+        contentType: opts?.contentType ?? null,
+        uploadedBy: userId,
+        storedName: storageName,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
+
     return fileId;
   }
 
-  public async getFileStream(fileId: string): Promise<{ stream: Readable; fileName: string } | null> {
-    const fileData = await this.fileRepository.getFile(fileId);
-    if (!fileData) {
-      return null;
+  public async getFileStream(fileId: string): Promise<{
+    stream: Readable;
+    fileName: string;
+    contentType?: string;
+  } | null> {
+    try {
+      const fileData = await this.fileRepository.getFile(fileId);
+      const stream = await this.adapter.getStream(fileData.location);
+      const metadata = this.normaliseMetadata(fileData);
+      const downloadName = this.resolveDownloadName(
+        fileData.fileName,
+        metadata.storedName ?? fileData.location,
+      );
+
+      return {
+        stream,
+        fileName: downloadName,
+        contentType: metadata.contentType ?? undefined,
+      };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  private normaliseOriginalName(fileName: string): string {
+    const trimmed = fileName?.trim() ?? "";
+    const base = path.basename(trimmed).replace(/[\r\n]+/g, "");
+    return base.length > 0 ? base : "file";
+  }
+
+  private resolveExtension(fileName: string, contentType?: string): string {
+    const fromName = path.extname(fileName ?? "");
+    if (fromName) {
+      return fromName.toLowerCase();
     }
 
-    const stream = await this.adapter.getStream(fileData.filePath);
-    return { stream, fileName: fileData.fileName };
+    if (!contentType) {
+      return "";
+    }
+
+    const mapping: Record<string, string> = {
+      "application/pdf": ".pdf",
+      "image/png": ".png",
+      "image/jpeg": ".jpg",
+      "image/jpg": ".jpg",
+      "image/gif": ".gif",
+      "text/plain": ".txt",
+    };
+
+    const type = contentType.toLowerCase();
+    return mapping[type] ?? "";
+  }
+
+  private resolveDownloadName(preferred: string, storedName: string): string {
+    const trimmedPreferred = preferred?.trim() ?? "";
+    if (trimmedPreferred.length === 0) {
+      return storedName;
+    }
+
+    if (path.extname(trimmedPreferred)) {
+      return trimmedPreferred;
+    }
+
+    const storedExt = path.extname(storedName ?? "");
+    if (storedExt) {
+      return `${trimmedPreferred}${storedExt}`;
+    }
+
+    return trimmedPreferred;
+  }
+
+  private normaliseMetadata(file: FileRecord): {
+    contentType: string | null;
+    storedName: string | null;
+    uploadedBy: number | null;
+  } {
+    const metadata = file.metadata ?? {};
+    if (typeof metadata !== "object" || Array.isArray(metadata)) {
+      return { contentType: null, storedName: null, uploadedBy: null };
+    }
+
+    const tryString = (value: unknown): string | null =>
+      typeof value === "string" && value.trim().length > 0
+        ? value.trim()
+        : null;
+
+    const tryNumber = (value: unknown): number | null =>
+      typeof value === "number" && Number.isFinite(value) ? value : null;
+
+    const bag = metadata as Record<string, unknown>;
+
+    return {
+      contentType: tryString(bag.contentType ?? null),
+      storedName: tryString(bag.storedName ?? null),
+      uploadedBy: tryNumber(bag.uploadedBy ?? null),
+    };
   }
 }

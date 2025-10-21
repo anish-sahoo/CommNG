@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as fsp from "node:fs/promises";
 import path from "node:path";
@@ -16,7 +15,7 @@ export class FileSystemStorageAdapter extends StorageAdapter {
   public async storeStream(
     filename: string,
     input: Readable,
-    opts?: FileInputStreamOptions,
+    _opts?: FileInputStreamOptions,
   ): Promise<FilePath> {
     const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
     const finalPath = path.join(destDir, filename);
@@ -25,10 +24,7 @@ export class FileSystemStorageAdapter extends StorageAdapter {
     // Ensure the destination directory (including subdirectories) exists
     await fsp.mkdir(finalDir, { recursive: true });
     // Create temp file in the same directory as final file for atomic rename
-    const tmpPath = path.join(
-      finalDir,
-      `.${filename}.tmp`,
-    );
+    const tmpPath = path.join(finalDir, `.${filename}.tmp`);
 
     const ws = fs.createWriteStream(tmpPath, { flags: "w" });
     try {
@@ -36,7 +32,9 @@ export class FileSystemStorageAdapter extends StorageAdapter {
       await pipeline(input, ws);
       // move into final location atomically (works because same filesystem/directory)
       await fsp.rename(tmpPath, finalPath);
-      return { path: finalPath };
+      const relativePath =
+        path.relative(destDir, finalPath) || path.basename(finalPath);
+      return { path: relativePath };
     } catch (err) {
       // cleanup temp file on error
       try {
@@ -48,9 +46,11 @@ export class FileSystemStorageAdapter extends StorageAdapter {
 
   public async getStream(filePath: string): Promise<Readable> {
     // Verify file exists first
-    await fsp.access(filePath, fs.constants.R_OK);
+    const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
+    const absolutePath = path.join(destDir, filePath);
+    await fsp.access(absolutePath, fs.constants.R_OK);
     // Return a readable stream
-    return fs.createReadStream(filePath);
+    return fs.createReadStream(absolutePath);
   }
 
   public async delete(_path: string): Promise<boolean> {

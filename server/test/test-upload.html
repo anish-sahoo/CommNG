@@ -92,8 +92,8 @@
 </head>
 <body>
     <div class="container">
-    <h1>File Upload Test</h1>
-    <p>Test your multipart file upload endpoint (max 10MB)</p>
+        <h1>File Upload Test</h1>
+        <p>Test your multipart file upload endpoint (max 10MB) and fetch stored files</p>
         
         <form id="uploadForm">
             <div class="form-group">
@@ -138,6 +138,14 @@
             <button type="submit" id="submitBtn">Upload File</button>
         </form>
         
+        <div class="form-group">
+            <label for="fileIdLookup">Fetch File by UUID:</label>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="fileIdLookup" placeholder="Paste file UUID here" style="flex: 1;">
+                <button type="button" id="fetchBtn" style="flex-basis: 140px;">Download</button>
+            </div>
+        </div>
+
         <div class="response" id="response"></div>
     </div>
 
@@ -149,11 +157,13 @@
         const submitBtn = document.getElementById('submitBtn');
         const endpointInput = document.getElementById('endpoint');
         const tokenInput = document.getElementById('token');
-    const contextSelect = document.getElementById('context');
+        const contextSelect = document.getElementById('context');
         const channelIdGroup = document.getElementById('channelIdGroup');
         const channelIdInput = document.getElementById('channelId');
         const channelActionGroup = document.getElementById('channelActionGroup');
         const channelActionSelect = document.getElementById('channelAction');
+        const fileIdInput = document.getElementById('fileIdLookup');
+        const fetchBtn = document.getElementById('fetchBtn');
 
         // Update form based on context selection
         contextSelect.addEventListener('change', (e) => {
@@ -263,6 +273,9 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    if (data.fileId) {
+                        fileIdInput.value = data.fileId;
+                    }
                     showResponse('success', `
                         <strong>Upload Successful!</strong><br>
                         File ID: <code>${data.fileId}</code><br>
@@ -295,6 +308,62 @@
             responseDiv.innerHTML = message;
             responseDiv.style.display = 'block';
         }
+
+        fetchBtn.addEventListener('click', async () => {
+            const fileId = fileIdInput.value.trim();
+            if (!fileId) {
+                showResponse('error', 'Please enter a file UUID to download');
+                return;
+            }
+
+            try {
+                const baseUrl = new URL(endpointInput.value.trim());
+                const downloadUrl = `${baseUrl.origin}/api/files/${fileId}`;
+
+                const headers = {};
+                const token = tokenInput.value.trim();
+                if (token) {
+                    headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+                }
+
+                const resp = await fetch(downloadUrl, { headers });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    showResponse('error', `
+                        <strong>Download Failed</strong><br>
+                        Status: ${resp.status}<br>
+                        Response: <pre style="white-space: pre-wrap;">${text}</pre>
+                    `);
+                    return;
+                }
+
+                const blob = await resp.blob();
+                const disposition = resp.headers.get('content-disposition') || '';
+                const match = /filename="?(.*?)"?$/i.exec(disposition);
+                const filename = match ? match[1] : `${fileId}`;
+
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+
+                showResponse('success', `
+                    <strong>Download Started</strong><br>
+                    File ID: <code>${fileId}</code><br>
+                    Filename: <code>${filename}</code><br>
+                    URL: <code>${downloadUrl}</code>
+                `);
+            } catch (error) {
+                showResponse('error', `
+                    <strong>Download Error</strong><br>
+                    ${(error instanceof Error ? error.message : 'Unknown error')}
+                `);
+            }
+        });
     </script>
 </body>
 </html>
