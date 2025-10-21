@@ -1,17 +1,14 @@
+import { randomUUID } from "crypto";
 import { eq, inArray, sql } from "drizzle-orm";
+import { type CreateUser, users } from "../data/db/schema/auth.js";
 import {
   channels,
   type NewRole,
-  type NewUser,
+  // type NewUser,
   roles,
   userRoles,
-  users,
 } from "../data/db/schema/index.js";
 import { db, shutdownPostgres } from "../data/db/sql.js";
-
-interface SeedUser extends Omit<NewUser, "userId"> {
-  email: string;
-}
 
 interface RoleDefinition
   extends Omit<NewRole, "roleId" | "createdAt" | "updatedAt"> {
@@ -29,7 +26,7 @@ type ChannelSeed = {
   metadata: Record<string, unknown>;
 };
 
-async function upsertUsers(seedUsers: SeedUser[]) {
+async function upsertUsers(seedUsers: CreateUser[]) {
   await db
     .insert(users)
     .values(seedUsers)
@@ -37,7 +34,7 @@ async function upsertUsers(seedUsers: SeedUser[]) {
       target: users.email,
       set: {
         name: sql`excluded.name`,
-        password: sql`excluded.password`,
+        // password: sql`excluded.password`,
         phoneNumber: sql`excluded.phone_number`,
         clearanceLevel: sql`excluded.clearance_level`,
         department: sql`excluded.department`,
@@ -47,7 +44,7 @@ async function upsertUsers(seedUsers: SeedUser[]) {
     });
 
   const userRows = await db
-    .select({ userId: users.userId, email: users.email })
+    .select({ userId: users.id, email: users.email })
     .from(users)
     .where(
       inArray(
@@ -129,7 +126,7 @@ async function upsertRoles(seedRoles: RoleDefinition[]) {
 
 async function upsertUserRoles(
   assignments: RoleAssignment[],
-  userMap: Map<string, number>,
+  userMap: Map<string, string>,
   roleMap: Map<string, number>,
 ) {
   for (const assignment of assignments) {
@@ -165,29 +162,29 @@ async function upsertUserRoles(
 }
 
 async function seed() {
-  const usersToSeed: SeedUser[] = [
+  const usersToSeed: CreateUser[] = [
     {
+      id: randomUUID(),
       name: "Alice Johnson",
       email: "alice@example.com",
-      password: "$argon2id$v=19$m=65536,t=3,p=1$alice$examplehash",
       phoneNumber: "555-0100",
       clearanceLevel: "Top Secret",
       department: "Operations",
       branch: "East",
     },
     {
+      id: randomUUID(),
       name: "Brandon Smith",
       email: "brandon@example.com",
-      password: "$argon2id$v=19$m=65536,t=3,p=1$brandon$examplehash",
       phoneNumber: "555-0101",
       clearanceLevel: "Secret",
       department: "Intelligence",
       branch: "West",
     },
     {
+      id: randomUUID(),
       name: "Chloe Martinez",
       email: "chloe@example.com",
-      password: "$argon2id$v=19$m=65536,t=3,p=1$chloe$examplehash",
       phoneNumber: "555-0102",
       clearanceLevel: "Top Secret",
       department: "Mentorship",

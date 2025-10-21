@@ -1,5 +1,4 @@
 import type { UserRepository } from "../data/repository/user-repo.js";
-import { BadRequestError } from "../types/errors.js";
 import { Cache } from "../utils/cache.js";
 
 export class UserService {
@@ -12,11 +11,8 @@ export class UserService {
     this.usersRepo = usersRepo;
   }
 
-  @Cache((user_id: number) => `user:${user_id}:user_date`)
-  async getUserData(user_id: number) {
-    if (user_id !== Math.trunc(user_id)) {
-      throw new BadRequestError("Cannot have decimal points in User ID");
-    }
+  @Cache((user_id: string) => `user:${user_id}:user_date`)
+  async getUserData(user_id: string) {
     return this.usersRepo.getUserData(user_id);
   }
 }

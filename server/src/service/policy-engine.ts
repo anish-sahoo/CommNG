@@ -36,8 +36,8 @@ export class PolicyEngine {
    * @param roleKey roleKey, for example `channel:1:read`
    * @returns `true` or `false`
    */
-  async validate(userId: number, roleKey: string) {
-    if (roleKey.length === 0 || userId < 1) {
+  async validate(userId: string, roleKey: string) {
+    if (roleKey.length === 0) {
       return false;
     }
     const roleId = await this.authRepository.getRoleId(roleKey);
@@ -72,8 +72,8 @@ export class PolicyEngine {
    * @returns
    */
   async addNewPermission(
-    userId: number,
-    targetUserId: number,
+    userId: string,
+    targetUserId: string,
     roleKey: string,
     ttlSec: number = this.DEFAULT_TTL,
   ) {

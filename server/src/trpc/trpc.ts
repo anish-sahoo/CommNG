@@ -23,8 +23,9 @@ const t = initTRPC.context<Context>().create();
  * that can be used throughout the router
  */
 export const router = t.router;
-export const procedure = t.procedure;
 export const middleware = t.middleware;
+
+export const procedure = t.procedure;
 export const protectedProcedure = procedure.use(async (opts) => {
   if (!opts.ctx.auth) {
     throw new TRPCError({ code: "UNAUTHORIZED" });

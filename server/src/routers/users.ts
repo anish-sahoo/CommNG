@@ -1,15 +1,14 @@
 import { UserRepository } from "../data/repository/user-repo.js";
 import { UserService } from "../service/user-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, router } from "../trpc/trpc.js";
+import { protectedProcedure, router } from "../trpc/trpc.js";
 import { getUserDataInputSchema } from "../types/user-types.js";
 
 const userService = new UserService(new UserRepository());
 
-const getUserData = procedure
+const getUserData = protectedProcedure
   .input(getUserDataInputSchema)
   .meta({
-    requiresAuth: true,
     description: "Returns the public-facing data for a given user",
   })
   .query(({ input }) =>

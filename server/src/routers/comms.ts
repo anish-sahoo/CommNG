@@ -2,31 +2,30 @@ import { CommsRepository } from "../data/repository/comms-repo.js";
 import { CommsService } from "../service/comms-service.js";
 import { policyEngine } from "../service/policy-engine.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, router } from "../trpc/trpc.js";
+import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createChannelSchema,
   createSubscriptionSchema,
   deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
-  getUserSubscriptionsSchema,
   postPostSchema,
   registerDeviceSchema,
 } from "../types/comms-types.js";
-import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
+import { ForbiddenError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
 const commsRepo = new CommsRepository();
 const commsService = new CommsService(commsRepo);
 
-const registerDevice = procedure
+const registerDevice = protectedProcedure
   .input(registerDeviceSchema)
-  .mutation(({ input }) =>
+  .mutation(({ ctx, input }) =>
     withErrorHandling("registerDevice", async () => {
       log.debug({ deviceType: input.deviceType }, "registerDevice");
 
       return await commsRepo.registerDevice(
-        1, // TODO: get from auth context
+        ctx.auth.user.id, // TODO: get from auth context
         input.deviceType,
         input.deviceToken,
       );
@@ -37,13 +36,10 @@ const registerDevice = procedure
  * createPost
  * Allows an authenticated user to post a message in a channel if they have write permissions.
  */
-const createPost = procedure
+const createPost = protectedProcedure
   .input(postPostSchema)
   .mutation(async ({ ctx, input }) => {
-    const userId = ctx.userId ?? ctx.user?.userId ?? null;
-    if (!userId) {
-      throw new UnauthorizedError("Sign in required");
-    }
+    const userId = ctx.auth.user.id;
 
     await commsService.getChannelById(input.channelId);
 
@@ -69,14 +65,11 @@ const createPost = procedure
   });
 
 // Channel creation endpoint
-const createChannel = procedure
+const createChannel = protectedProcedure
   .input(createChannelSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("createChannel", async () => {
-      const userId = ctx.userId ?? ctx.user?.userId ?? null;
-      if (!userId) {
-        throw new UnauthorizedError("Sign in required");
-      }
+      const userId = ctx.auth.user.id;
 
       log.debug({ userId, channelName: input.name }, "Creating channel");
 
@@ -88,13 +81,10 @@ const createChannel = procedure
  * editPost
  * Allows an authenticated user to edit a previously posted message if they authored it.
  */
-const editPost = procedure
+const editPost = protectedProcedure
   .input(editPostSchema)
   .mutation(async ({ ctx, input }) => {
-    const userId = ctx.userId ?? ctx.user?.userId ?? null;
-    if (!userId) {
-      throw new UnauthorizedError("Sign in required");
-    }
+    const userId = ctx.auth.user.id;
 
     const canPost = await policyEngine.validate(
       userId,
@@ -122,13 +112,10 @@ const editPost = procedure
  * deletePost
  * Allows an authenticated user to delete a previously posted message if they authored it or if they are an admin.
  */
-const deletePost = procedure
+const deletePost = protectedProcedure
   .input(deletePostSchema)
   .mutation(async ({ ctx, input }) => {
-    const userId = ctx.userId ?? ctx.user?.userId ?? null;
-    if (!userId) {
-      throw new UnauthorizedError("Sign in required");
-    }
+    const userId = ctx.auth.user.id;
 
     const deletedPost = await commsService.deleteMessage(
       userId,
@@ -140,14 +127,11 @@ const deletePost = procedure
   });
 
 // Channel subscription endpoints
-const createSubscription = procedure
+const createSubscription = protectedProcedure
   .input(createSubscriptionSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("createSubscription", async () => {
-      const userId = ctx.userId ?? ctx.user?.userId ?? null;
-      if (!userId) {
-        throw new UnauthorizedError("Sign in required");
-      }
+      const userId = ctx.auth.user.id;
 
       log.debug(
         { userId, channelId: input.channelId },
@@ -163,14 +147,11 @@ const createSubscription = procedure
     }),
   );
 
-const deleteSubscription = procedure
+const deleteSubscription = protectedProcedure
   .input(deleteSubscriptionSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("deleteSubscription", async () => {
-      const userId = ctx.userId ?? ctx.user?.userId ?? null;
-      if (!userId) {
-        throw new UnauthorizedError("Sign in required");
-      }
+      const userId = ctx.auth.user.id;
 
       log.debug(
         { userId, subscriptionId: input.subscriptionId },
@@ -181,20 +162,15 @@ const deleteSubscription = procedure
     }),
   );
 
-const getUserSubscriptions = procedure
-  .input(getUserSubscriptionsSchema)
-  .query(({ ctx, input }) =>
-    withErrorHandling("getUserSubscriptions", async () => {
-      const userId = ctx.userId ?? ctx.user?.userId ?? input.userId ?? null;
-      if (!userId) {
-        throw new UnauthorizedError("Sign in required");
-      }
+const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
+  withErrorHandling("getUserSubscriptions", async () => {
+    const userId = ctx.auth.user.id;
 
-      log.debug({ userId }, "Getting user subscriptions");
+    log.debug({ userId }, "Getting user subscriptions");
 
-      return await commsRepo.getUserSubscriptions(userId);
-    }),
-  );
+    return await commsRepo.getUserSubscriptions(userId);
+  }),
+);
 
 export const commsRouter = router({
   registerDevice,

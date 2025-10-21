@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 type MockMessage = {
   messageId: number;
   channelId: number;
-  senderId: number | null;
+  senderId: string | null;
   message: string | null;
   attachmentUrl: string | null;
   createdAt: Date;
@@ -12,7 +12,7 @@ type MockMessage = {
 
 type MockSubscription = {
   subscriptionId: number;
-  userId: number;
+  userId: string;
   channelId: number;
   permission: "read" | "write" | "both";
   notificationsEnabled: boolean;
@@ -29,7 +29,7 @@ type MockChannel = {
 
 const mem: {
   users: {
-    user_id: number;
+    user_id: string;
     name: string;
     email: string;
     password: string;
@@ -37,7 +37,7 @@ const mem: {
   channels: { channel_id: number; name: string }[];
   channelSubscriptions: Array<{
     id: number;
-    user_id: number;
+    user_id: string;
     channel_id: number;
     permission: "read" | "write" | "both";
     notifications_enabled: boolean;
@@ -50,10 +50,10 @@ const mem: {
     subject_id: string;
     role_key: string;
   }[];
-  userRoles: { id: number; user_id: number; role_id: number }[];
+  userRoles: { id: number; user_id: string; role_id: number }[];
   posts: MockMessage[];
   _ids: {
-    user: number;
+    user: string;
     channel: number;
     sub: number;
     role: number;
@@ -67,9 +67,16 @@ const mem: {
   roles: [],
   userRoles: [],
   posts: [],
-  _ids: { user: 0, channel: 0, sub: 0, role: 0, userRole: 0, post: 0 },
+  _ids: { user: "0", channel: 0, sub: 0, role: 0, userRole: 0, post: 0 },
 };
-mem._ids = { user: 0, channel: 0, sub: 0, role: 0, userRole: 0, post: 0 };
+mem._ids = {
+  user: randomUUID(),
+  channel: 0,
+  sub: 0,
+  role: 0,
+  userRole: 0,
+  post: 0,
+};
 
 let uniqueCounter = 0;
 function uniqueName(prefix: string) {
@@ -78,7 +85,7 @@ function uniqueName(prefix: string) {
 }
 
 function createUser(name: string, email: string, password: string) {
-  const u = { user_id: ++mem._ids.user, name, email, password };
+  const u = { user_id: randomUUID(), name, email, password };
   mem.users.push(u);
   return u;
 }
@@ -88,7 +95,7 @@ function createChannel(name: string) {
   return ch;
 }
 function addSubscription(
-  user_id: number,
+  user_id: string,
   channel_id: number,
   permission: "read" | "write" | "both",
 ) {
@@ -120,7 +127,7 @@ function createRole(
   mem.roles.push(r);
   return r;
 }
-function grantRole(user_id: number, role_id: number) {
+function grantRole(user_id: string, role_id: number) {
   const ur = { id: ++mem._ids.userRole, user_id, role_id };
   mem.userRoles.push(ur);
   return ur;
@@ -182,12 +189,12 @@ vi.mock("../src/trpc/app_router.js", () => {
   };
   type AppRouter = {
     createCaller(ctx: {
-      user?: { userId: number } | undefined;
-      userId: number | null;
+      user?: { userId: string } | undefined;
+      userId: string | null;
     }): CommsCaller;
   };
 
-  function ensureCanPost(userId: number, channelId: number) {
+  function ensureCanPost(userId: string, channelId: number) {
     const hasWriteSub = mem.channelSubscriptions.some(
       (s) =>
         s.user_id === userId &&
@@ -211,7 +218,7 @@ vi.mock("../src/trpc/app_router.js", () => {
     }
   }
 
-  function isChannelAdmin(userId: number, channelId: number) {
+  function isChannelAdmin(userId: string, channelId: number) {
     const roleIds = mem.userRoles
       .filter((ur) => ur.user_id === userId)
       .map((ur) => ur.role_id);
@@ -227,8 +234,8 @@ vi.mock("../src/trpc/app_router.js", () => {
 
   const appRouter: AppRouter = {
     createCaller(ctx: {
-      user?: { userId: number } | undefined;
-      userId: number | null;
+      user?: { userId: string } | undefined;
+      userId: string | null;
     }) {
       return {
         comms: {
@@ -243,7 +250,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             );
             if (!ch) throw new Error("NOT_FOUND");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
             ensureCanPost(uid, input.channelId);
 
             const post: MockMessage = {
@@ -272,7 +279,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             );
             if (!ch) throw new Error("NOT_FOUND");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
             ensureCanPost(uid, input.channelId);
 
             const postIndex = mem.posts.findIndex(
@@ -327,7 +334,7 @@ vi.mock("../src/trpc/app_router.js", () => {
               throw new Error("BAD_REQUEST");
             }
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
             const isOwner = post.senderId === uid;
             const isAdmin = isChannelAdmin(uid, input.channelId);
 
@@ -350,7 +357,7 @@ vi.mock("../src/trpc/app_router.js", () => {
           }): Promise<MockSubscription> {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
 
             // Check if subscription already exists
             const existing = mem.channelSubscriptions.find(
@@ -382,7 +389,7 @@ vi.mock("../src/trpc/app_router.js", () => {
           }): Promise<MockSubscription> {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
             const subscriptionIndex = mem.channelSubscriptions.findIndex(
               (s) => s.id === input.subscriptionId && s.user_id === uid,
             );
@@ -410,7 +417,7 @@ vi.mock("../src/trpc/app_router.js", () => {
           }): Promise<MockSubscriptionSummary[]> {
             if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.userId;
             const userSubscriptions: MockSubscriptionSummary[] =
               mem.channelSubscriptions
                 .filter((s) => s.user_id === uid)
@@ -473,13 +480,14 @@ vi.mock("../src/trpc/app_router.js", () => {
   return { appRouter };
 });
 
+import { randomUUID } from "crypto";
 // Import the mocked router AFTER vi.mock
 import { appRouter } from "../src/trpc/app_router.js";
 
 // Tests
 describe("commsRouter.createPost", () => {
-  let authedUserId: number;
-  let otherUserId: number;
+  let authedUserId: string;
+  let otherUserId: string;
   let channelId: number;
 
   beforeAll(async () => {
@@ -502,7 +510,7 @@ describe("commsRouter.createPost", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ user: undefined, userId: null });
+    const caller = appRouter.createCaller({ auth: null });
     await expect(
       caller.comms.createPost({ channelId, content: "Nope" }),
     ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -510,6 +518,9 @@ describe("commsRouter.createPost", () => {
 
   it("throws NOT_FOUND for missing channel", async () => {
     const caller = appRouter.createCaller({
+      auth: {
+        
+      }
       user: ctxUser(authedUserId),
       userId: authedUserId,
     });

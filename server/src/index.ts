@@ -1,25 +1,22 @@
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
-import { config } from "dotenv";
 import express from "express";
 import { auth } from "./auth.js";
 import { connectRedis } from "./data/db/redis.js";
 import { connectPostgres } from "./data/db/sql.js";
 import { policyEngine } from "./service/policy-engine.js";
 import { appRouter } from "./trpc/app_router.js";
+import { createContext } from "./trpc/trpc.js";
 import log from "./utils/logger.js";
 import { registerTrpcUiRoute } from "./utils/trpc-ui.js";
-import { createContext } from "./trpc/trpc.js";
-
-config({ path: "../env" });
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 
-app.all("/api/auth/*", toNodeHandler(auth));
+app.all("/api/auth/{*any}", toNodeHandler(auth));
 
 app.use(
   "/api/trpc",
