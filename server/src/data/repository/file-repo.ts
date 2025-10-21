@@ -1,6 +1,5 @@
-import log from "../../utils/logger.js";
-
 export class FileRepository {
-  constructor() {
+  public async insertFile(_filePath: string, _fileName: string) {
+    return "uuid";
   }
 }

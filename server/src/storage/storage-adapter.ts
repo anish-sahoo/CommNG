@@ -1,11 +1,19 @@
-import type { Readable } from "stream";
+import type { Readable } from "node:stream";
 
 export abstract class StorageAdapter {
-  abstract storeStream(filename: string, input: Readable, opts?: FileInputStreamOptions): void;
-  abstract delete(path: string): boolean;
-  abstract getUrl(path: string): string;
+  abstract storeStream(
+    filename: string,
+    input: Readable,
+    opts?: FileInputStreamOptions,
+  ): Promise<FilePath>;
+  abstract delete(path: string): Promise<boolean>;
+  abstract getUrl(path: string): Promise<string>;
 }
 
 export type FileInputStreamOptions = {
   contentType?: string;
+};
+
+export type FilePath = {
+  path: string;
 };
