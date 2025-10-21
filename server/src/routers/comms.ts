@@ -21,7 +21,7 @@ const commsRepo = new CommsRepository();
 
 const ping = procedure.query(() => {
   log.debug("ping");
-  return "pong from comms";
+  return "pong from comms" as const;
 });
 
 const registerDevice = procedure
