@@ -7,6 +7,7 @@ import { policyEngine } from "./service/policy-engine.js";
 import { appRouter } from "./trpc/app_router.js";
 import log from "./utils/logger.js";
 import { registerTrpcUiRoute } from "./utils/trpc-ui.js";
+import fileRouter from "./routers/files.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -18,6 +19,7 @@ app.use(
     router: appRouter,
   }),
 );
+app.use("/api/files/", fileRouter);
 
 await connectPostgres();
 await connectRedis();

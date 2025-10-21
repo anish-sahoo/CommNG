@@ -10,7 +10,7 @@ import type {
 /**
  * Policy Engine that handles everything related to access control (checking access, granting access, etc.)
  */
-export class FileEngine {
+export class FileService {
   private fileRepository: FileRepository;
   private adapter: StorageAdapter;
 
