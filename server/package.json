@@ -5,12 +5,12 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "dev": "npx dotenv -e ../.env -- tsx watch src/index.ts",
+    "dev": "npx dotenv -e .env -- tsx watch --clear-screen=false src/index.ts",
     "test": "vitest",
-    "db:generate": "npx dotenv -e ../.env -- drizzle-kit generate --config=drizzle.config.ts  --name=migration",
-    "db:migrate": "npx dotenv -e ../.env -- drizzle-kit migrate --config=drizzle.config.ts",
-    "db:studio": "npx dotenv -e ../.env -- drizzle-kit studio --config=drizzle.config.ts",
-    "db:seed": "npx dotenv -e ../.env -- tsx src/utils/seed.ts",
+    "db:generate": "npx dotenv -e .env -- drizzle-kit generate --config=drizzle.config.ts  --name=migration",
+    "db:migrate": "npx dotenv -e .env -- drizzle-kit migrate --config=drizzle.config.ts",
+    "db:studio": "npx dotenv -e .env -- drizzle-kit studio --config=drizzle.config.ts",
+    "db:seed": "npx dotenv -e .env -- tsx src/utils/seed.ts",
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
     "lintfix": "npx @biomejs/biome check --write"
