@@ -6,6 +6,7 @@ export abstract class StorageAdapter {
     input: Readable,
     opts?: FileInputStreamOptions,
   ): Promise<FilePath>;
+  abstract getStream(path: string): Promise<Readable>;
   abstract delete(path: string): Promise<boolean>;
   abstract getUrl(path: string): Promise<string>;
 }

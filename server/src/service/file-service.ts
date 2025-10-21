@@ -6,6 +6,7 @@ import type {
   FileInputStreamOptions,
   StorageAdapter,
 } from "../storage/storage-adapter.js";
+import log from "../utils/logger.js";
 
 /**
  * Policy Engine that handles everything related to access control (checking access, granting access, etc.)
@@ -23,11 +24,31 @@ export class FileService {
   }
 
   public async storeFileFromStream(
+    userId: number,
     fileName: string,
     file: Readable,
-    _opts?: FileInputStreamOptions,
+    opts?: FileInputStreamOptions,
   ): Promise<string> {
-    const { path: filePath } = await this.adapter.storeStream(fileName, file);
-    return this.fileRepository.insertFile(filePath, fileName);
+    log.info(`INSERT ${fileName} ${opts?.contentType} for user ${userId}`);
+    fileName = fileName.replace(/\s+/g, "-").replace(/[^\x00-\x7F]/g, "");
+
+    const { path: filePath } = await this.adapter.storeStream(
+      fileName,
+      file,
+      opts,
+    );
+
+    const fileId = await this.fileRepository.insertFile(filePath, fileName);
+    return fileId;
+  }
+
+  public async getFileStream(fileId: string): Promise<{ stream: Readable; fileName: string } | null> {
+    const fileData = await this.fileRepository.getFile(fileId);
+    if (!fileData) {
+      return null;
+    }
+
+    const stream = await this.adapter.getStream(fileData.filePath);
+    return { stream, fileName: fileData.fileName };
   }
 }
