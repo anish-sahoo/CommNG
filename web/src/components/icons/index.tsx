@@ -19,12 +19,7 @@ import {
   UserPlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/solid";
-import {
-  Megaphone,
-  MessageSquareWarning,
-  User,
-  Users,
-} from "lucide-react";
+import { Megaphone, MessageSquareWarning, User, Users } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 type HeroIcon = ComponentType<SVGProps<SVGSVGElement>>;
