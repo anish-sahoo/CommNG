@@ -2,7 +2,7 @@ import { CommsRepository } from "../data/repository/comms-repo.js";
 import { CommsService } from "../service/comms-service.js";
 import { policyEngine } from "../service/policy-engine.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
+import { protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createChannelSchema,
   createSubscriptionSchema,

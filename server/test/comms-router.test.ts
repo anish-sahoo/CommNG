@@ -493,7 +493,7 @@ vi.mock("../src/trpc/app_router.js", () => {
   return { appRouter };
 });
 
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 // Import the mocked router AFTER vi.mock
 import { appRouter } from "../src/trpc/app_router.js";
 import type { Context } from "../src/trpc/trpc.js";
