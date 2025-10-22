@@ -16,8 +16,8 @@ import {
 import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
-const commsService = new CommsService();
 const commsRepo = new CommsRepository();
+const commsService = new CommsService(commsRepo);
 
 const registerDevice = procedure
   .input(registerDeviceSchema)

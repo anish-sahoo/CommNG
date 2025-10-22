@@ -6,8 +6,8 @@ export class ReportService {
   /**
    * @param reportsRepo (optional) a reportRepository instance
    */
-  constructor(reportsRepo?: ReportRepository) {
-    this.reportsRepo = reportsRepo ?? new ReportRepository();
+  constructor(reportsRepo: ReportRepository) {
+    this.reportsRepo = reportsRepo;
   }
 
   async getHelloWorld(name: string) {

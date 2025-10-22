@@ -8,8 +8,8 @@ export class UserService {
   /**
    * @param usersRepo (optional) a reportRepository instance
    */
-  constructor(usersRepo?: UserRepository) {
-    this.usersRepo = usersRepo ?? new UserRepository();
+  constructor(usersRepo: UserRepository) {
+    this.usersRepo = usersRepo;
   }
 
   @Cache((user_id: number) => `user:${user_id}:user_date`)

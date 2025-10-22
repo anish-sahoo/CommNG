@@ -5,8 +5,8 @@ import { policyEngine } from "./policy-engine.js";
 export class CommsService {
   private commsRepo: CommsRepository;
 
-  constructor(commsRepo?: CommsRepository) {
-    this.commsRepo = commsRepo ?? new CommsRepository();
+  constructor(commsRepo: CommsRepository) {
+    this.commsRepo = commsRepo;
   }
 
   async getChannelById(channel_id: number) {

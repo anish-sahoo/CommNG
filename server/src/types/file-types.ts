@@ -16,20 +16,13 @@ type FormDataLike = {
   entries(): IterableIterator<[string, FormDataEntryValueLike]>;
 };
 
-const isFileLike = (value: unknown): value is FileLike => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const candidate = value as Partial<FileLike>;
-  return (
-    typeof candidate.name === "string" &&
-    typeof candidate.size === "number" &&
-    typeof candidate.type === "string" &&
-    typeof candidate.arrayBuffer === "function" &&
-    typeof candidate.stream === "function"
-  );
-};
+const fileLikeSchema = z.object({
+  name: z.string(),
+  size: z.number(),
+  type: z.string(),
+  arrayBuffer: z.function().returns(z.promise(z.instanceof(ArrayBuffer))),
+  stream: z.function().returns(z.custom<ReadableStreamWeb<Uint8Array>>()),
+});
 
 const formDataLikeSchema = z
   .custom<FormDataLike>(
@@ -48,9 +41,12 @@ const formDataLikeSchema = z
   });
 
 const fileFieldSchema = z
-  .custom<FileLike>((value): value is FileLike => isFileLike(value), {
-    message: "Expected file upload",
-  })
+  .custom<FileLike>(
+    (value): value is FileLike => fileLikeSchema.safeParse(value).success,
+    {
+      message: "Expected file upload",
+    },
+  )
   .refine((file) => file.size > 0, {
     message: "File cannot be empty",
   });

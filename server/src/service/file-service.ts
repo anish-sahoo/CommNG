@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { FileRepository } from "../data/repository/file-repo.js";
-import { FileSystemStorageAdapter } from "../storage/filesystem-adapter.js";
-import { S3Adapter } from "../storage/s3-adapter.js";
+import type { FileRepository } from "../data/repository/file-repo.js";
 import type {
   FileInputStreamOptions,
   StorageAdapter,
@@ -21,12 +19,9 @@ export class FileService {
   private fileRepository: FileRepository;
   private adapter: StorageAdapter;
 
-  constructor(fileRepository?: FileRepository, adapter?: StorageAdapter) {
-    this.fileRepository = fileRepository ?? new FileRepository();
-    const backend = (process.env.STORAGE_BACKEND ?? "fs").toLowerCase();
-    this.adapter =
-      adapter ??
-      (backend === "s3" ? new S3Adapter() : new FileSystemStorageAdapter());
+  constructor(fileRepository: FileRepository, adapter: StorageAdapter) {
+    this.fileRepository = fileRepository;
+    this.adapter = adapter;
   }
 
   public async storeFileFromStream(
@@ -109,7 +104,7 @@ export class FileService {
 
   private resolveExtension(fileName: string, contentType?: string): string {
     const fromName = path.extname(fileName ?? "");
-    if (fromName) {
+    if (fromName.length > 0) {
       return fromName.toLowerCase();
     }
 

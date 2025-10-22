@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
+import { FileRepository } from "../data/repository/file-repo.js";
 import { FileService } from "../service/file-service.js";
 import { policyEngine } from "../service/policy-engine.js";
+import { FileSystemStorageAdapter } from "../storage/filesystem-adapter.js";
 import { procedure, router } from "../trpc/trpc.js";
 import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
 import type { FileDownloadPayload } from "../types/file-types.js";
@@ -11,7 +13,10 @@ import {
 } from "../types/file-types.js";
 import log from "../utils/logger.js";
 
-const fileService = new FileService();
+const fileService = new FileService(
+  new FileRepository(),
+  new FileSystemStorageAdapter(),
+);
 
 const uploadForUser = procedure
   .input(uploadForUserInputSchema)
@@ -106,19 +111,19 @@ const getFile = procedure
         throw new TRPCError({ code: "NOT_FOUND", message: "File not found" });
       }
 
-      const chunks: Buffer[] = [];
-      await new Promise<void>((resolve, reject) => {
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        const chunks: Buffer[] = [];
         fileData.stream.on("data", (chunk) =>
           chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
         );
-        fileData.stream.on("end", resolve);
+        fileData.stream.on("end", () => resolve(Buffer.concat(chunks)));
         fileData.stream.on("error", reject);
       });
 
       const payload: FileDownloadPayload = {
         fileName: fileData.fileName,
         contentType: fileData.contentType ?? "application/octet-stream",
-        data: Buffer.concat(chunks).toString("base64"),
+        data: buffer.toString("base64"),
       };
       return payload;
     } catch (err) {
