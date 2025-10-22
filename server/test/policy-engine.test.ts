@@ -140,7 +140,7 @@ describe("PolicyEngine", () => {
 
     it("should call authRepository.getRolesForUser", async () => {
       await policyEngine.validate("2", "channel:1:read");
-      expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith(2);
+      expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith("2");
     });
 
     it("should always check if role exists via getRoleId first", async () => {
@@ -292,7 +292,7 @@ describe("PolicyEngine", () => {
     it("should query database when redis returns 0 (not found)", async () => {
       await policyEngine.validate("1", "channel:1:read");
 
-      expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith(1);
+      expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith("1");
     });
 
     it("should return true immediately when redis returns 1 (found)", async () => {
