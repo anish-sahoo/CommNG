@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   {
     id: 1,
     label: "Communications",
-    href: "/style-guide",
+    href: "/communications",
     icon: "communications",
   },
   { id: 2, label: "Mentorship", href: "/mentorship", icon: "mentorship" },
