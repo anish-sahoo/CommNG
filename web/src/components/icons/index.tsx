@@ -11,6 +11,7 @@ import {
   Menu,
   MessageCircle,
   MessageSquareText,
+  MessageSquareWarning,
   MessagesSquare,
   PenSquare,
   Plus,
@@ -19,7 +20,9 @@ import {
   ToggleLeft,
   ToggleRight,
   Trash2,
+  User,
   UserPlus,
+  Users,
   X,
 } from "lucide-react";
 
@@ -45,6 +48,10 @@ export const icons = {
   toggleOn: ToggleRight,
   message: MessageCircle,
   ellipsis: EllipsisVertical,
+  communications: Megaphone,
+  mentorship: Users,
+  reports: MessageSquareWarning,
+  user: User,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

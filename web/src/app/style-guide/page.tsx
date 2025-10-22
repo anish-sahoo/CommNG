@@ -46,6 +46,14 @@ const palette = [
     usage: "Brand accents, primary buttons, links.",
   },
   {
+    name: "Primary Dark",
+    token: "primary-dark",
+    hex: "#202978",
+    swatchClass: "bg-primary-dark border border-primary-dark/60",
+    textClass: "text-secondary",
+    usage: "Channel side bar, shadows for primary",
+  },
+  {
     name: "Secondary",
     token: "secondary",
     hex: "#222121",
