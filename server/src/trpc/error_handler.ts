@@ -3,6 +3,7 @@ import {
   BadRequestError,
   ConflictError,
   ForbiddenError,
+  InternalServerError,
   NotFoundError,
   UnauthorizedError,
   ValidationError,
@@ -11,6 +12,14 @@ import log from "../utils/logger.js";
 
 export function handleProcedureError(error: unknown, context: string): never {
   log.error(`${context}: ${error}`);
+
+  if (error instanceof InternalServerError) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: error.message,
+      cause: error,
+    });
+  }
 
   if (error instanceof NotFoundError) {
     throw new TRPCError({

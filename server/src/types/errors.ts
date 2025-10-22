@@ -12,3 +12,4 @@ export class ForbiddenError extends DomainError {}
 export class ValidationError extends DomainError {}
 export class ConflictError extends DomainError {}
 export class BadRequestError extends DomainError {}
+export class InternalServerError extends DomainError {}

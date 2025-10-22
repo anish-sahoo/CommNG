@@ -1,10 +1,11 @@
+import { ReportRepository } from "../data/repository/reports-repo.js";
 import { ReportService } from "../service/reports-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
 import { procedure, router } from "../trpc/trpc.js";
 import { getReportsSchema } from "../types/reports-types.js";
 import { requirePermission } from "../utils/access_control.js";
 
-const reportService = new ReportService();
+const reportService = new ReportService(new ReportRepository());
 
 const getReports = procedure
   .input(getReportsSchema)

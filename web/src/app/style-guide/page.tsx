@@ -46,14 +46,6 @@ const palette = [
     usage: "Brand accents, primary buttons, links.",
   },
   {
-    name: "Primary Dark",
-    token: "primary-dark",
-    hex: "#202978",
-    swatchClass: "bg-primary-dark border border-primary-dark/60",
-    textClass: "text-secondary",
-    usage: "Channel side bar, shadows for primary",
-  },
-  {
     name: "Secondary",
     token: "secondary",
     hex: "#222121",
@@ -252,7 +244,7 @@ export default function StyleGuidePage() {
                       className="{className}"
                     </code>
                   </div>
-                )
+                ),
               )}
             </div>
           </section>
@@ -286,7 +278,7 @@ export default function StyleGuidePage() {
                     </div>
                     <code className="text-xs text-neutral">bg-{token}</code>
                   </div>
-                )
+                ),
               )}
             </div>
           </section>
@@ -295,7 +287,7 @@ export default function StyleGuidePage() {
         <section className="space-y-6">
           <h2 className="text-header text-secondary">Icons</h2>
           <p className="text-subheader text-secondary/80">
-            Lucide filled icons mapped to our Figma set. Import them from
+            @heroicons icons mapped to our Figma set. Import them from
             <code className="mx-2 rounded bg-neutral/30 px-2 py-0.5 text-xs text-secondary">
               @/components/icons
             </code>

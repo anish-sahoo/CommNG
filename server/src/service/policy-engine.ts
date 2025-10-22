@@ -12,7 +12,7 @@ export class PolicyEngine {
   private authRepository: AuthRepository;
 
   constructor(authRepository: AuthRepository) {
-    this.authRepository = authRepository ?? new AuthRepository();
+    this.authRepository = authRepository;
   }
 
   /**
