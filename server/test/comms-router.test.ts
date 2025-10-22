@@ -154,7 +154,7 @@ function createContext(
         token: "test-session-token",
         userId,
         updatedAt: now,
-        expiresAt: now, // TODO: add day
+        expiresAt: now,
       },
       user: {
         id: userId,
@@ -169,17 +169,6 @@ function createContext(
       },
     },
   };
-  // return {
-  //   userId,
-  //   name,
-  //   email,
-  //   createdAt: now,
-  //   updatedAt: now,
-  //   phoneNumber: null as string | null,
-  //   clearanceLevel: null as string | null,
-  //   department: null as string | null,
-  //   branch: null as string | null,
-  // };
 }
 
 // Mock the TRPC app router
@@ -902,25 +891,6 @@ describe("commsRouter subscription endpoints", () => {
   let otherUserId: string;
   let channelId: number;
 
-  // function ctxUser(
-  //   userId: number,
-  //   name = "Test User",
-  //   email = "test@example.com",
-  // ) {
-  //   const now = new Date();
-  //   return {
-  //     userId,
-  //     name,
-  //     email,
-  //     createdAt: now,
-  //     updatedAt: now,
-  //     phoneNumber: null as string | null,
-  //     clearanceLevel: null as string | null,
-  //     department: null as string | null,
-  //     branch: null as string | null,
-  //   };
-  // }
-
   beforeAll(async () => {
     const u1 = createUser(
       "Test User",
@@ -1086,25 +1056,6 @@ describe("commsRouter subscription endpoints", () => {
 // Channel Creation Tests
 describe("commsRouter.createChannel", () => {
   let authedUserId: string;
-
-  // function ctxUser(
-  //   userId: number,
-  //   name = "Test User",
-  //   email = "test@example.com",
-  // ) {
-  //   const now = new Date();
-  //   return {
-  //     userId,
-  //     name,
-  //     email,
-  //     createdAt: now,
-  //     updatedAt: now,
-  //     phoneNumber: null as string | null,
-  //     clearanceLevel: null as string | null,
-  //     department: null as string | null,
-  //     branch: null as string | null,
-  //   };
-  // }
 
   beforeAll(async () => {
     const u1 = createUser(

@@ -395,8 +395,6 @@ export const messageBlasts = pgTable(
   ],
 );
 
-// export type User = typeof users.$inferSelect;
-// export type NewUser = typeof users.$inferInsert;
 export type UserDevice = typeof userDevices.$inferSelect;
 export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;

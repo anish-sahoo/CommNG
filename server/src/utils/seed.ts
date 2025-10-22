@@ -4,7 +4,6 @@ import {
   channels,
   type NewRole,
   type NewUser,
-  // type NewUser,
   roles,
   userRoles,
   users,
@@ -35,7 +34,6 @@ async function upsertUsers(seedUsers: NewUser[]) {
       target: users.email,
       set: {
         name: sql`excluded.name`,
-        // password: sql`excluded.password`,
         phoneNumber: sql`excluded.phone_number`,
         clearanceLevel: sql`excluded.clearance_level`,
         department: sql`excluded.department`,
