@@ -21,7 +21,6 @@ const navItems: NavItem[] = [
   { id: 2, label: "Mentorship", href: "/mentorship", icon: "mentorship" },
   { id: 3, label: "Reports", href: "/reports", icon: "reports" },
 ];
-
 const AppNavBarItem = ({
   item,
   isActive,
