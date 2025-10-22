@@ -1,4 +1,4 @@
-import { icons, type IconName } from "@/components/icons";
+import { type IconName, icons } from "@/components/icons";
 
 const typographyScale = [
   {
