@@ -10,6 +10,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -130,6 +131,13 @@ export const roles = pgTable(
     index("ix_roles_channel_id").on(table.channelId),
   ],
 );
+
+export const files = pgTable("files", {
+  fileId: uuid("file_id").primaryKey().defaultRandom(),
+  fileName: text("file_name").notNull(),
+  location: text("location").notNull(),
+  metadata: jsonb("metadata"),
+});
 
 // USER <-> ROLES (assign users to reusable roles)
 export const userRoles = pgTable(
@@ -346,6 +354,8 @@ export type UserDevice = typeof userDevices.$inferSelect;
 export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
+export type File = typeof files.$inferSelect;
+export type NewFile = typeof files.$inferInsert;
 export type Mentee = typeof mentees.$inferSelect;
 export type NewMentee = typeof mentees.$inferInsert;
 export type MessageBlast = typeof messageBlasts.$inferSelect;

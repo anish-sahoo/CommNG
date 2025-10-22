@@ -16,13 +16,8 @@ import {
 import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
-const commsService = new CommsService();
 const commsRepo = new CommsRepository();
-
-const ping = procedure.query(() => {
-  log.debug("ping");
-  return "pong from comms" as const;
-});
+const commsService = new CommsService(commsRepo);
 
 const registerDevice = procedure
   .input(registerDeviceSchema)
@@ -122,6 +117,7 @@ const editPost = procedure
 
     return updatedPost;
   });
+
 /**
  * deletePost
  * Allows an authenticated user to delete a previously posted message if they authored it or if they are an admin.
@@ -142,6 +138,7 @@ const deletePost = procedure
 
     return deletedPost;
   });
+
 // Channel subscription endpoints
 const createSubscription = procedure
   .input(createSubscriptionSchema)
@@ -200,7 +197,6 @@ const getUserSubscriptions = procedure
   );
 
 export const commsRouter = router({
-  ping,
   registerDevice,
   createPost,
   createChannel,

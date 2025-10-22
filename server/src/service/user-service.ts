@@ -1,4 +1,4 @@
-import { UserRepository } from "../data/repository/user-repo.js";
+import type { UserRepository } from "../data/repository/user-repo.js";
 import { BadRequestError } from "../types/errors.js";
 import { Cache } from "../utils/cache.js";
 
@@ -8,8 +8,8 @@ export class UserService {
   /**
    * @param usersRepo (optional) a reportRepository instance
    */
-  constructor(usersRepo?: UserRepository) {
-    this.usersRepo = usersRepo ?? new UserRepository();
+  constructor(usersRepo: UserRepository) {
+    this.usersRepo = usersRepo;
   }
 
   @Cache((user_id: number) => `user:${user_id}:user_date`)
