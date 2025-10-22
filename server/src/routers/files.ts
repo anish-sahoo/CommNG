@@ -55,7 +55,7 @@ const uploadForChannel = procedure
   })
   .mutation(async ({ ctx, input }) => {
     // replace with auth middleware later -----------------\
-    const userId = ctx.userId; 
+    const userId = ctx.userId;
     if (!userId) {
       throw new TRPCError({
         code: "UNAUTHORIZED",
