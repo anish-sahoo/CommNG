@@ -1,9 +1,9 @@
-import AppNavBar from "@/components/navigation/app-navbar";
+import Navigation from "@/components/navigation";
 
 const Components = () => {
   return (
     <div id="components">
-      <AppNavBar />
+      <Navigation />
     </div>
   );
 };
