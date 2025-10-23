@@ -104,6 +104,7 @@ type ListViewProps = {
   className?: string;
 };
 
+// default avatar until we get some photos
 const Avatar = () => (
   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
     {(() => {
