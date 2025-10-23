@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import { icons } from "@/components/icons";
+import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 
@@ -61,6 +62,18 @@ const Components = () => {
               </h2>
             </div>
             <SelectableButton text="Button" />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Linked Card
+              </h2>
+            </div>
+            <LinkedCard
+              href="https://example.com"
+              content="How to Mentor Effectively: 5 Tips for Success"
+            />
           </section>
 
           <section className="space-y-6">

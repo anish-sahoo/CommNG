@@ -1,0 +1,32 @@
+"use client";
+import { icons } from "@/components/icons";
+import { Card } from "@/components/ui/card";
+
+type LinkedCardProps = {
+  content: string;
+  href: string;
+};
+
+export const LinkedCard = ({ content, href }: LinkedCardProps) => {
+  const Icon = icons.arrowRight;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="linked-card"
+    >
+      <Card className="w-full p-4 hover:bg-primary group">
+        <div className="flex items-center justify-between gap-4 px-4 py-0 w-full">
+          <div className="text-secondary text-subheader font-semibold group-hover:text-white">
+            {content}
+          </div>
+          <Icon className="text-accent w-10 h-10" />
+        </div>
+      </Card>
+    </a>
+  );
+};
+
+export default LinkedCard;
