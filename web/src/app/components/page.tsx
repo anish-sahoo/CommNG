@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { icons } from "@/components/icons";
-import Navigation from "@/components/navigation";
 import LinkedCard from "@/components/linked-card";
+import Navigation from "@/components/navigation";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
