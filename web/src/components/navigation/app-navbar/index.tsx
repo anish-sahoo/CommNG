@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { icons } from "@/components/icons";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   id: number;
@@ -49,12 +50,21 @@ const AppNavBarItem = ({
   );
 };
 
-export const AppNavBar = () => {
+type AppNavBarProps = {
+  className?: string;
+};
+
+export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
   const pathname = usePathname();
   const ProfileIcon = icons.user;
 
   return (
-    <nav className="fixed inset-y-0 left-0 z-40 flex w-24 flex-col items-center bg-primary px-3 py-6 shadow-[6px_0_18px_rgba(32,41,120,0.35)]">
+    <nav
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex w-24 flex-col items-center bg-primary px-3 py-6 shadow-lg shadow-black/20",
+        className,
+      )}
+    >
       <div className="flex h-16 w-16 items-center justify-center">
         <Image
           src="/favicon_yellow.svg"
