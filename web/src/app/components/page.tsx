@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
+import PostedCard from "@/components/posted-card";
+import Reaction from "@/components/reaction-bubble";
 import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 
@@ -74,6 +76,32 @@ const Components = () => {
               href="https://example.com"
               content="How to Mentor Effectively: 5 Tips for Success"
             />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Posted Card
+              </h2>
+            </div>
+            <PostedCard
+              name="Brandon Johnson"
+              rank="E-1"
+              content="Are there any additional resources regarding the mentorship program? I would like to participate and receive a mentor, but I would like more insight on the program prior to applying. Thanks!"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Reaction Bubble
+              </h2>
+              <Reaction
+                emoji="👍"
+                count={0}
+                onClick={() => console.log("Liked!")}
+              />
+            </div>
           </section>
 
           <section className="space-y-6">

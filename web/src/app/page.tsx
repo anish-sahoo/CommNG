@@ -8,7 +8,6 @@ import { useTRPC } from "@/lib/trpc";
 export default function Home() {
   // this is the pattern for using trpc routes in our frontend
   const trpc = useTRPC();
-  const _test = useQuery(trpc.comms.ping.queryOptions());
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
