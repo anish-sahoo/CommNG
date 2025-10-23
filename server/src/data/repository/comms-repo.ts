@@ -5,7 +5,7 @@ import {
   channels,
   messages,
   userDevices,
-} from "../db/schema/index.js";
+} from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 export type UserPermissionsResult = {
@@ -31,7 +31,7 @@ export class CommsRepository {
   }
 
   async createMessage(
-    user_id: number,
+    user_id: string,
     channel_id: number,
     content: string,
     attachment_url?: string,
@@ -141,7 +141,7 @@ export class CommsRepository {
   }
   // Channel subscription methods
   async createSubscription(
-    userId: number,
+    userId: string,
     channelId: number,
     permission: "read" | "write" | "both",
     notificationsEnabled: boolean = true,
@@ -175,7 +175,7 @@ export class CommsRepository {
     return subscription;
   }
 
-  async deleteSubscription(subscriptionId: number, userId: number) {
+  async deleteSubscription(subscriptionId: number, userId: string) {
     const [deleted] = await db
       .delete(channelSubscriptions)
       .where(
@@ -195,7 +195,7 @@ export class CommsRepository {
     return deleted;
   }
 
-  async getUserSubscriptions(userId: number) {
+  async getUserSubscriptions(userId: string) {
     return await db
       .select({
         subscriptionId: channelSubscriptions.subscriptionId,
@@ -213,7 +213,7 @@ export class CommsRepository {
   }
 
   async registerDevice(
-    userId: number,
+    userId: string,
     deviceType: string,
     deviceToken: string,
   ) {

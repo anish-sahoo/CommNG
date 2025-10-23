@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 type MockMessage = {
   messageId: number;
   channelId: number;
-  senderId: number | null;
+  senderId: string | null;
   message: string | null;
   attachmentUrl: string | null;
   createdAt: Date;
@@ -12,7 +12,7 @@ type MockMessage = {
 
 type MockSubscription = {
   subscriptionId: number;
-  userId: number;
+  userId: string;
   channelId: number;
   permission: "read" | "write" | "both";
   notificationsEnabled: boolean;
@@ -29,7 +29,7 @@ type MockChannel = {
 
 const mem: {
   users: {
-    user_id: number;
+    user_id: string;
     name: string;
     email: string;
     password: string;
@@ -37,7 +37,7 @@ const mem: {
   channels: { channel_id: number; name: string }[];
   channelSubscriptions: Array<{
     id: number;
-    user_id: number;
+    user_id: string;
     channel_id: number;
     permission: "read" | "write" | "both";
     notifications_enabled: boolean;
@@ -50,10 +50,10 @@ const mem: {
     subject_id: string;
     role_key: string;
   }[];
-  userRoles: { id: number; user_id: number; role_id: number }[];
+  userRoles: { id: number; user_id: string; role_id: number }[];
   posts: MockMessage[];
   _ids: {
-    user: number;
+    user: string;
     channel: number;
     sub: number;
     role: number;
@@ -67,9 +67,23 @@ const mem: {
   roles: [],
   userRoles: [],
   posts: [],
-  _ids: { user: 0, channel: 0, sub: 0, role: 0, userRole: 0, post: 0 },
+  _ids: {
+    user: randomUUID(),
+    channel: 0,
+    sub: 0,
+    role: 0,
+    userRole: 0,
+    post: 0,
+  },
 };
-mem._ids = { user: 0, channel: 0, sub: 0, role: 0, userRole: 0, post: 0 };
+mem._ids = {
+  user: randomUUID(),
+  channel: 0,
+  sub: 0,
+  role: 0,
+  userRole: 0,
+  post: 0,
+};
 
 let uniqueCounter = 0;
 function uniqueName(prefix: string) {
@@ -78,7 +92,7 @@ function uniqueName(prefix: string) {
 }
 
 function createUser(name: string, email: string, password: string) {
-  const u = { user_id: ++mem._ids.user, name, email, password };
+  const u = { user_id: randomUUID(), name, email, password };
   mem.users.push(u);
   return u;
 }
@@ -88,7 +102,7 @@ function createChannel(name: string) {
   return ch;
 }
 function addSubscription(
-  user_id: number,
+  user_id: string,
   channel_id: number,
   permission: "read" | "write" | "both",
 ) {
@@ -120,28 +134,40 @@ function createRole(
   mem.roles.push(r);
   return r;
 }
-function grantRole(user_id: number, role_id: number) {
+function grantRole(user_id: string, role_id: number) {
   const ur = { id: ++mem._ids.userRole, user_id, role_id };
   mem.userRoles.push(ur);
   return ur;
 }
 
-function ctxUser(
-  userId: number,
+function createContext(
+  userId: string,
   name = "Test User",
   email = "test@example.com",
-) {
+): Context {
   const now = new Date();
   return {
-    userId,
-    name,
-    email,
-    createdAt: now,
-    updatedAt: now,
-    phoneNumber: null as string | null,
-    clearanceLevel: null as string | null,
-    department: null as string | null,
-    branch: null as string | null,
+    auth: {
+      session: {
+        createdAt: now,
+        id: "test-session-id",
+        token: "test-session-token",
+        userId,
+        updatedAt: now,
+        expiresAt: now,
+      },
+      user: {
+        id: userId,
+        email,
+        emailVerified: true,
+        name,
+        branch: "test-branch",
+        clearanceLevel: "test-clearance",
+        department: "test-dept",
+        createdAt: now,
+        updatedAt: now,
+      },
+    },
   };
 }
 
@@ -181,13 +207,10 @@ vi.mock("../src/trpc/app_router.js", () => {
     };
   };
   type AppRouter = {
-    createCaller(ctx: {
-      user?: { userId: number } | undefined;
-      userId: number | null;
-    }): CommsCaller;
+    createCaller(ctx: Context): CommsCaller;
   };
 
-  function ensureCanPost(userId: number, channelId: number) {
+  function ensureCanPost(userId: string, channelId: number) {
     const hasWriteSub = mem.channelSubscriptions.some(
       (s) =>
         s.user_id === userId &&
@@ -211,7 +234,7 @@ vi.mock("../src/trpc/app_router.js", () => {
     }
   }
 
-  function isChannelAdmin(userId: number, channelId: number) {
+  function isChannelAdmin(userId: string, channelId: number) {
     const roleIds = mem.userRoles
       .filter((ur) => ur.user_id === userId)
       .map((ur) => ur.role_id);
@@ -226,24 +249,21 @@ vi.mock("../src/trpc/app_router.js", () => {
   }
 
   const appRouter: AppRouter = {
-    createCaller(ctx: {
-      user?: { userId: number } | undefined;
-      userId: number | null;
-    }) {
+    createCaller(ctx: Context) {
       return {
         comms: {
           async createPost(input: {
             channelId: number;
             content: string;
           }): Promise<MockMessage> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
             const ch = mem.channels.find(
               (c) => c.channel_id === input.channelId,
             );
             if (!ch) throw new Error("NOT_FOUND");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
             ensureCanPost(uid, input.channelId);
 
             const post: MockMessage = {
@@ -265,14 +285,14 @@ vi.mock("../src/trpc/app_router.js", () => {
             content: string;
             attachmentUrl?: string;
           }): Promise<MockMessage> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
             const ch = mem.channels.find(
               (c) => c.channel_id === input.channelId,
             );
             if (!ch) throw new Error("NOT_FOUND");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
             ensureCanPost(uid, input.channelId);
 
             const postIndex = mem.posts.findIndex(
@@ -308,7 +328,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             channelId: number;
             messageId: number;
           }): Promise<MockMessage> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
             const ch = mem.channels.find(
               (c) => c.channel_id === input.channelId,
@@ -327,7 +347,7 @@ vi.mock("../src/trpc/app_router.js", () => {
               throw new Error("BAD_REQUEST");
             }
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
             const isOwner = post.senderId === uid;
             const isAdmin = isChannelAdmin(uid, input.channelId);
 
@@ -348,9 +368,9 @@ vi.mock("../src/trpc/app_router.js", () => {
             permission: "read" | "write" | "both";
             notificationsEnabled: boolean;
           }): Promise<MockSubscription> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
 
             // Check if subscription already exists
             const existing = mem.channelSubscriptions.find(
@@ -380,9 +400,9 @@ vi.mock("../src/trpc/app_router.js", () => {
           async deleteSubscription(input: {
             subscriptionId: number;
           }): Promise<MockSubscription> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
             const subscriptionIndex = mem.channelSubscriptions.findIndex(
               (s) => s.id === input.subscriptionId && s.user_id === uid,
             );
@@ -408,9 +428,9 @@ vi.mock("../src/trpc/app_router.js", () => {
           async getUserSubscriptions(_input: {
             userId?: number;
           }): Promise<MockSubscriptionSummary[]> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
-            const uid = ctx.userId as number;
+            const uid = ctx.auth.user.id;
             const userSubscriptions: MockSubscriptionSummary[] =
               mem.channelSubscriptions
                 .filter((s) => s.user_id === uid)
@@ -437,7 +457,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             name: string;
             metadata?: Record<string, unknown>;
           }): Promise<MockChannel> {
-            if (!ctx?.user || !ctx.userId) throw new Error("UNAUTHORIZED");
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
             // Validate input (simulate Zod validation)
             if (!input.name || input.name.length === 0) {
@@ -473,13 +493,15 @@ vi.mock("../src/trpc/app_router.js", () => {
   return { appRouter };
 });
 
+import { randomUUID } from "node:crypto";
 // Import the mocked router AFTER vi.mock
 import { appRouter } from "../src/trpc/app_router.js";
+import type { Context } from "../src/trpc/trpc.js";
 
 // Tests
 describe("commsRouter.createPost", () => {
-  let authedUserId: number;
-  let otherUserId: number;
+  let authedUserId: string;
+  let otherUserId: string;
   let channelId: number;
 
   beforeAll(async () => {
@@ -502,17 +524,14 @@ describe("commsRouter.createPost", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ user: undefined, userId: null });
+    const caller = appRouter.createCaller({ auth: null });
     await expect(
       caller.comms.createPost({ channelId, content: "Nope" }),
     ).rejects.toThrow(/UNAUTHORIZED/i);
   });
 
   it("throws NOT_FOUND for missing channel", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(authedUserId),
-      userId: authedUserId,
-    });
+    const caller = appRouter.createCaller(createContext(authedUserId));
     await expect(
       caller.comms.createPost({
         channelId: 99999999,
@@ -522,10 +541,9 @@ describe("commsRouter.createPost", () => {
   });
 
   it("throws FORBIDDEN when user lacks subscription and roles", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(otherUserId, "Other User", "other@example.com"),
-      userId: otherUserId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(otherUserId, "Other User", "other@example.com"),
+    );
     await expect(
       caller.comms.createPost({
         channelId,
@@ -537,10 +555,7 @@ describe("commsRouter.createPost", () => {
   it("allows posting via subscription permission = 'write'", async () => {
     addSubscription(authedUserId, channelId, "write");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(authedUserId),
-      userId: authedUserId,
-    });
+    const caller = appRouter.createCaller(createContext(authedUserId));
     const created: MockMessage = await caller.comms.createPost({
       channelId,
       content: "Permitted by subscription",
@@ -563,10 +578,9 @@ describe("commsRouter.createPost", () => {
     );
     grantRole(otherUserId, role.role_id);
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(otherUserId, "Other User", "other@example.com"),
-      userId: otherUserId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(otherUserId, "Other User", "other@example.com"),
+    );
     const created: MockMessage = await caller.comms.createPost({
       channelId,
       content: "Permitted by role",
@@ -581,8 +595,8 @@ describe("commsRouter.createPost", () => {
 
 describe("commsRouter.editPost", () => {
   let channelId: number;
-  let authorId: number;
-  let otherUserId: number;
+  let authorId: string;
+  let otherUserId: string;
   let messageId: number;
 
   beforeAll(async () => {
@@ -605,10 +619,9 @@ describe("commsRouter.editPost", () => {
 
     addSubscription(authorId, channelId, "write");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Author User", "author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
     const created = await caller.comms.createPost({
       channelId,
       content: "Original content",
@@ -617,7 +630,7 @@ describe("commsRouter.editPost", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ user: undefined, userId: null });
+    const caller = appRouter.createCaller({ auth: null });
     await expect(
       caller.comms.editPost({
         channelId,
@@ -628,10 +641,9 @@ describe("commsRouter.editPost", () => {
   });
 
   it("throws NOT_FOUND for missing message", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Author User", "author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
     await expect(
       caller.comms.editPost({
         channelId,
@@ -642,10 +654,9 @@ describe("commsRouter.editPost", () => {
   });
 
   it("throws FORBIDDEN when user lacks permission", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(otherUserId, "Editor User", "editor@example.com"),
-      userId: otherUserId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(otherUserId, "Editor User", "editor@example.com"),
+    );
     await expect(
       caller.comms.editPost({
         channelId,
@@ -659,10 +670,9 @@ describe("commsRouter.editPost", () => {
     const otherChannel = createChannel(`mismatch-${Date.now()}`);
     addSubscription(authorId, otherChannel.channel_id, "write");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Author User", "author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
     await expect(
       caller.comms.editPost({
         channelId: otherChannel.channel_id,
@@ -675,10 +685,9 @@ describe("commsRouter.editPost", () => {
   it("throws FORBIDDEN when editing a post authored by someone else", async () => {
     addSubscription(otherUserId, channelId, "write");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(otherUserId, "Editor User", "editor@example.com"),
-      userId: otherUserId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(otherUserId, "Editor User", "editor@example.com"),
+    );
     await expect(
       caller.comms.editPost({
         channelId,
@@ -689,10 +698,9 @@ describe("commsRouter.editPost", () => {
   });
 
   it("allows editing when user is original author with permissions", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Author User", "author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
     const updated: MockMessage = await caller.comms.editPost({
       channelId,
       messageId,
@@ -712,9 +720,9 @@ describe("commsRouter.editPost", () => {
 
 describe("commsRouter.deletePost", () => {
   let channelId: number;
-  let authorId: number;
-  let adminUserId: number;
-  let otherUserId: number;
+  let authorId: string;
+  let adminUserId: string;
+  let otherUserId: string;
 
   beforeAll(async () => {
     const author = createUser(
@@ -754,10 +762,9 @@ describe("commsRouter.deletePost", () => {
   });
 
   async function createAuthorPost(content: string) {
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Delete Author", "delete-author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Delete Author", "delete-author@example.com"),
+    );
     return caller.comms.createPost({
       channelId,
       content,
@@ -773,7 +780,7 @@ describe("commsRouter.deletePost", () => {
 
   it("throws UNAUTHORIZED if no user in context", async () => {
     const post = await createAuthorPost("Unauthorized delete target");
-    const caller = appRouter.createCaller({ user: undefined, userId: null });
+    const caller = appRouter.createCaller({ auth: null });
 
     await expect(
       caller.comms.deletePost({
@@ -786,10 +793,9 @@ describe("commsRouter.deletePost", () => {
   });
 
   it("throws NOT_FOUND for missing message", async () => {
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Delete Author", "delete-author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Delete Author", "delete-author@example.com"),
+    );
 
     await expect(
       caller.comms.deletePost({
@@ -803,10 +809,9 @@ describe("commsRouter.deletePost", () => {
     const post = await createAuthorPost("Mismatch channel delete");
     const otherChannel = createChannel(`delete-mismatch-${Date.now()}`);
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Delete Author", "delete-author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Delete Author", "delete-author@example.com"),
+    );
 
     await expect(
       caller.comms.deletePost({
@@ -821,14 +826,13 @@ describe("commsRouter.deletePost", () => {
   it("throws FORBIDDEN when user is neither poster nor admin", async () => {
     const post = await createAuthorPost("Forbidden delete attempt");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(
+    const caller = appRouter.createCaller(
+      createContext(
         otherUserId,
         "Delete Bystander",
         "delete-bystander@example.com",
       ),
-      userId: otherUserId,
-    });
+    );
 
     await expect(
       caller.comms.deletePost({
@@ -845,10 +849,9 @@ describe("commsRouter.deletePost", () => {
   it("allows original poster to delete their message", async () => {
     const post = await createAuthorPost("Delete own message");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(authorId, "Delete Author", "delete-author@example.com"),
-      userId: authorId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Delete Author", "delete-author@example.com"),
+    );
 
     const deleted = await caller.comms.deletePost({
       channelId,
@@ -865,10 +868,9 @@ describe("commsRouter.deletePost", () => {
   it("allows channel admin to delete someone else's message", async () => {
     const post = await createAuthorPost("Admin deletes this");
 
-    const caller = appRouter.createCaller({
-      user: ctxUser(adminUserId, "Channel Admin", "channel-admin@example.com"),
-      userId: adminUserId,
-    });
+    const caller = appRouter.createCaller(
+      createContext(adminUserId, "Channel Admin", "channel-admin@example.com"),
+    );
 
     const deleted = await caller.comms.deletePost({
       channelId,
@@ -885,28 +887,9 @@ describe("commsRouter.deletePost", () => {
 
 // Channel Subscription Tests
 describe("commsRouter subscription endpoints", () => {
-  let authedUserId: number;
-  let otherUserId: number;
+  let authedUserId: string;
+  let otherUserId: string;
   let channelId: number;
-
-  function ctxUser(
-    userId: number,
-    name = "Test User",
-    email = "test@example.com",
-  ) {
-    const now = new Date();
-    return {
-      userId,
-      name,
-      email,
-      createdAt: now,
-      updatedAt: now,
-      phoneNumber: null as string | null,
-      clearanceLevel: null as string | null,
-      department: null as string | null,
-      branch: null as string | null,
-    };
-  }
 
   beforeAll(async () => {
     const u1 = createUser(
@@ -929,7 +912,7 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("createSubscription", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ user: undefined, userId: null });
+      const caller = appRouter.createCaller({ auth: null });
       await expect(
         caller.comms.createSubscription({
           channelId,
@@ -942,10 +925,7 @@ describe("commsRouter subscription endpoints", () => {
     it("creates subscription successfully", async () => {
       // Use a fresh channel for this test
       const testChannel = createChannel(uniqueName("test-channel"));
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
       const subscription = await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
         permission: "read",
@@ -966,10 +946,7 @@ describe("commsRouter subscription endpoints", () => {
     it("throws CONFLICT for duplicate subscription", async () => {
       // Use a fresh channel for this test
       const testChannel = createChannel(uniqueName("test-channel"));
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
 
       // First subscription
       await caller.comms.createSubscription({
@@ -991,7 +968,7 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("deleteSubscription", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ user: undefined, userId: null });
+      const caller = appRouter.createCaller({ auth: null });
       await expect(
         caller.comms.deleteSubscription({ subscriptionId: 1 }),
       ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -1000,10 +977,7 @@ describe("commsRouter subscription endpoints", () => {
     it("creates and deletes subscription successfully", async () => {
       // Use a fresh channel for this test
       const testChannel = createChannel(uniqueName("test-channel"));
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
 
       // Create a subscription to delete
       const subscription = await caller.comms.createSubscription({
@@ -1024,10 +998,7 @@ describe("commsRouter subscription endpoints", () => {
     });
 
     it("throws NOT_FOUND for non-existent subscription", async () => {
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
       await expect(
         caller.comms.deleteSubscription({ subscriptionId: 999999 }),
       ).rejects.toThrow(/NOT_FOUND/i);
@@ -1036,8 +1007,8 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("getUserSubscriptions", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ user: undefined, userId: null });
-      await expect(caller.comms.getUserSubscriptions({})).rejects.toThrow(
+      const caller = appRouter.createCaller({ auth: null });
+      await expect(caller.comms.getUserSubscriptions()).rejects.toThrow(
         /UNAUTHORIZED/i,
       );
     });
@@ -1045,10 +1016,7 @@ describe("commsRouter subscription endpoints", () => {
     it("returns user's subscriptions", async () => {
       // Use a fresh channel for this test
       const testChannel = createChannel(uniqueName("test-channel"));
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
 
       // Create a subscription first
       await caller.comms.createSubscription({
@@ -1057,7 +1025,7 @@ describe("commsRouter subscription endpoints", () => {
         notificationsEnabled: true,
       });
 
-      const subscriptions = await caller.comms.getUserSubscriptions({});
+      const subscriptions = await caller.comms.getUserSubscriptions();
 
       expect(subscriptions).toBeDefined();
       expect(Array.isArray(subscriptions)).toBe(true);
@@ -1075,11 +1043,8 @@ describe("commsRouter subscription endpoints", () => {
     });
 
     it("returns empty array for user with no subscriptions", async () => {
-      const caller = appRouter.createCaller({
-        user: ctxUser(otherUserId),
-        userId: otherUserId,
-      });
-      const subscriptions = await caller.comms.getUserSubscriptions({});
+      const caller = appRouter.createCaller(createContext(otherUserId));
+      const subscriptions = await caller.comms.getUserSubscriptions();
 
       expect(subscriptions).toBeDefined();
       expect(Array.isArray(subscriptions)).toBe(true);
@@ -1090,26 +1055,7 @@ describe("commsRouter subscription endpoints", () => {
 
 // Channel Creation Tests
 describe("commsRouter.createChannel", () => {
-  let authedUserId: number;
-
-  function ctxUser(
-    userId: number,
-    name = "Test User",
-    email = "test@example.com",
-  ) {
-    const now = new Date();
-    return {
-      userId,
-      name,
-      email,
-      createdAt: now,
-      updatedAt: now,
-      phoneNumber: null as string | null,
-      clearanceLevel: null as string | null,
-      department: null as string | null,
-      branch: null as string | null,
-    };
-  }
+  let authedUserId: string;
 
   beforeAll(async () => {
     const u1 = createUser(
@@ -1128,7 +1074,7 @@ describe("commsRouter.createChannel", () => {
 
   describe("createChannel", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ user: undefined, userId: null });
+      const caller = appRouter.createCaller({ auth: null });
       await expect(
         caller.comms.createChannel({
           name: "test-channel",
@@ -1137,10 +1083,7 @@ describe("commsRouter.createChannel", () => {
     });
 
     it("creates channel successfully", async () => {
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
       const channelName = uniqueName("test-channel");
       const channel = await caller.comms.createChannel({
         name: channelName,
@@ -1162,10 +1105,7 @@ describe("commsRouter.createChannel", () => {
     });
 
     it("creates channel without metadata", async () => {
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
       const channelName = uniqueName("simple-channel");
       const channel = await caller.comms.createChannel({
         name: channelName,
@@ -1182,10 +1122,7 @@ describe("commsRouter.createChannel", () => {
 
     it("throws CONFLICT for duplicate channel name", async () => {
       const channelName = uniqueName("duplicate-test");
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
 
       // First channel creation
       await caller.comms.createChannel({
@@ -1201,10 +1138,7 @@ describe("commsRouter.createChannel", () => {
     });
 
     it("validates channel name requirements", async () => {
-      const caller = appRouter.createCaller({
-        user: ctxUser(authedUserId),
-        userId: authedUserId,
-      });
+      const caller = appRouter.createCaller(createContext(authedUserId));
 
       // Test empty name (should be caught by Zod validation)
       await expect(

@@ -3,8 +3,8 @@ import { FileRepository } from "../data/repository/file-repo.js";
 import { FileService } from "../service/file-service.js";
 import { policyEngine } from "../service/policy-engine.js";
 import { FileSystemStorageAdapter } from "../storage/filesystem-adapter.js";
-import { procedure, router } from "../trpc/trpc.js";
-import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
+import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
+import { ForbiddenError } from "../types/errors.js";
 import type { FileDownloadPayload } from "../types/file-types.js";
 import {
   getFileInputSchema,
@@ -18,19 +18,14 @@ const fileService = new FileService(
   new FileSystemStorageAdapter(),
 );
 
-const uploadForUser = procedure
+const uploadForUser = protectedProcedure
   .input(uploadForUserInputSchema)
   .meta({
     requiresAuth: true,
     description: "Upload a user-specific file (profile picture, etc.)",
   })
   .mutation(async ({ ctx, input }) => {
-    // replace with auth middleware later -----------------\
-    const userId = ctx.userId;
-    if (!userId) {
-      throw new UnauthorizedError("Sign In required");
-    }
-    // replace with auth middleware later -----------------/
+    const userId = ctx.auth.user.id;
 
     const { file, contentType } = input;
     const stream = await fileService.fileLikeToReadable(file);
@@ -51,7 +46,7 @@ const uploadForUser = procedure
     }
   });
 
-const uploadForChannel = procedure
+const uploadForChannel = protectedProcedure
   .input(uploadForChannelInputSchema)
   .meta({
     requiresAuth: true,
@@ -59,15 +54,7 @@ const uploadForChannel = procedure
       "Upload a channel-specific file (post attachment, cover photo, etc.)",
   })
   .mutation(async ({ ctx, input }) => {
-    // replace with auth middleware later -----------------\
-    const userId = ctx.userId;
-    if (!userId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Sign in required",
-      });
-    }
-    // replace with auth middleware later -----------------/
+    const userId = ctx.auth.user.id;
 
     const { file, channelId, action, contentType } = input;
 

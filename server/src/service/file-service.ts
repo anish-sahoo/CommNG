@@ -25,7 +25,7 @@ export class FileService {
   }
 
   public async storeFileFromStream(
-    userId: number,
+    userId: string,
     originalFileName: string,
     file: Readable,
     opts?: FileInputStreamOptions,

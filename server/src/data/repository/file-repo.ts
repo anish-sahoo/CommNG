@@ -3,7 +3,7 @@ import { NotFoundError } from "../../types/errors.js";
 import type { FileMetadata, FileRecord } from "../../types/file-types.js";
 import { fileMetadataSchema } from "../../types/file-types.js";
 import { Cache } from "../../utils/cache.js";
-import { files } from "../db/schema/index.js";
+import { files } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 export class FileRepository {

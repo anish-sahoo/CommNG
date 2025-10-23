@@ -295,7 +295,7 @@ export default function StyleGuidePage() {
         <section className="space-y-6">
           <h2 className="text-header text-secondary">Icons</h2>
           <p className="text-subheader text-secondary/80">
-            @heroicons icons mapped to our Figma set. Import them from
+            Lucide icons mapped to our Figma set. Import them from
             <code className="mx-2 rounded bg-neutral/30 px-2 py-0.5 text-xs text-secondary">
               @/components/icons
             </code>

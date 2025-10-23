@@ -7,12 +7,9 @@ export const requirePermission = (permission: string) =>
     if (permission.length === 0) {
       return next();
     }
-    const userId = ctx?.user?.userId ?? ctx?.userId;
+    const userId = ctx?.auth?.user.id;
     if (!userId) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "No user in context",
-      });
+      throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
     const allowed = (await policyEngine.validate(userId, permission)) ?? false;

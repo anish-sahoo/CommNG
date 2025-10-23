@@ -15,7 +15,7 @@ export const userSchema = z.object({
 export type UserSchema = z.infer<typeof userSchema>;
 
 export const getUserDataInputSchema = z.object({
-  user_id: z.number(),
+  user_id: z.string(),
 });
 
 export type GetUserDataInput = z.infer<typeof getUserDataInputSchema>;
@@ -29,16 +29,4 @@ export type RoleSummary = {
   roleKey: string;
   channelId: number | null;
   metadata: Record<string, unknown> | null;
-};
-
-export type GetUserDataOutput = {
-  userId: number;
-  name: string;
-  email: string;
-  phoneNumber?: string | null;
-  clearanceLevel?: string | null;
-  department?: string | null;
-  branch?: string | null;
-  createdAt: string | Date;
-  updatedAt: string | Date;
 };

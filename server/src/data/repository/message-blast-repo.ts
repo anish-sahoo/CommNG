@@ -5,7 +5,7 @@ import type {
   GetMessageBlastOutput,
   UpdateMessageBlastOutput,
 } from "../../types/message-blast-types.js";
-import { messageBlasts } from "../db/schema/index.js";
+import { messageBlasts } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 /**

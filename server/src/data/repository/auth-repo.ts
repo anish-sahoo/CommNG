@@ -1,7 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import { Cache } from "../../utils/cache.js";
 import log from "../../utils/logger.js";
-import { roles, userRoles, users } from "../db/schema/index.js";
+import { roles, userRoles, users } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 export class AuthRepository {
@@ -14,8 +14,8 @@ export class AuthRepository {
     return rows.map((row) => row.userId);
   }
 
-  @Cache((userId: number) => `roles:${userId}`, 3600)
-  async getRolesForUser(userId: number) {
+  @Cache((userId: string) => `roles:${userId}`, 3600)
+  async getRolesForUser(userId: string) {
     const rows = await db
       .selectDistinct({
         key: roles.roleKey,
@@ -46,17 +46,17 @@ export class AuthRepository {
     return roleData[0]?.roleId ?? -1;
   }
 
-  async checkIfUserExists(userId: number) {
+  async checkIfUserExists(userId: string) {
     const ct = await db
       .select({ value: count() })
       .from(users)
-      .where(eq(users.userId, userId));
+      .where(eq(users.id, userId));
     return ct.length > 0;
   }
 
   async grantAccess(
-    userId: number,
-    targetUserId: number,
+    userId: string,
+    targetUserId: string,
     roleId: number,
     roleKey: string,
   ) {

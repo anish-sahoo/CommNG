@@ -47,7 +47,7 @@ export type GetMenteesByUserInput = z.infer<typeof getMenteesByUserInputSchema>;
 
 export type CreateMenteeOutput = {
   menteeId: number;
-  userId: number;
+  userId: string;
   learningGoals?: string | null;
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
@@ -58,7 +58,7 @@ export type CreateMenteeOutput = {
 
 export type GetMenteeOutput = {
   menteeId: number;
-  userId: number;
+  userId: string;
   learningGoals?: string | null;
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
@@ -69,7 +69,7 @@ export type GetMenteeOutput = {
 
 export type UpdateMenteeOutput = {
   menteeId: number;
-  userId: number;
+  userId: string;
   learningGoals?: string | null;
   experienceLevel?: string | null;
   preferredMentorType?: string | null;

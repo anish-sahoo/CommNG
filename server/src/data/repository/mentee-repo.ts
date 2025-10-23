@@ -5,7 +5,7 @@ import type {
   GetMenteeOutput,
   UpdateMenteeOutput,
 } from "../../types/mentee-types.js";
-import { mentees } from "../db/schema/index.js";
+import { mentees } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 /**
@@ -13,7 +13,7 @@ import { db } from "../db/sql.js";
  */
 export class MenteeRepository {
   async createMentee(
-    userId: number,
+    userId: string,
     learningGoals?: string,
     experienceLevel?: string,
     preferredMentorType?: string,
@@ -80,7 +80,7 @@ export class MenteeRepository {
     return mentee;
   }
 
-  async getMenteeByUserId(userId: number): Promise<GetMenteeOutput | null> {
+  async getMenteeByUserId(userId: string): Promise<GetMenteeOutput | null> {
     const [mentee] = await db
       .select({
         menteeId: mentees.menteeId,

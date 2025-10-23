@@ -46,27 +46,76 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "feature",
 ]);
 
-// USERS
 export const users = pgTable(
-  "users",
+  "user",
   {
-    userId: integer("user_id").primaryKey().generatedAlwaysAsIdentity(),
+    id: text("id").primaryKey(),
     name: text("name").notNull(),
-    email: text("email").notNull(),
-    password: text("password").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").default(false).notNull(),
     phoneNumber: text("phone_number"),
+    image: text("image"),
     clearanceLevel: text("clearance_level"),
     department: text("department"),
     branch: text("branch"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
       .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
-      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
   (table) => [uniqueIndex("ux_users_email").on(table.email)],
 );
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+export const session = pgTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+});
+
+export const account = pgTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
+
+export const verification = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
+});
 
 // CHANNELS
 export const channels = pgTable(
@@ -143,8 +192,8 @@ export const files = pgTable("files", {
 export const userRoles = pgTable(
   "user_roles",
   {
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     roleId: integer("role_id")
       .references(() => roles.roleId, { onDelete: "cascade" })
@@ -152,7 +201,7 @@ export const userRoles = pgTable(
     assignedAt: timestamp("assigned_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
-    assignedBy: integer("assigned_by").references(() => users.userId, {
+    assignedBy: text("assigned_by").references(() => users.id, {
       onDelete: "set null",
     }),
     metadata: jsonb("metadata"),
@@ -174,8 +223,8 @@ export const channelSubscriptions = pgTable(
     subscriptionId: integer("subscription_id")
       .primaryKey()
       .generatedAlwaysAsIdentity(),
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     channelId: integer("channel_id")
       .references(() => channels.channelId, { onDelete: "cascade" })
@@ -199,7 +248,7 @@ export const messages = pgTable(
     channelId: integer("channel_id")
       .references(() => channels.channelId, { onDelete: "cascade" })
       .notNull(),
-    senderId: integer("sender_id").references(() => users.userId, {
+    senderId: text("sender_id").references(() => users.id, {
       onDelete: "set null",
     }),
     message: text("message"),
@@ -219,8 +268,8 @@ export const mentors = pgTable(
   "mentors",
   {
     mentorId: integer("mentor_id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     mentorshipPreferences: text("mentorship_preferences"),
     rank: text("rank"),
@@ -240,8 +289,8 @@ export const mentorMatchingRequests = pgTable(
   "mentor_matching_requests",
   {
     requestId: integer("request_id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     requestPreferences: text("request_preferences"),
     createdAt: timestamp("created_at", { withTimezone: false })
@@ -256,10 +305,8 @@ export const mentorshipMatches = pgTable(
   "mentorship_matches",
   {
     matchId: integer("match_id").primaryKey().generatedAlwaysAsIdentity(),
-    requestorUserId: integer("requestor_user_id").references(
-      () => users.userId,
-    ),
-    mentorUserId: integer("mentor_user_id").references(() => users.userId),
+    requestorUserId: text("requestor_user_id").references(() => users.id),
+    mentorUserId: text("mentor_user_id").references(() => users.id),
     matchedAt: timestamp("matched_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
@@ -279,8 +326,8 @@ export const userDevices = pgTable(
   "user_devices",
   {
     deviceId: integer("device_id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     deviceType: text("device_type").notNull(), // "ios", "android", "web"
     deviceToken: text("device_token").notNull(), // FCM/APNS token
@@ -300,8 +347,8 @@ export const mentees = pgTable(
   "mentees",
   {
     menteeId: integer("mentee_id").primaryKey().generatedAlwaysAsIdentity(),
-    userId: integer("user_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     learningGoals: text("learning_goals"),
     experienceLevel: text("experience_level"),
@@ -325,8 +372,8 @@ export const messageBlasts = pgTable(
   "message_blasts",
   {
     blastId: integer("blast_id").primaryKey().generatedAlwaysAsIdentity(),
-    senderId: integer("sender_id")
-      .references(() => users.userId, { onDelete: "cascade" })
+    senderId: text("sender_id")
+      .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     title: text("title").notNull(),
     content: text("content").notNull(),
@@ -348,8 +395,6 @@ export const messageBlasts = pgTable(
   ],
 );
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
 export type UserDevice = typeof userDevices.$inferSelect;
 export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;

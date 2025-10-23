@@ -65,7 +65,7 @@ export type ScheduleMessageBlastInput = z.infer<
 
 export type CreateMessageBlastOutput = {
   blastId: number;
-  senderId: number;
+  senderId: string;
   title: string;
   content: string;
   targetAudience?: Record<string, unknown> | null;
@@ -78,7 +78,7 @@ export type CreateMessageBlastOutput = {
 
 export type GetMessageBlastOutput = {
   blastId: number;
-  senderId: number;
+  senderId: string;
   title: string;
   content: string;
   targetAudience?: Record<string, unknown> | null;
@@ -91,7 +91,7 @@ export type GetMessageBlastOutput = {
 
 export type UpdateMessageBlastOutput = {
   blastId: number;
-  senderId: number;
+  senderId: string;
   title: string;
   content: string;
   targetAudience?: Record<string, unknown> | null;

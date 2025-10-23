@@ -18,7 +18,7 @@ export class CommsService {
   }
 
   async createMessage(
-    user_id: number,
+    user_id: string,
     channel_id: number,
     content: string,
     attachment_url?: string,
@@ -27,10 +27,6 @@ export class CommsService {
 
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
-    }
-
-    if (user_id !== Math.trunc(user_id)) {
-      throw new BadRequestError("Cannot have decimal points in User ID");
     }
 
     return this.commsRepo.createMessage(
@@ -42,7 +38,7 @@ export class CommsService {
   }
 
   async editMessage(
-    user_id: number,
+    user_id: string,
     channel_id: number,
     message_id: number,
     content: string,
@@ -54,10 +50,6 @@ export class CommsService {
 
     if (message_id !== Math.trunc(message_id)) {
       throw new BadRequestError("Cannot have decimal points in Message ID");
-    }
-
-    if (user_id !== Math.trunc(user_id)) {
-      throw new BadRequestError("Cannot have decimal points in User ID");
     }
 
     const existingMessage = await this.commsRepo.getMessageById(message_id);
@@ -82,17 +74,13 @@ export class CommsService {
     );
   }
 
-  async deleteMessage(user_id: number, channel_id: number, message_id: number) {
+  async deleteMessage(user_id: string, channel_id: number, message_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
     }
 
     if (message_id !== Math.trunc(message_id)) {
       throw new BadRequestError("Cannot have decimal points in Message ID");
-    }
-
-    if (user_id !== Math.trunc(user_id)) {
-      throw new BadRequestError("Cannot have decimal points in User ID");
     }
 
     const existingMessage = await this.commsRepo.getMessageById(message_id);

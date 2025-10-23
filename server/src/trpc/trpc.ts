@@ -1,10 +1,16 @@
-import { initTRPC } from "@trpc/server";
-import type { UserSchema } from "../types/user-types.js";
+import { initTRPC, TRPCError } from "@trpc/server";
+import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import { auth } from "../auth.js";
 
-export interface Context {
-  user?: UserSchema;
-  userId?: number | null;
+export async function createContext(opts: CreateExpressContextOptions) {
+  const session = await auth.api.getSession({
+    headers: opts.req.headers,
+  });
+
+  return { auth: session };
 }
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
 
 /**
  * Initialization of tRPC backend
@@ -17,5 +23,13 @@ const t = initTRPC.context<Context>().create();
  * that can be used throughout the router
  */
 export const router = t.router;
-export const procedure = t.procedure;
 export const middleware = t.middleware;
+
+export const procedure = t.procedure;
+export const protectedProcedure = procedure.use(async (opts) => {
+  if (!opts.ctx.auth) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return opts.next({ ctx: { auth: opts.ctx.auth } });
+});

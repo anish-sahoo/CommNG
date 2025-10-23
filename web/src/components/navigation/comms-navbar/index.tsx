@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 type Channel = {
   id: string;
@@ -42,13 +43,12 @@ const ChannelLink = ({
       <Link
         href={channel.href}
         aria-current={isActive ? "page" : undefined}
-        className={`group relative flex items-center gap-3 px-6 py-3 transition-colors duration-200
-          ${
-            isActive
-              ? "bg-primary text-background"
-              : "text-background hover:bg-primary/80 hover:text-background"
-          }
-        `}
+        className={cn(
+          "group relative flex items-center gap-3 px-6 py-3 transition-colors duration-200",
+          isActive
+            ? "bg-primary text-background"
+            : "text-background hover:bg-primary/80 hover:text-background",
+        )}
       >
         {channel.type === "channel" ? (
           <span
@@ -74,11 +74,20 @@ const ChannelLink = ({
   );
 };
 
-export const CommsNavBar = () => {
+type CommsNavBarProps = {
+  className?: string;
+};
+
+export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-24 z-30 flex w-60 flex-col bg-primary-dark pt-16 text-background shadow-[6px_0_20px_rgba(20,26,84,0.35)]">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-24 z-30 flex w-60 flex-col bg-primary-dark pt-16 text-background shadow-lg shadow-black/20",
+        className,
+      )}
+    >
       <ul className="flex flex-col gap-1">
         {channels.map((channel) => {
           const isActive =
