@@ -36,11 +36,15 @@ export const Reaction = ({
   ];
 
   if (displayCount === 0) {
-    baseClasses.push("border-2", "border-primary-dark", "bg-white", "text-primary-dark");
-  } 
-  else if (displayCount === 1) {
+    baseClasses.push(
+      "border-2",
+      "border-primary-dark",
+      "bg-white",
+      "text-primary-dark",
+    );
+  } else if (displayCount === 1) {
     baseClasses.push("bg-primary-dark", "text-white");
-  };
+  }
 
   //Reaction button UI
   return (

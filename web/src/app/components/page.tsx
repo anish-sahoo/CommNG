@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
-import PostedCard from "@/components/posted-card";
-import Reaction from "@/components/reaction-bubble";
 import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
+import PostedCard from "@/components/posted-card";
+import Reaction from "@/components/reaction-bubble";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
