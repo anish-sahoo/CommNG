@@ -6,6 +6,9 @@ import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
+import PostedCard from "@/components/posted-card";
+import Reaction from "@/components/reaction-bubble";
+import { ReportsTable } from "@/components/table-view";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -78,6 +81,32 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
+                Posted Card
+              </h2>
+            </div>
+            <PostedCard
+              name="Brandon Johnson"
+              rank="E-1"
+              content="Are there any additional resources regarding the mentorship program? I would like to participate and receive a mentor, but I would like more insight on the program prior to applying. Thanks!"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Reaction Bubble
+              </h2>
+              <Reaction
+                emoji="👍"
+                count={0}
+                onClick={() => console.log("Liked!")}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
                 Member List View
               </h2>
             </div>
@@ -91,6 +120,28 @@ const Components = () => {
               </h2>
             </div>
             <DropdownButtons />
+
+                Reports Table View
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Standard viewer sees the comments preview and can tap through
+                for full details.
+              </p>
+            </div>
+            <ReportsTable />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Reports Table View (Admin)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Admins see who each report is issued to so they can reassign or
+                follow up quickly.
+              </p>
+            </div>
+            <ReportsTable isAdmin />
           </section>
         </div>
       </main>
