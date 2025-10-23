@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import ListView from "@/components/list-view";
-import Navigation from "@/components/navigation";
 import { icons } from "@/components/icons";
+import Navigation from "@/components/navigation";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -36,10 +35,10 @@ const Components = () => {
         <button
           type="button"
           onClick={() => setMobileNavOpen(true)}
-          className="absolute left-4 top-4 inline-flex items-center justify-center text-primary transition-colors hover:text-primary-dark lg:hidden"
+          className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center text-primary transition-colors hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:hidden"
           aria-label="Open navigation"
         >
-          <MenuIcon className="h-8 w-8" />
+          <MenuIcon className="h-7 w-7" />
         </button>
 
         <header className="mb-8 flex items-center justify-between">

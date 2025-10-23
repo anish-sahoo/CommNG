@@ -1,6 +1,6 @@
 "use client";
-import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import AppNavBar from "./app-navbar";
 import CommsNavBar from "./comms-navbar";
@@ -17,14 +17,19 @@ const Navigation = ({
   showCommsNav = true,
 }: NavigationProps) => {
   const pathname = usePathname();
+  const previousPathnameRef = useRef(pathname);
 
   useEffect(() => {
     if (!mobileOpen) {
+      previousPathnameRef.current = pathname;
       return;
     }
-    onMobileClose?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+
+    if (pathname !== previousPathnameRef.current) {
+      previousPathnameRef.current = pathname;
+      onMobileClose?.();
+    }
+  }, [mobileOpen, onMobileClose, pathname]);
 
   return (
     <>
@@ -42,12 +47,14 @@ const Navigation = ({
         )}
         aria-hidden={!mobileOpen}
       >
-        <div
+        <button
+          type="button"
           className={cn(
-            "absolute inset-0 bg-secondary/70 backdrop-blur-sm transition-opacity duration-300",
+            "absolute inset-0 bg-secondary/70 backdrop-blur-sm transition-opacity duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
             mobileOpen ? "opacity-100" : "opacity-0",
           )}
           onClick={onMobileClose}
+          aria-label="Close navigation"
         />
 
         <AppNavBar
