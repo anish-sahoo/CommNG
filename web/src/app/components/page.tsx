@@ -7,6 +7,7 @@ import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
+import { ReportsTable } from "@/components/table-view";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -111,6 +112,32 @@ const Components = () => {
               </h2>
             </div>
             <ListView />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Reports Table View
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Standard viewer sees the comments preview and can tap through
+                for full details.
+              </p>
+            </div>
+            <ReportsTable />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Reports Table View (Admin)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Admins see who each report is issued to so they can reassign or
+                follow up quickly.
+              </p>
+            </div>
+            <ReportsTable isAdmin />
           </section>
         </div>
       </main>
