@@ -34,32 +34,6 @@ const Components = () => {
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
       />
-      <main className="relative min-h-screen bg-background px-4 pb-16 pt-16 sm:px-6 lg:pl-[30rem] lg:pr-10 lg:py-12">
-        <button
-          type="button"
-          onClick={() => setMobileNavOpen(true)}
-          className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center text-primary transition-colors hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:hidden"
-          aria-label="Open navigation"
-        >
-          <MenuIcon className="h-7 w-7" />
-        </button>
-
-        <header className="mb-8 flex items-center justify-between">
-          <div className="w-full flex flex-col items-start gap-3">
-            <div>
-              <h1 className="text-header font-semibold text-secondary">
-                Component Library
-              </h1>
-              <p className="text-sm text-secondary/70">
-                Responsive shells and interaction samples
-              </p>
-            </div>
-            <div className="w-full flex flex-col gap-2">
-              <LinkedCard
-                href="https://example.com"
-                content="How to Mentor Effectively: 5 Tips for Success"
-              />
-            </div>
       <main className="min-h-screen bg-background px-4 pb-16 pt-20 sm:px-6 lg:pl-[21rem] lg:pr-12 lg:pt-16">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
           <div className="flex justify-start lg:hidden">
@@ -88,6 +62,18 @@ const Components = () => {
               </h2>
             </div>
             <SelectableButton text="Button" />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Linked Card
+              </h2>
+            </div>
+            <LinkedCard
+              href="https://example.com"
+              content="How to Mentor Effectively: 5 Tips for Success"
+            />
           </section>
 
           <section className="space-y-6">
