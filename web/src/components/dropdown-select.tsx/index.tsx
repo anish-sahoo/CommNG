@@ -19,7 +19,7 @@ export const DropdownSelect = ({
 }) => {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="group data-[placeholder]:text-primary hover:data-[placeholder]:text-white text-subheader font-semibold py-5 rounded-xl bg-white hover:bg-primary hover:text-white border-2 border-primary w-[332px] [&>span]:text-primary [&>span]:group-hover:text-white">
+      <SelectTrigger className="hover:data-[placeholder]:text-white text-subheader font-semibold py-5 rounded-xl bg-white hover:bg-primary hover:text-white border-2 border-primary w-[332px]">
         <SelectValue
           placeholder={
             options.length > 0 ? options[0].label : "Select an option"

@@ -75,8 +75,9 @@ const Components = () => {
             </div>
             <DropdownSelect
               options={[
-                { label: "Option 1", value: "option1" },
-                { label: "Option 2", value: "option2" },
+                { label: "Always Muted", value: "option1" },
+                { label: "All Notifications", value: "option2" },
+                { label: "Mute for 1 hour", value: "option3" },
               ]}
               value={selectedDropdownValue}
               onChange={setSelectedDropdownValue}
