@@ -15,6 +15,11 @@ import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { ReportsTable } from "@/components/table-view";
 import { TextInput } from "@/components/text-input";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
 
 const mentorQualityOptions: MultiSelectOption[] = [
   {
@@ -131,6 +136,8 @@ const Components = () => {
 
   const [singleLineText, setSingleLineText] = useState("");
   const [multiLineText, setMultiLineText] = useState("");
+
+  const [files, setFiles] = useState<File[] | undefined>();
 
   return (
     <>
@@ -374,6 +381,29 @@ const Components = () => {
               onChange={setSelectedQualities}
               maxSelections={3}
             />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                File dropzone
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Component to allow users to upload/drag & drop files. We have to
+                manage uploading, but this gives us UI to accept files in the
+                first place
+              </p>
+            </div>
+            <Dropzone
+              onDrop={(files) => {
+                setFiles(files);
+              }}
+              src={files}
+              maxFiles={5}
+            >
+              <DropzoneEmptyState />
+              <DropzoneContent />
+            </Dropzone>
           </section>
         </div>
       </main>
