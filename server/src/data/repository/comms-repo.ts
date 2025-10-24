@@ -279,4 +279,38 @@ export class CommsRepository {
 
     return channel;
   }
+
+  // Get all channels method
+  async getAllChannels() {
+    const [allChannels] = await db
+      .select({
+        channelId: channels.channelId,
+        name: channels.name,
+        metadata: channels.metadata,
+      })
+      .from(channels);
+
+    return allChannels;
+  }
+
+  // Get channel messages method
+  async getChannelMessages(channel_id: number) {
+    const [messagesList] = await db
+      .select({
+        messageId: messages.messageId,
+        channelId: messages.channelId,
+        senderId: messages.senderId,
+        message: messages.message,
+        attachmentUrl: messages.attachmentUrl,
+        createdAt: messages.createdAt,
+      })
+      .from(messages) // Retrieve from messages table
+      .where(eq(messages.channelId, channel_id)); // Filter by channel ID
+
+    if (!messagesList) {
+      throw new NotFoundError("No messages found for this channel");
+    }
+
+    return messagesList;
+  }
 }

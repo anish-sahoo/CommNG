@@ -200,6 +200,9 @@ vi.mock("../src/trpc/app_router.js", () => {
       getUserSubscriptions(input: {
         userId?: number;
       }): Promise<MockSubscriptionSummary[]>;
+      getChannelMessages(input: { channelId: number }): Promise<MockMessage[]>;
+      getChannelMembers(input: { channelId: number }): Promise<any[]>;
+      getAllChannels(): Promise<MockChannel[]>;
       createChannel(input: {
         name: string;
         metadata?: Record<string, unknown>;
@@ -477,6 +480,47 @@ vi.mock("../src/trpc/app_router.js", () => {
             return members;
           },
 
+          // Get all channels endpoint
+          async getAllChannels(): Promise<MockChannel[]> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            return mem.channels.map((c) => ({
+              channelId: c.channel_id,
+              name: c.name,
+              metadata: null,
+              createdAt: new Date(),
+            }));
+          },
+
+          // Channel messages endpoint
+          async getChannelMessages(input: {
+            channelId: number;
+          }): Promise<MockMessage[]> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            const ch = mem.channels.find(
+              (c) => c.channel_id === input.channelId,
+            );
+            if (!ch) throw new Error("NOT_FOUND");
+
+            const uid = ctx.auth.user.id;
+
+            const hasSub = mem.channelSubscriptions.some(
+              (s) => s.user_id === uid && s.channel_id === input.channelId,
+            );
+
+            const roleIds = mem.userRoles
+              .filter((ur) => ur.user_id === uid)
+              .map((ur) => ur.role_id);
+            const hasRole = mem.roles.some(
+              (r) => roleIds.includes(r.role_id) && r.namespace === "channel",
+            );
+
+            if (!hasSub && !hasRole) throw new Error("FORBIDDEN");
+
+            return mem.posts.filter((p) => p.channelId === input.channelId);
+          },
+
           // Channel creation endpoint
           async createChannel(input: {
             name: string;
@@ -615,6 +659,86 @@ describe("commsRouter.createPost", () => {
     expect(created.channelId).toBe(channelId);
     expect(created.senderId).toBe(otherUserId);
     expect(created.message ?? "").toContain("Permitted by role");
+  });
+});
+
+describe("commsRouter.getChannelMessages", () => {
+  let channelId: number;
+  let authorId: string;
+  let readerId: string;
+  let otherId: string;
+  let messageId: number;
+
+  beforeAll(async () => {
+    const author = createUser(
+      "Msg Author",
+      `msg-author-${Date.now()}@example.com`,
+      "pwd",
+    );
+    authorId = author.user_id;
+
+    const reader = createUser(
+      "Msg Reader",
+      `msg-reader-${Date.now()}@example.com`,
+      "pwd",
+    );
+    readerId = reader.user_id;
+
+    const other = createUser("Other", `other-${Date.now()}@example.com`, "pwd");
+    otherId = other.user_id;
+
+    const ch = createChannel(`msgs-channel-${Date.now()}`);
+    channelId = ch.channel_id;
+
+    // give author write permission and create a post
+    addSubscription(authorId, channelId, "write");
+    const caller = appRouter.createCaller(createContext(authorId));
+    const created = await caller.comms.createPost({
+      channelId,
+      content: "Hello channel",
+    });
+    messageId = created.messageId;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect(
+      (caller as any).comms.getChannelMessages({ channelId }),
+    ).rejects.toThrow(/UNAUTHORIZED/i);
+  });
+
+  it("throws FORBIDDEN when user lacks read permission", async () => {
+    const caller = appRouter.createCaller(createContext(otherId));
+    await expect(
+      (caller as any).comms.getChannelMessages({ channelId }),
+    ).rejects.toThrow(/FORBIDDEN/i);
+  });
+
+  it("returns messages when user has subscription (read/write)", async () => {
+    addSubscription(readerId, channelId, "read");
+
+    const caller = appRouter.createCaller(createContext(readerId));
+    const messages = await (caller as any).comms.getChannelMessages({
+      channelId,
+    });
+
+    expect(Array.isArray(messages)).toBe(true);
+    const found = messages.find((m: any) => m.messageId === messageId);
+    expect(found).toBeDefined();
+    expect(found.message).toBe("Hello channel");
+  });
+
+  it("returns messages when user has channel role", async () => {
+    const role = createRole("channel", channelId, "read", "messages", "READER");
+    grantRole(otherId, role.role_id);
+
+    const caller = appRouter.createCaller(createContext(otherId));
+    const messages = await (caller as any).comms.getChannelMessages({
+      channelId,
+    });
+
+    expect(Array.isArray(messages)).toBe(true);
+    expect(messages.length).toBeGreaterThan(0);
   });
 });
 
@@ -1136,6 +1260,41 @@ describe("commsRouter.getChannelMembers", () => {
     expect(a?.permission).toBe("write");
     expect(b).toBeDefined();
     expect(b?.permission).toBe("read");
+  });
+});
+
+// Get All Channels Tests
+describe("commsRouter.getAllChannels", () => {
+  let creatorId: string;
+
+  beforeAll(() => {
+    const u = createUser(
+      "Channels Creator",
+      `creator-${Date.now()}@example.com`,
+      "pwd",
+    );
+    creatorId = u.user_id;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect((caller as any).comms.getAllChannels()).rejects.toThrow(
+      /UNAUTHORIZED/i,
+    );
+  });
+
+  it("returns all channels", async () => {
+    // create some channels via helper so they're present in mem
+    const ch1 = createChannel(uniqueName("all-ch-1"));
+    const ch2 = createChannel(uniqueName("all-ch-2"));
+
+    const caller = appRouter.createCaller(createContext(creatorId));
+    const channels = await (caller as any).comms.getAllChannels();
+
+    expect(Array.isArray(channels)).toBe(true);
+    // should at least contain the two channels we added
+    const names = channels.map((c: any) => c.name);
+    expect(names).toEqual(expect.arrayContaining([ch1.name, ch2.name]));
   });
 });
 
