@@ -200,6 +200,8 @@ vi.mock("../src/trpc/app_router.js", () => {
       getUserSubscriptions(input: {
         userId?: number;
       }): Promise<MockSubscriptionSummary[]>;
+      getChannelMembers(input: { channelId: number }): Promise<any[]>;
+      getAllChannels(): Promise<MockChannel[]>;
       createChannel(input: {
         name: string;
         metadata?: Record<string, unknown>;
@@ -475,6 +477,18 @@ vi.mock("../src/trpc/app_router.js", () => {
               });
 
             return members;
+          },
+
+          // Get all channels endpoint
+          async getAllChannels(): Promise<MockChannel[]> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            return mem.channels.map((c) => ({
+              channelId: c.channel_id,
+              name: c.name,
+              metadata: null,
+              createdAt: new Date(),
+            }));
           },
 
           // Channel creation endpoint
@@ -1136,6 +1150,41 @@ describe("commsRouter.getChannelMembers", () => {
     expect(a?.permission).toBe("write");
     expect(b).toBeDefined();
     expect(b?.permission).toBe("read");
+  });
+});
+
+// Get All Channels Tests
+describe("commsRouter.getAllChannels", () => {
+  let creatorId: string;
+
+  beforeAll(() => {
+    const u = createUser(
+      "Channels Creator",
+      `creator-${Date.now()}@example.com`,
+      "pwd",
+    );
+    creatorId = u.user_id;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect((caller as any).comms.getAllChannels()).rejects.toThrow(
+      /UNAUTHORIZED/i,
+    );
+  });
+
+  it("returns all channels", async () => {
+    // create some channels via helper so they're present in mem
+    const ch1 = createChannel(uniqueName("all-ch-1"));
+    const ch2 = createChannel(uniqueName("all-ch-2"));
+
+    const caller = appRouter.createCaller(createContext(creatorId));
+    const channels = await (caller as any).comms.getAllChannels();
+
+    expect(Array.isArray(channels)).toBe(true);
+    // should at least contain the two channels we added
+    const names = channels.map((c: any) => c.name);
+    expect(names).toEqual(expect.arrayContaining([ch1.name, ch2.name]));
   });
 });
 
