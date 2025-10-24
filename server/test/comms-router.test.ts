@@ -1168,7 +1168,9 @@ describe("commsRouter.getAllChannels", () => {
 
   it("throws UNAUTHORIZED if no user in context", async () => {
     const caller = appRouter.createCaller({ auth: null });
-  await expect((caller as any).comms.getAllChannels()).rejects.toThrow(/UNAUTHORIZED/i);
+    await expect((caller as any).comms.getAllChannels()).rejects.toThrow(
+      /UNAUTHORIZED/i,
+    );
   });
 
   it("returns all channels", async () => {
@@ -1177,11 +1179,11 @@ describe("commsRouter.getAllChannels", () => {
     const ch2 = createChannel(uniqueName("all-ch-2"));
 
     const caller = appRouter.createCaller(createContext(creatorId));
-  const channels = await (caller as any).comms.getAllChannels();
+    const channels = await (caller as any).comms.getAllChannels();
 
-  expect(Array.isArray(channels)).toBe(true);
-  // should at least contain the two channels we added
-  const names = channels.map((c: any) => c.name);
+    expect(Array.isArray(channels)).toBe(true);
+    // should at least contain the two channels we added
+    const names = channels.map((c: any) => c.name);
     expect(names).toEqual(expect.arrayContaining([ch1.name, ch2.name]));
   });
 });

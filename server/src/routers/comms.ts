@@ -71,7 +71,6 @@ const createPost = protectedProcedure
  */
 const getAllChannels = protectedProcedure.query(({ ctx }) =>
   withErrorHandling("getAllChannels", async () => {
-
     log.debug("Getting all channels");
 
     return await commsRepo.getAllChannels();
