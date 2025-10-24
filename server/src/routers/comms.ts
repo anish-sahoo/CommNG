@@ -5,6 +5,7 @@ import { withErrorHandling } from "../trpc/error_handler.js";
 import { procedure, router } from "../trpc/trpc.js";
 import {
   createChannelSchema,
+  getChannelMembersSchema,
   createSubscriptionSchema,
   deletePostSchema,
   deleteSubscriptionSchema,
@@ -73,22 +74,6 @@ const createPost = procedure
     return createdPost;
   });
 
-// Channel creation endpoint
-const createChannel = procedure
-  .input(createChannelSchema)
-  .mutation(({ ctx, input }) =>
-    withErrorHandling("createChannel", async () => {
-      const userId = ctx.userId ?? ctx.user?.userId ?? null;
-      if (!userId) {
-        throw new UnauthorizedError("Sign in required");
-      }
-
-      log.debug({ userId, channelName: input.name }, "Creating channel");
-
-      return await commsRepo.createChannel(input.name, input.metadata);
-    }),
-  );
-
 /**
  * editPost
  * Allows an authenticated user to edit a previously posted message if they authored it.
@@ -122,6 +107,7 @@ const editPost = procedure
 
     return updatedPost;
   });
+
 /**
  * deletePost
  * Allows an authenticated user to delete a previously posted message if they authored it or if they are an admin.
@@ -142,6 +128,31 @@ const deletePost = procedure
 
     return deletedPost;
   });
+
+// Channel creation endpoint
+const createChannel = procedure
+  .input(createChannelSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("createChannel", async () => {
+      const userId = ctx.userId ?? ctx.user?.userId ?? null;
+      if (!userId) {
+        throw new UnauthorizedError("Sign in required");
+      }
+
+      log.debug({ userId, channelName: input.name }, "Creating channel");
+
+      return await commsRepo.createChannel(input.name, input.metadata);
+    }),
+  );
+
+// Channel members endpoint
+const getChannelMembers = procedure
+  .input(getChannelMembersSchema)
+  .query(({ input }) => async () => {
+    log.debug("getChannelMembers");
+    return await commsRepo.getChannelMembers(input.channelId);
+  });
+
 // Channel subscription endpoints
 const createSubscription = procedure
   .input(createSubscriptionSchema)
@@ -203,9 +214,10 @@ export const commsRouter = router({
   ping,
   registerDevice,
   createPost,
-  createChannel,
   editPost,
   deletePost,
+  createChannel,
+  getChannelMembers,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,

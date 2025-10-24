@@ -22,6 +22,24 @@ export const registerDeviceSchema = z.object({
   deviceToken: z.string(),
 });
 
+// Channel creation schema
+export const createChannelSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Channel name cannot be empty")
+    .max(100, "Channel name too long"),
+  metadata: z.record(z.unknown()).optional(), // Optional JSON metadata
+});
+
+export type CreateChannelInput = z.infer<typeof createChannelSchema>;
+
+// Channel members schema
+export const getChannelMembersSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+});
+
+export type GetChannelMembersInput = z.infer<typeof getChannelMembersSchema>;
+
 // Channel subscription schemas
 export const createSubscriptionSchema = z.object({
   channelId: z.coerce.number().int().positive(),
@@ -44,14 +62,3 @@ export type GetUserSubscriptionsInput = z.infer<
   typeof getUserSubscriptionsSchema
 >;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;
-
-// Channel creation schema
-export const createChannelSchema = z.object({
-  name: z
-    .string()
-    .min(1, "Channel name cannot be empty")
-    .max(100, "Channel name too long"),
-  metadata: z.record(z.unknown()).optional(), // Optional JSON metadata
-});
-
-export type CreateChannelInput = z.infer<typeof createChannelSchema>;
