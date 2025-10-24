@@ -6,6 +6,11 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -157,6 +162,7 @@ resource "aws_elasticache_serverless_cache" "dev_cache_valkey" {
   major_engine_version  = "8"
   security_group_ids    = [aws_security_group.dev_cache_public.id]
   subnet_ids            = slice(data.aws_subnets.default_vpc_supported_az.ids, 0, 2) # Supported AZs only; AWS requires between 2 and 3 subnets
+  user_group_id         = aws_elasticache_user_group.valkey_default.user_group_id
 
   cache_usage_limits {
     data_storage {
@@ -171,6 +177,54 @@ resource "aws_elasticache_serverless_cache" "dev_cache_valkey" {
 
   tags = {
     Name        = "dev-comm-ng-valkey-redis"
+    Environment = "dev"
+  }
+}
+
+# ------------------------------------------------------------
+# Valkey authentication secret and IAM user group
+# ------------------------------------------------------------
+resource "random_password" "cache_auth" {
+  length          = 32
+  special         = true
+  override_special = "!@#%^*+-_=~"
+}
+
+resource "aws_secretsmanager_secret" "cache_auth" {
+  name        = "dev/comm-ng/cache-auth"
+  description = "Cache AUTH token for dev environment"
+
+  tags = {
+    Name        = "dev-comm-ng-cache-auth"
+    Environment = "dev"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "cache_auth_current" {
+  secret_id     = aws_secretsmanager_secret.cache_auth.id
+  secret_string = random_password.cache_auth.result
+}
+
+resource "aws_elasticache_user" "valkey_default" {
+  user_id       = "comm-ng-dev"
+  user_name     = "default"
+  engine        = "valkey"
+  passwords     = [random_password.cache_auth.result]
+  access_string = "on ~* +@all"
+
+  tags = {
+    Name        = "dev-comm-ng-cache-user"
+    Environment = "dev"
+  }
+}
+
+resource "aws_elasticache_user_group" "valkey_default" {
+  user_group_id = "comm-ng-dev-group"
+  engine        = "valkey"
+  user_ids      = [aws_elasticache_user.valkey_default.user_id]
+
+  tags = {
+    Name        = "dev-comm-ng-cache-user-group"
     Environment = "dev"
   }
 }
