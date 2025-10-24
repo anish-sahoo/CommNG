@@ -10,6 +10,7 @@ import {
   deleteSubscriptionSchema,
   editPostSchema,
   getChannelMembersSchema,
+  getChannelMessagesSchema,
   postPostSchema,
   registerDeviceSchema,
 } from "../types/comms-types.js";
@@ -76,6 +77,34 @@ const getAllChannels = protectedProcedure.query(({ ctx }) =>
     return await commsRepo.getAllChannels();
   }),
 );
+
+/**
+ * getChannelMessages
+ * Retrieves messages from a specific channel.
+ */
+const getChannelMessages = protectedProcedure
+  .input(getChannelMessagesSchema)
+  .query(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const isInChannel = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!isInChannel) {
+      throw new ForbiddenError(
+        "You do not have permission to get messages in this channel",
+      );
+    }
+
+    log.debug(
+      { userId, channelId: input.channelId },
+      "Getting channel messages",
+    );
+
+    return await commsRepo.getChannelMessages(input.channelId);
+  });
 
 /**
  * editPost
