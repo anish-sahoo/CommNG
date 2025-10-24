@@ -31,6 +31,7 @@ await policyEngine.populateCache(60 * 60 * 12, 5000);
 
 app.listen(port, () => {
   log.info(`tRPC server running at http://localhost:${port}/api/trpc`);
+  log.info(`Better auth running at http://localhost:${port}/api/auth`);
   log.info(
     `Better-auth OpenAPI spec: http://localhost:${port}/api/auth/reference`,
   );
