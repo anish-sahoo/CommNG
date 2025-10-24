@@ -34,7 +34,7 @@ export class CommsRepository {
   }
 
   async getChannelMembers(channel_id: number) {
-    const [members] = await db
+    const members = await db
       .select({
         userId: users.id,
         name: users.name,
@@ -282,20 +282,21 @@ export class CommsRepository {
 
   // Get all channels method
   async getAllChannels() {
-    const [allChannels] = await db
+    const allChannels = await db
       .select({
         channelId: channels.channelId,
         name: channels.name,
         metadata: channels.metadata,
       })
-      .from(channels);
+      .from(channels)
+      .orderBy(channels.name);
 
     return allChannels;
   }
 
   // Get channel messages method
   async getChannelMessages(channel_id: number) {
-    const [messagesList] = await db
+    const messagesList = await db
       .select({
         messageId: messages.messageId,
         channelId: messages.channelId,
@@ -303,13 +304,14 @@ export class CommsRepository {
         message: messages.message,
         attachmentUrl: messages.attachmentUrl,
         createdAt: messages.createdAt,
+        authorName: users.name,
+        authorClearanceLevel: users.clearanceLevel,
+        authorDepartment: users.department,
       })
       .from(messages) // Retrieve from messages table
-      .where(eq(messages.channelId, channel_id)); // Filter by channel ID
-
-    if (!messagesList) {
-      throw new NotFoundError("No messages found for this channel");
-    }
+      .leftJoin(users, eq(messages.senderId, users.id))
+      .where(eq(messages.channelId, channel_id))
+      .orderBy(messages.createdAt);
 
     return messagesList;
   }
