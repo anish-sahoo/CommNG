@@ -7,4 +7,27 @@
 # DS_Store
 **/.DS_Store
 
+server/src/data/db/migrations/meta/
+
 storage/
+
+
+# Local Terraform directories
+**/.terraform/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Lock info file (temporary during plan/apply)
+**/.terraform.tfstate.lock.info
+
+# Provider lock file
+**/.terraform.lock.hcl
+
+# Sensitive variable files (optional)
+*.tfvars
+*.tfvars.json
+
+# Crash logs
+**/crash.log
