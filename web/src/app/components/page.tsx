@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import { DropdownButtons } from "@/components/dropdown";
+import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
@@ -28,6 +29,8 @@ const Components = () => {
       document.body.style.overflow = "";
     };
   }, [mobileNavOpen]);
+
+  const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
 
   return (
     <>
@@ -61,10 +64,27 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
-                Button Component
+                Button
               </h2>
             </div>
             <SelectableButton text="Button" />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Dropdown Select
+              </h2>
+            </div>
+            <DropdownSelect
+              options={[
+                { label: "Always Muted", value: "option1" },
+                { label: "All Notifications", value: "option2" },
+                { label: "Mute for 1 hour", value: "option3" },
+              ]}
+              value={selectedDropdownValue}
+              onChange={setSelectedDropdownValue}
+            />
           </section>
 
           <section className="space-y-6">
