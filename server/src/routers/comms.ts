@@ -66,6 +66,19 @@ const createPost = protectedProcedure
   });
 
 /**
+ * getAllChannels
+ * Retrieves a list of all channels. (no matter if public or private?)
+ */
+const getAllChannels = protectedProcedure.query(({ ctx }) =>
+  withErrorHandling("getAllChannels", async () => {
+
+    log.debug("Getting all channels");
+
+    return await commsRepo.getAllChannels();
+  }),
+);
+
+/**
  * editPost
  * Allows an authenticated user to edit a previously posted message if they authored it.
  */
