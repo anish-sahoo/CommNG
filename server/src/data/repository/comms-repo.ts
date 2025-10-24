@@ -252,4 +252,14 @@ export class CommsRepository {
 
     return channel;
   }
+
+  async getAllChannels() {
+    return await db
+      .select({
+        channelId: channels.channelId,
+        name: channels.name,
+        metadata: channels.metadata,
+      })
+      .from(channels);
+  }
 }
