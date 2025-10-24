@@ -9,6 +9,8 @@ import {
   deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
+  getChannelMembersSchema,
+  getChannelMessagesSchema,
   postPostSchema,
   registerDeviceSchema,
 } from "../types/comms-types.js";
@@ -64,18 +66,45 @@ const createPost = protectedProcedure
     return createdPost;
   });
 
-// Channel creation endpoint
-const createChannel = protectedProcedure
-  .input(createChannelSchema)
-  .mutation(({ ctx, input }) =>
-    withErrorHandling("createChannel", async () => {
-      const userId = ctx.auth.user.id;
+/**
+ * getAllChannels
+ * Retrieves a list of all channels. (no matter if public or private?)
+ */
+const getAllChannels = protectedProcedure.query(({ ctx }) =>
+  withErrorHandling("getAllChannels", async () => {
+    log.debug("Getting all channels");
 
-      log.debug({ userId, channelName: input.name }, "Creating channel");
+    return await commsRepo.getAllChannels();
+  }),
+);
 
-      return await commsRepo.createChannel(input.name, input.metadata);
-    }),
-  );
+/**
+ * getChannelMessages
+ * Retrieves messages from a specific channel.
+ */
+const getChannelMessages = protectedProcedure
+  .input(getChannelMessagesSchema)
+  .query(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const isInChannel = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!isInChannel) {
+      throw new ForbiddenError(
+        "You do not have permission to get messages in this channel",
+      );
+    }
+
+    log.debug(
+      { userId, channelId: input.channelId },
+      "Getting channel messages",
+    );
+
+    return await commsRepo.getChannelMessages(input.channelId);
+  });
 
 /**
  * editPost
@@ -124,6 +153,27 @@ const deletePost = protectedProcedure
     );
 
     return deletedPost;
+  });
+
+// Channel creation endpoint
+const createChannel = protectedProcedure
+  .input(createChannelSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("createChannel", async () => {
+      const userId = ctx.auth.user.id;
+
+      log.debug({ userId, channelName: input.name }, "Creating channel");
+
+      return await commsRepo.createChannel(input.name, input.metadata);
+    }),
+  );
+
+// Channel members endpoint
+const getChannelMembers = protectedProcedure
+  .input(getChannelMembersSchema)
+  .query(({ input }) => async () => {
+    log.debug("getChannelMembers");
+    return await commsRepo.getChannelMembers(input.channelId);
   });
 
 // Channel subscription endpoints
@@ -175,9 +225,10 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 export const commsRouter = router({
   registerDevice,
   createPost,
-  createChannel,
   editPost,
   deletePost,
+  createChannel,
+  getChannelMembers,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,

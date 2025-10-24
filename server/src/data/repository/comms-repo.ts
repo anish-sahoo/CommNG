@@ -4,7 +4,10 @@ import {
   channelSubscriptions,
   channels,
   messages,
+  roles,
   userDevices,
+  userRoles,
+  users,
 } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
@@ -28,6 +31,30 @@ export class CommsRepository {
     }
 
     return channel;
+  }
+
+  async getChannelMembers(channel_id: number) {
+    const [members] = await db
+      .select({
+        userId: users.id,
+        name: users.name,
+        email: users.email,
+        clearanceLevel: users.clearanceLevel,
+        department: users.department,
+        roleKey: roles.roleKey,
+        action: roles.action,
+      })
+      .from(userRoles) // start from userRoles table because it has info abt both users and roles
+      .innerJoin(users, eq(userRoles.userId, users.id)) // join to get user details
+      .innerJoin(roles, eq(userRoles.roleId, roles.roleId)) // join to get role details
+      .where(
+        and(
+          eq(roles.channelId, channel_id), // find for the specific channel
+          eq(roles.namespace, "channel"), // only channel roles
+        ),
+      );
+
+    return members;
   }
 
   async createMessage(
@@ -251,5 +278,39 @@ export class CommsRepository {
       .returning();
 
     return channel;
+  }
+
+  // Get all channels method
+  async getAllChannels() {
+    const [allChannels] = await db
+      .select({
+        channelId: channels.channelId,
+        name: channels.name,
+        metadata: channels.metadata,
+      })
+      .from(channels);
+
+    return allChannels;
+  }
+
+  // Get channel messages method
+  async getChannelMessages(channel_id: number) {
+    const [messagesList] = await db
+      .select({
+        messageId: messages.messageId,
+        channelId: messages.channelId,
+        senderId: messages.senderId,
+        message: messages.message,
+        attachmentUrl: messages.attachmentUrl,
+        createdAt: messages.createdAt,
+      })
+      .from(messages) // Retrieve from messages table
+      .where(eq(messages.channelId, channel_id)); // Filter by channel ID
+
+    if (!messagesList) {
+      throw new NotFoundError("No messages found for this channel");
+    }
+
+    return messagesList;
   }
 }
