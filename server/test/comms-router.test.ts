@@ -51,7 +51,11 @@ const mem: {
     email: string;
     password: string;
   }[];
-  channels: { channel_id: number; name: string }[];
+  channels: {
+    channel_id: number;
+    name: string;
+    metadata: Record<string, unknown> | null;
+  }[];
   channelSubscriptions: Array<{
     id: number;
     user_id: string;
@@ -119,8 +123,11 @@ function createUser(name: string, email: string, password: string) {
   mem.users.push(u);
   return u;
 }
-function createChannel(name: string) {
-  const ch = { channel_id: ++mem._ids.channel, name };
+function createChannel(
+  name: string,
+  metadata: Record<string, unknown> | null = null,
+) {
+  const ch = { channel_id: ++mem._ids.channel, name, metadata };
   mem.channels.push(ch);
   return ch;
 }
@@ -587,12 +594,48 @@ vi.mock("../src/trpc/app_router.js", () => {
           async getAllChannels(): Promise<MockChannel[]> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
-            return mem.channels.map((c) => ({
-              channelId: c.channel_id,
-              name: c.name,
-              metadata: null,
-              createdAt: new Date(),
-            }));
+            const uid = ctx.auth.user.id;
+
+            return mem.channels
+              .filter((channel) => {
+                const type = (channel.metadata as { type?: string } | null)
+                  ?.type;
+                const isPublic =
+                  typeof type !== "string" || type.toLowerCase() === "public";
+
+                if (isPublic) {
+                  return true;
+                }
+
+                const hasSubscription = mem.channelSubscriptions.some(
+                  (sub) =>
+                    sub.channel_id === channel.channel_id &&
+                    sub.user_id === uid,
+                );
+
+                if (hasSubscription) {
+                  return true;
+                }
+
+                const roleIds = mem.userRoles
+                  .filter((role) => role.user_id === uid)
+                  .map((role) => role.role_id);
+
+                const hasRole = mem.roles.some(
+                  (role) =>
+                    roleIds.includes(role.role_id) &&
+                    role.namespace === "channel" &&
+                    role.channel_id === channel.channel_id,
+                );
+
+                return hasRole;
+              })
+              .map((c) => ({
+                channelId: c.channel_id,
+                name: c.name,
+                metadata: c.metadata,
+                createdAt: new Date(),
+              }));
           },
 
           // Channel messages endpoint
@@ -722,6 +765,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             mem.channels.push({
               channel_id: channel.channelId,
               name: channel.name,
+              metadata: channel.metadata,
             });
 
             return channel;

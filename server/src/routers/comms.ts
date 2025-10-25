@@ -71,11 +71,13 @@ const createPost = protectedProcedure
  * getAllChannels
  * Retrieves a list of all channels. (no matter if public or private?)
  */
-const getAllChannels = protectedProcedure.query(() =>
+const getAllChannels = protectedProcedure.query(({ ctx }) =>
   withErrorHandling("getAllChannels", async () => {
-    log.debug("Getting all channels");
+    const userId = ctx.auth.user.id;
 
-    return await commsRepo.getAllChannels();
+    log.debug({ userId }, "Getting accessible channels");
+
+    return await commsRepo.getAccessibleChannels(userId);
   }),
 );
 

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
 import {
   channelSubscriptions,
@@ -281,18 +281,40 @@ export class CommsRepository {
     return channel;
   }
 
-  // Get all channels method
-  async getAllChannels() {
-    const allChannels = await db
-      .select({
+  async getAccessibleChannels(userId: string) {
+    const accessibleChannels = await db
+      .selectDistinct({
         channelId: channels.channelId,
         name: channels.name,
         metadata: channels.metadata,
       })
       .from(channels)
+      .leftJoin(
+        channelSubscriptions,
+        and(
+          eq(channelSubscriptions.channelId, channels.channelId),
+          eq(channelSubscriptions.userId, userId),
+        ),
+      )
+      .leftJoin(userRoles, eq(userRoles.userId, userId))
+      .leftJoin(
+        roles,
+        and(
+          eq(userRoles.roleId, roles.roleId),
+          eq(roles.channelId, channels.channelId),
+          eq(roles.namespace, "channel"),
+        ),
+      )
+      .where(
+        or(
+          sql`coalesce(${channels.metadata}->>'type', 'public') = 'public'`,
+          isNotNull(channelSubscriptions.subscriptionId),
+          isNotNull(roles.roleId),
+        ),
+      )
       .orderBy(channels.name);
 
-    return allChannels;
+    return accessibleChannels;
   }
 
   // Get channel messages method
@@ -311,37 +333,18 @@ export class CommsRepository {
       >();
     }
 
-    const rows = await db
+    const reactionRows = await db
       .select({
         messageId: messageReactions.messageId,
         emoji: messageReactions.emoji,
-        userId: messageReactions.userId,
+        count: count(messageReactions.emoji).as("count"),
+        reactedByCurrentUser: sql<boolean>`
+          bool_or(${messageReactions.userId} = ${currentUserId})
+        `.as("reactedByCurrentUser"),
       })
       .from(messageReactions)
-      .where(inArray(messageReactions.messageId, messageIds));
-
-    const aggregate = new Map<
-      number,
-      Map<string, { count: number; reactedByCurrentUser: boolean }>
-    >();
-
-    for (const row of rows) {
-      const messageBucket =
-        aggregate.get(row.messageId) ??
-        new Map<string, { count: number; reactedByCurrentUser: boolean }>();
-      const entry = messageBucket.get(row.emoji) ?? {
-        count: 0,
-        reactedByCurrentUser: false,
-      };
-
-      entry.count += 1;
-      if (row.userId === currentUserId) {
-        entry.reactedByCurrentUser = true;
-      }
-
-      messageBucket.set(row.emoji, entry);
-      aggregate.set(row.messageId, messageBucket);
-    }
+      .where(inArray(messageReactions.messageId, messageIds))
+      .groupBy(messageReactions.messageId, messageReactions.emoji);
 
     const result = new Map<
       number,
@@ -352,20 +355,23 @@ export class CommsRepository {
       }[]
     >();
 
-    for (const [messageId, emojiMap] of aggregate.entries()) {
-      const reactions = Array.from(emojiMap.entries())
-        .map(([emoji, data]) => ({
-          emoji,
-          count: data.count,
-          reactedByCurrentUser: data.reactedByCurrentUser,
-        }))
-        .sort((a, b) => {
-          if (b.count !== a.count) {
-            return b.count - a.count;
-          }
-          return a.emoji.localeCompare(b.emoji);
-        });
-      result.set(messageId, reactions);
+    for (const row of reactionRows) {
+      const reactionsForMessage = result.get(row.messageId) ?? [];
+      reactionsForMessage.push({
+        emoji: row.emoji,
+        count: Number(row.count),
+        reactedByCurrentUser: row.reactedByCurrentUser,
+      });
+      result.set(row.messageId, reactionsForMessage);
+    }
+
+    for (const [_messageId, reactions] of result.entries()) {
+      reactions.sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        return a.emoji.localeCompare(b.emoji);
+      });
     }
 
     for (const messageId of messageIds) {
@@ -417,26 +423,28 @@ export class CommsRepository {
     emoji: string;
     active: boolean;
   }) {
-    if (active) {
-      await db
-        .insert(messageReactions)
-        .values({
-          messageId,
-          userId,
-          emoji,
-        })
-        .onConflictDoNothing();
-    } else {
-      await db
-        .delete(messageReactions)
-        .where(
-          and(
-            eq(messageReactions.messageId, messageId),
-            eq(messageReactions.userId, userId),
-            eq(messageReactions.emoji, emoji),
-          ),
-        );
-    }
+    await db.transaction(async (tx) => {
+      if (active) {
+        await tx
+          .insert(messageReactions)
+          .values({
+            messageId,
+            userId,
+            emoji,
+          })
+          .onConflictDoNothing();
+      } else {
+        await tx
+          .delete(messageReactions)
+          .where(
+            and(
+              eq(messageReactions.messageId, messageId),
+              eq(messageReactions.userId, userId),
+              eq(messageReactions.emoji, emoji),
+            ),
+          );
+      }
+    });
 
     const reactions = await this.getReactionsForMessages([messageId], userId);
 
