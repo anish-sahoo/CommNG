@@ -40,6 +40,13 @@ export const getChannelMembersSchema = z.object({
 
 export type GetChannelMembersInput = z.infer<typeof getChannelMembersSchema>;
 
+// Get channel messages schema
+export const getChannelMessagesSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+});
+
+export type GetChannelMessagesInput = z.infer<typeof getChannelMessagesSchema>;
+
 // Channel subscription schemas
 export const createSubscriptionSchema = z.object({
   channelId: z.coerce.number().int().positive(),
