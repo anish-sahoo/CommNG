@@ -54,7 +54,9 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     phoneNumber: text("phone_number"),
-    image: text("image"),
+    image: uuid("image").references(() => files.fileId, {
+      onDelete: "set null",
+    }),
     clearanceLevel: text("clearance_level"),
     department: text("department"),
     branch: text("branch"),

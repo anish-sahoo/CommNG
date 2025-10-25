@@ -11,7 +11,7 @@ export class UserService {
     this.usersRepo = usersRepo;
   }
 
-  @Cache((user_id: string) => `user:${user_id}:user_date`)
+  @Cache((user_id: string) => `user:${user_id}:data`)
   async getUserData(user_id: string) {
     return this.usersRepo.getUserData(user_id);
   }

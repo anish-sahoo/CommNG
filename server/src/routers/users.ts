@@ -11,11 +11,11 @@ const getUserData = protectedProcedure
   .meta({
     description: "Returns the public-facing data for a given user",
   })
-  .query(({ input }) =>
-    withErrorHandling("getUserData", () =>
-      userService.getUserData(input.user_id),
-    ),
-  );
+  .query(async ({ input }) => {
+    return withErrorHandling("getUserData", async () => {
+      return await userService.getUserData(input.user_id);
+    });
+  });
 
 export const userRouter = router({
   getUserData,
