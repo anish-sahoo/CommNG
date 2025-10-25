@@ -20,8 +20,14 @@ const fileLikeSchema = z.object({
   name: z.string(),
   size: z.number(),
   type: z.string(),
-  arrayBuffer: z.function().returns(z.promise(z.instanceof(ArrayBuffer))),
-  stream: z.function().returns(z.custom<ReadableStreamWeb<Uint8Array>>()),
+  arrayBuffer: z.function({
+    input: [],
+    output: z.promise(z.instanceof(ArrayBuffer)),
+  }),
+  stream: z.function({
+    input: [],
+    output: z.custom<ReadableStreamWeb<Uint8Array>>(),
+  }),
 });
 
 const formDataLikeSchema = z
@@ -52,25 +58,29 @@ const fileFieldSchema = z
   });
 
 export const uploadForUserInputSchema = formDataLikeSchema.pipe(
-  z
-    .object({
-      file: fileFieldSchema,
-      contentType: z.string().optional(),
-    })
-    .passthrough(),
+  (
+    z
+      .object({
+        file: fileFieldSchema,
+        contentType: z.string().optional(),
+      })
+      .loose() as unknown as z.ZodType<any, Record<string, FormDataEntryValueLike>, any>
+  ),
 );
 
 export const uploadForChannelInputSchema = formDataLikeSchema.pipe(
-  z
-    .object({
-      file: fileFieldSchema,
-      channelId: z.coerce.number().int().positive({
-        message: "channelId must be a positive integer",
-      }),
-      action: z.enum(["write", "admin"]),
-      contentType: z.string().optional(),
-    })
-    .passthrough(),
+  (
+    z
+      .object({
+        file: fileFieldSchema,
+        channelId: z.coerce.number().int().positive({
+          message: "channelId must be a positive integer",
+        }),
+        action: z.enum(["write", "admin"]),
+        contentType: z.string().optional(),
+      })
+      .loose() as unknown as z.ZodType<any, Record<string, FormDataEntryValueLike>, any>
+  ),
 );
 
 export const getFileInputSchema = z.object({
