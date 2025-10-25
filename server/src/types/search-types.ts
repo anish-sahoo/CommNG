@@ -5,8 +5,8 @@ export const typeaheadSchema = z.object({
   limit: z
     .number()
     .int()
-    .min(1)
-    .max(50, "query is too long")
+    .min(3)
+    .max(20, "Too many results")
     .optional()
     .default(10),
   searchType: z.enum(["substring", "prefix"]).default("prefix"),
