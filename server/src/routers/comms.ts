@@ -171,10 +171,12 @@ const createChannel = protectedProcedure
 // Channel members endpoint
 const getChannelMembers = protectedProcedure
   .input(getChannelMembersSchema)
-  .query(({ input }) => async () => {
-    log.debug("getChannelMembers");
-    return await commsRepo.getChannelMembers(input.channelId);
-  });
+  .query(({ input }) =>
+    withErrorHandling("getChannelMembers", async () => {
+      log.debug({ channelId: input.channelId }, "getChannelMembers");
+      return await commsRepo.getChannelMembers(input.channelId);
+    }),
+  );
 
 // Channel subscription endpoints
 const createSubscription = protectedProcedure
@@ -225,6 +227,8 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 export const commsRouter = router({
   registerDevice,
   createPost,
+  getAllChannels,
+  getChannelMessages,
   editPost,
   deletePost,
   createChannel,
