@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type ReactionProps = {
   emoji: string;
   count: number;
   onClick?: () => void;
   onToggle?: (active: boolean) => void;
+  initiallyActive?: boolean;
 };
 
 //Reaction logic
@@ -15,8 +16,13 @@ export const Reaction = ({
   count,
   onClick,
   onToggle,
+  initiallyActive = false,
 }: ReactionProps) => {
-  const [active, setActive] = useState(false);
+  const [active, setActive] = useState(initiallyActive);
+
+  useEffect(() => {
+    setActive(initiallyActive);
+  }, [initiallyActive]);
 
   const handleClick = () => {
     const next = !active;
@@ -24,8 +30,6 @@ export const Reaction = ({
     onClick?.();
     onToggle?.(next);
   };
-
-  const displayCount = count + (active ? 1 : 0);
 
   const baseClasses = [
     "inline-flex",
@@ -68,7 +72,7 @@ export const Reaction = ({
       aria-pressed={active}
     >
       <span className="emoji">{emoji}</span>
-      {displayCount > 0 && <span>{displayCount}</span>}
+      {count > 0 && <span>{count}</span>}
     </button>
   );
 };

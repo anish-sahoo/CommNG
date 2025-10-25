@@ -1,7 +1,6 @@
-import { icons } from "@/components/icons";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
-import { Button } from "@/components/ui/button";
+import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 
 export type ChannelMessage = {
   id: number;
@@ -10,7 +9,11 @@ export type ChannelMessage = {
   authorRole?: string | null;
   content: string;
   createdAt?: string | Date;
-  reactions?: { emoji: string; count: number }[];
+  reactions?: {
+    emoji: string;
+    count: number;
+    reactedByCurrentUser?: boolean;
+  }[];
 };
 
 type MessageListProps = {
@@ -47,6 +50,7 @@ export function MessageList({ messages, onReactionToggle }: MessageListProps) {
                   key={`${message.id}-${reaction.emoji}-${index}`}
                   emoji={reaction.emoji}
                   count={reaction.count}
+                  initiallyActive={reaction.reactedByCurrentUser ?? false}
                   onToggle={(active) =>
                     onReactionToggle?.({
                       messageId: message.id,
@@ -56,31 +60,34 @@ export function MessageList({ messages, onReactionToggle }: MessageListProps) {
                   }
                 />
               ))}
-              <AddReactionButton />
+              <AddReaction
+                disabled={!onReactionToggle}
+                onSelect={(emoji) =>
+                  onReactionToggle?.({
+                    messageId: message.id,
+                    emoji,
+                    active: true,
+                  })
+                }
+              />
             </div>
           ) : (
             <div className="flex items-center gap-2 pl-6 pr-4 sm:pl-8 sm:pr-0">
-              <AddReactionButton />
+              <AddReaction
+                disabled={!onReactionToggle}
+                onSelect={(emoji) =>
+                  onReactionToggle?.({
+                    messageId: message.id,
+                    emoji,
+                    active: true,
+                  })
+                }
+              />
             </div>
           )}
         </div>
       ))}
     </div>
-  );
-}
-
-function AddReactionButton() {
-  const PlusIcon = icons.add;
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="h-8 rounded-full px-3 text-primary hover:text-primary-foreground"
-      type="button"
-      aria-label="Add reaction"
-    >
-      <PlusIcon className="h-4 w-4" />
-    </Button>
   );
 }
 

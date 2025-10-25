@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
 import {
   channelSubscriptions,
   channels,
+  messageReactions,
   messages,
   roles,
   userDevices,
@@ -295,7 +296,88 @@ export class CommsRepository {
   }
 
   // Get channel messages method
-  async getChannelMessages(channel_id: number) {
+  private async getReactionsForMessages(
+    messageIds: number[],
+    currentUserId: string,
+  ) {
+    if (!messageIds.length) {
+      return new Map<
+        number,
+        {
+          emoji: string;
+          count: number;
+          reactedByCurrentUser: boolean;
+        }[]
+      >();
+    }
+
+    const rows = await db
+      .select({
+        messageId: messageReactions.messageId,
+        emoji: messageReactions.emoji,
+        userId: messageReactions.userId,
+      })
+      .from(messageReactions)
+      .where(inArray(messageReactions.messageId, messageIds));
+
+    const aggregate = new Map<
+      number,
+      Map<string, { count: number; reactedByCurrentUser: boolean }>
+    >();
+
+    for (const row of rows) {
+      const messageBucket =
+        aggregate.get(row.messageId) ??
+        new Map<string, { count: number; reactedByCurrentUser: boolean }>();
+      const entry = messageBucket.get(row.emoji) ?? {
+        count: 0,
+        reactedByCurrentUser: false,
+      };
+
+      entry.count += 1;
+      if (row.userId === currentUserId) {
+        entry.reactedByCurrentUser = true;
+      }
+
+      messageBucket.set(row.emoji, entry);
+      aggregate.set(row.messageId, messageBucket);
+    }
+
+    const result = new Map<
+      number,
+      {
+        emoji: string;
+        count: number;
+        reactedByCurrentUser: boolean;
+      }[]
+    >();
+
+    for (const [messageId, emojiMap] of aggregate.entries()) {
+      const reactions = Array.from(emojiMap.entries())
+        .map(([emoji, data]) => ({
+          emoji,
+          count: data.count,
+          reactedByCurrentUser: data.reactedByCurrentUser,
+        }))
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.emoji.localeCompare(b.emoji);
+        });
+      result.set(messageId, reactions);
+    }
+
+    for (const messageId of messageIds) {
+      if (!result.has(messageId)) {
+        result.set(messageId, []);
+      }
+    }
+
+    return result;
+  }
+
+  async getChannelMessages(channel_id: number, currentUserId: string) {
     const messagesList = await db
       .select({
         messageId: messages.messageId,
@@ -313,6 +395,51 @@ export class CommsRepository {
       .where(eq(messages.channelId, channel_id))
       .orderBy(messages.createdAt);
 
-    return messagesList;
+    const reactionMap = await this.getReactionsForMessages(
+      messagesList.map((message) => message.messageId),
+      currentUserId,
+    );
+
+    return messagesList.map((message) => ({
+      ...message,
+      reactions: reactionMap.get(message.messageId) ?? [],
+    }));
+  }
+
+  async setMessageReaction({
+    messageId,
+    userId,
+    emoji,
+    active,
+  }: {
+    messageId: number;
+    userId: string;
+    emoji: string;
+    active: boolean;
+  }) {
+    if (active) {
+      await db
+        .insert(messageReactions)
+        .values({
+          messageId,
+          userId,
+          emoji,
+        })
+        .onConflictDoNothing();
+    } else {
+      await db
+        .delete(messageReactions)
+        .where(
+          and(
+            eq(messageReactions.messageId, messageId),
+            eq(messageReactions.userId, userId),
+            eq(messageReactions.emoji, emoji),
+          ),
+        );
+    }
+
+    const reactions = await this.getReactionsForMessages([messageId], userId);
+
+    return reactions.get(messageId) ?? [];
   }
 }

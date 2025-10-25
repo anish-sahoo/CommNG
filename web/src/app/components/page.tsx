@@ -9,6 +9,7 @@ import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
+import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { ReportsTable } from "@/components/table-view";
 
 const Components = () => {
@@ -31,6 +32,64 @@ const Components = () => {
   }, [mobileNavOpen]);
 
   const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+
+  const [demoReactions, setDemoReactions] = useState<
+    { emoji: string; count: number; reactedByUser: boolean }[]
+  >([{ emoji: "👍", count: 1, reactedByUser: false }]);
+
+  const handleDemoToggle = (emoji: string, active: boolean) => {
+    setDemoReactions((previous) =>
+      previous
+        .map((reaction) => {
+          if (reaction.emoji !== emoji) {
+            return reaction;
+          }
+
+          const nextCount = Math.max(0, reaction.count + (active ? 1 : -1));
+
+          if (nextCount === 0) {
+            return null;
+          }
+
+          return {
+            ...reaction,
+            count: nextCount,
+            reactedByUser: active,
+          };
+        })
+        .filter(
+          (
+            reaction,
+          ): reaction is {
+            emoji: string;
+            count: number;
+            reactedByUser: boolean;
+          } => reaction !== null,
+        ),
+    );
+  };
+
+  const handleDemoAddReaction = (emoji: string) => {
+    setDemoReactions((previous) => {
+      const existingIndex = previous.findIndex(
+        (reaction) => reaction.emoji === emoji,
+      );
+
+      if (existingIndex === -1) {
+        return [...previous, { emoji, count: 1, reactedByUser: true }];
+      }
+
+      return previous.map((reaction, index) =>
+        index === existingIndex
+          ? {
+              ...reaction,
+              count: reaction.count + 1,
+              reactedByUser: true,
+            }
+          : reaction,
+      );
+    });
+  };
 
   return (
     <>
@@ -115,14 +174,23 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
-                Reaction Bubble
+                Reaction Bubble and Add Reaction Button
               </h2>
             </div>
-            <Reaction
-              emoji="👍"
-              count={0}
-              onClick={() => console.log("Liked!")}
-            />
+            <div className="flex flex-wrap items-center gap-3">
+              {demoReactions.map((reaction) => (
+                <Reaction
+                  key={reaction.emoji}
+                  emoji={reaction.emoji}
+                  count={reaction.count}
+                  initiallyActive={reaction.reactedByUser}
+                  onToggle={(active) =>
+                    handleDemoToggle(reaction.emoji, active)
+                  }
+                />
+              ))}
+              <AddReaction onSelect={handleDemoAddReaction} />
+            </div>
           </section>
 
           <section className="space-y-6">

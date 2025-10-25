@@ -1,8 +1,14 @@
 "use client";
 
-import { skipToken, useQuery } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import Link from "next/link";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,6 +101,65 @@ const fallbackMessages: ChannelMessage[] = [
   },
 ];
 
+function cloneMessages(messages: ChannelMessage[]): ChannelMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    reactions: (message.reactions ?? []).map((reaction) => ({
+      ...reaction,
+      reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
+    })),
+  }));
+}
+
+function areMessagesEqual(a: ChannelMessage[], b: ChannelMessage[]): boolean {
+  if (a === b) {
+    return true;
+  }
+
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+
+    if (
+      left.id !== right.id ||
+      left.content !== right.content ||
+      left.authorName !== right.authorName ||
+      left.authorRank !== right.authorRank ||
+      left.authorRole !== right.authorRole ||
+      (left.reactions?.length ?? 0) !== (right.reactions?.length ?? 0)
+    ) {
+      return false;
+    }
+
+    const leftReactions = left.reactions ?? [];
+    const rightReactions = right.reactions ?? [];
+
+    for (
+      let reactionIndex = 0;
+      reactionIndex < leftReactions.length;
+      reactionIndex += 1
+    ) {
+      const leftReaction = leftReactions[reactionIndex];
+      const rightReaction = rightReactions[reactionIndex];
+
+      if (
+        leftReaction.emoji !== rightReaction.emoji ||
+        leftReaction.count !== rightReaction.count ||
+        (leftReaction.reactedByCurrentUser ?? false) !==
+          (rightReaction.reactedByCurrentUser ?? false)
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 function parseChannelId(channelId: string): number | null {
   const numericId = Number(channelId);
   if (Number.isNaN(numericId) || numericId <= 0) {
@@ -109,6 +174,10 @@ type ChannelViewProps = {
 
 export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const { mutate: mutateReaction } = useMutation(
+    trpc.comms.toggleMessageReaction.mutationOptions(),
+  );
   const parsedChannelId = parseChannelId(channelId);
 
   const channelListQuery = useQuery(trpc.comms.getAllChannels.queryOptions());
@@ -123,6 +192,10 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const channelList = channelListQuery.data ?? [];
 
   const messages = messagesQuery.data ?? [];
+
+  const [messagesState, setMessagesState] = useState<ChannelMessage[]>(() =>
+    cloneMessages(fallbackMessages),
+  );
 
   const channelName = useMemo(() => {
     if (!channelList.length || !parsedChannelId) {
@@ -148,12 +221,48 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       authorRole: message.authorDepartment ?? undefined,
       content: message.message ?? "",
       createdAt: message.createdAt,
+      reactions: (message.reactions ?? []).map((reaction) => ({
+        emoji: reaction.emoji,
+        count: reaction.count,
+        reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
+      })),
     }));
   }, [messages]);
 
-  const messagesToDisplay = messageItems.length
-    ? messageItems
-    : fallbackMessages;
+  const hasHydratedFromServerRef = useRef(false);
+
+  useEffect(() => {
+    if (!messagesQuery.isSuccess) {
+      return;
+    }
+
+    if (!messageItems.length) {
+      if (hasHydratedFromServerRef.current) {
+        setMessagesState((previous) => (previous.length === 0 ? previous : []));
+      }
+      return;
+    }
+
+    const nextMessages = cloneMessages(messageItems);
+
+    hasHydratedFromServerRef.current = true;
+
+    setMessagesState((previous) =>
+      areMessagesEqual(previous, nextMessages) ? previous : nextMessages,
+    );
+  }, [messageItems, messagesQuery.isSuccess]);
+
+  const channelMessagesQueryKey = useMemo<QueryKey | null>(() => {
+    if (parsedChannelId === null) {
+      return null;
+    }
+
+    return trpc.comms.getChannelMessages.queryKey({
+      channelId: parsedChannelId,
+    }) as unknown as QueryKey;
+  }, [parsedChannelId, trpc]);
+
+  const messagesToDisplay = messagesState;
 
   const ArrowLeftIcon = icons.arrowLeft;
   const AddIcon = icons.add;
@@ -170,9 +279,103 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       emoji: string;
       active: boolean;
     }) => {
-      console.debug("Reaction toggled", { messageId, emoji, active });
+      if (parsedChannelId === null) {
+        return;
+      }
+
+      setMessagesState((prevMessages) =>
+        prevMessages.map((message) => {
+          if (message.id !== messageId) {
+            return message;
+          }
+
+          const reactions = message.reactions ?? [];
+          const existingIndex = reactions.findIndex(
+            (reaction) => reaction.emoji === emoji,
+          );
+
+          if (existingIndex === -1) {
+            if (!active) {
+              return message;
+            }
+
+            return {
+              ...message,
+              reactions: [
+                ...reactions,
+                { emoji, count: 1, reactedByCurrentUser: true },
+              ],
+            };
+          }
+
+          const existingReaction = reactions[existingIndex];
+          const nextCount = Math.max(
+            0,
+            existingReaction.count + (active ? 1 : -1),
+          );
+
+          if (nextCount === 0) {
+            return {
+              ...message,
+              reactions: reactions.filter(
+                (_, index) => index !== existingIndex,
+              ),
+            };
+          }
+
+          const nextReactions = reactions.map((reaction, index) =>
+            index === existingIndex
+              ? {
+                  ...reaction,
+                  count: nextCount,
+                  reactedByCurrentUser: active,
+                }
+              : reaction,
+          );
+
+          return {
+            ...message,
+            reactions: nextReactions,
+          };
+        }),
+      );
+
+      mutateReaction(
+        {
+          channelId: parsedChannelId,
+          messageId,
+          emoji,
+          active,
+        },
+        {
+          onSuccess: (data) => {
+            setMessagesState((prevMessages) =>
+              prevMessages.map((message) =>
+                message.id === data.messageId
+                  ? {
+                      ...message,
+                      reactions: data.reactions.map((reaction) => ({
+                        emoji: reaction.emoji,
+                        count: reaction.count,
+                        reactedByCurrentUser:
+                          reaction.reactedByCurrentUser ?? false,
+                      })),
+                    }
+                  : message,
+              ),
+            );
+          },
+          onError: () => {
+            if (channelMessagesQueryKey) {
+              queryClient.invalidateQueries({
+                queryKey: channelMessagesQueryKey,
+              });
+            }
+          },
+        },
+      );
     },
-    [],
+    [parsedChannelId, queryClient, mutateReaction, channelMessagesQueryKey],
   );
 
   if (parsedChannelId === null) {

@@ -13,6 +13,7 @@ import {
   getChannelMessagesSchema,
   postPostSchema,
   registerDeviceSchema,
+  toggleReactionSchema,
 } from "../types/comms-types.js";
 import { ForbiddenError } from "../types/errors.js";
 import log from "../utils/logger.js";
@@ -70,7 +71,7 @@ const createPost = protectedProcedure
  * getAllChannels
  * Retrieves a list of all channels. (no matter if public or private?)
  */
-const getAllChannels = protectedProcedure.query(({ ctx }) =>
+const getAllChannels = protectedProcedure.query(() =>
   withErrorHandling("getAllChannels", async () => {
     log.debug("Getting all channels");
 
@@ -103,7 +104,44 @@ const getChannelMessages = protectedProcedure
       "Getting channel messages",
     );
 
-    return await commsRepo.getChannelMessages(input.channelId);
+    return await commsRepo.getChannelMessages(input.channelId, userId);
+  });
+
+const toggleMessageReaction = protectedProcedure
+  .input(toggleReactionSchema)
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const canRead = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!canRead) {
+      throw new ForbiddenError(
+        "You do not have permission to react in this channel",
+      );
+    }
+
+    const message = await commsRepo.getMessageById(input.messageId);
+
+    if (message.channelId !== input.channelId) {
+      throw new ForbiddenError(
+        "Message does not belong to the specified channel",
+      );
+    }
+
+    const reactions = await commsRepo.setMessageReaction({
+      messageId: input.messageId,
+      userId,
+      emoji: input.emoji,
+      active: input.active,
+    });
+
+    return {
+      messageId: input.messageId,
+      reactions,
+    };
   });
 
 /**
@@ -229,6 +267,7 @@ export const commsRouter = router({
   createPost,
   getAllChannels,
   getChannelMessages,
+  toggleMessageReaction,
   editPost,
   deletePost,
   createChannel,
