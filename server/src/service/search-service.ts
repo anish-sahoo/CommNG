@@ -15,10 +15,12 @@ export class SearchService {
     type: "substring" | "prefix",
   ) {
     const cleanedQuery = query.trim().toLowerCase();
-    log.debug([cleanedQuery, userId, limit, type], "typeahead");
     if (!cleanedQuery) return [];
+
+    log.debug([cleanedQuery, userId, limit, type], "typeahead");
     // basic matching, later we will expand this to be more powerful
-    const prefix = type === "prefix" ? `${query}%` : `%${query}%`;
+
+    const prefix = type === "prefix" ? `${cleanedQuery}%` : `%${cleanedQuery}%`;
     return await this.searchRepository.getSearchResults(prefix, userId, limit);
   }
 }
