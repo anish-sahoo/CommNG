@@ -2,8 +2,8 @@ import { SearchRepository } from "../data/repository/search-repo.js";
 import { SearchService } from "../service/search-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
 import { protectedProcedure, router } from "../trpc/trpc.js";
+import { UnauthorizedError } from "../types/errors.js";
 import { typeaheadSchema } from "../types/search-types.js";
-import log from "../utils/logger.js";
 
 const searchService = new SearchService(new SearchRepository());
 
@@ -14,16 +14,15 @@ const typeahead = protectedProcedure
   .input(typeaheadSchema)
   .query(async ({ input, ctx }) => {
     return withErrorHandling("typeahead", async () => {
-      const cleanedQuery = input.query.trim().toLowerCase();
-      if (!cleanedQuery) return [];
-
       const userId = ctx.auth.user.id;
-      log.debug({ cleanedQuery, user_id: userId }, "typeahead");
-
+      if (!userId) {
+        throw new UnauthorizedError("Unauthorized");
+      }
       return await searchService.getTypeAheadSuggestions(
-        cleanedQuery,
+        input.query,
         userId,
         input.limit,
+        input.searchType,
       );
     });
   });

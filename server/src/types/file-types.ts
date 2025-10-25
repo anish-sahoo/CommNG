@@ -57,30 +57,36 @@ const fileFieldSchema = z
     message: "File cannot be empty",
   });
 
+// Create a custom schema that accepts Record<string, FormDataEntryValueLike>
+const createLooseFormDataSchema = <T extends z.ZodRawShape>(shape: T) => {
+  return z
+    .custom<Record<string, FormDataEntryValueLike>>(
+      (value): value is Record<string, FormDataEntryValueLike> => {
+        return typeof value === "object" && value !== null;
+      },
+    )
+    .transform((data) => {
+      const schema = z.looseObject(shape);
+      return schema.parse(data);
+    });
+};
+
 export const uploadForUserInputSchema = formDataLikeSchema.pipe(
-  (
-    z
-      .object({
-        file: fileFieldSchema,
-        contentType: z.string().optional(),
-      })
-      .loose() as unknown as z.ZodType<any, Record<string, FormDataEntryValueLike>, any>
-  ),
+  createLooseFormDataSchema({
+    file: fileFieldSchema,
+    contentType: z.string().optional(),
+  }),
 );
 
 export const uploadForChannelInputSchema = formDataLikeSchema.pipe(
-  (
-    z
-      .object({
-        file: fileFieldSchema,
-        channelId: z.coerce.number().int().positive({
-          message: "channelId must be a positive integer",
-        }),
-        action: z.enum(["write", "admin"]),
-        contentType: z.string().optional(),
-      })
-      .loose() as unknown as z.ZodType<any, Record<string, FormDataEntryValueLike>, any>
-  ),
+  createLooseFormDataSchema({
+    file: fileFieldSchema,
+    channelId: z.coerce.number().int().positive({
+      message: "channelId must be a positive integer",
+    }),
+    action: z.enum(["write", "admin"]),
+    contentType: z.string().optional(),
+  }),
 );
 
 export const getFileInputSchema = z.object({

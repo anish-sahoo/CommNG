@@ -27,7 +27,7 @@ export class SearchRepository {
     userId: string,
     limit: number,
   ) {
-    return await db.execute<SearchResult>(sql`
+    const rows = await db.execute<SearchResult>(sql`
             SELECT kind, id, label FROM (
               SELECT 'user' AS kind, ${users.id}::text AS id, ${users.name} AS label
               FROM ${users}
@@ -37,8 +37,8 @@ export class SearchRepository {
     
               SELECT 'channel' AS kind, ${channels.channelId}::text AS id, ${channels.name} AS label
               FROM ${channels}
-              INNER JOIN ${channelSubscriptions} cs ON cs.${channelSubscriptions.channelId} = ${channels.channelId}
-              WHERE cs.${channelSubscriptions.userId} = ${userId} AND lower(${channels.name}) ILIKE ${searchString}
+              INNER JOIN ${channelSubscriptions} cs ON cs.channel_id = ${channels.channelId}
+              WHERE cs.user_id = ${userId} AND lower(${channels.name}) ILIKE ${searchString}
     
               UNION ALL
     
@@ -49,5 +49,7 @@ export class SearchRepository {
             ORDER BY length(label), label
             LIMIT ${limit}
           `);
+
+    return rows.rows ?? [];
   }
 }
