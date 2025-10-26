@@ -34,27 +34,16 @@ export class FileService {
     originalFileName: string,
     opts?: FileInputStreamOptions,
     expiresSeconds?: number,
+    uploadedByOverride?: number,
   ): Promise<{ fileId: string; uploadUrl: string }> {
     const safeOriginalName = this.normaliseOriginalName(originalFileName);
     const fileId = randomUUID();
     const extension = this.resolveExtension(safeOriginalName, opts?.contentType);
     const storageName = extension ? `${fileId}${extension}` : fileId;
 
-    const metadata = fileMetadataSchema.parse({
-      contentType: opts?.contentType ?? null,
-      storedName: storageName,
-      uploadedBy: userId,
-      uploadedAt: new Date().toISOString(),
-    });
-
-    // Persist the file record with the object key as location. The adapter's
-    // getUrl() will produce a signed GET url when needed.
-    await this.fileRepository.insertFile({
-      fileId,
-      fileName: safeOriginalName,
-      location: storageName,
-      metadata,
-    });
+    // Note: do NOT persist the DB record here for presigned flow. The
+    // confirmation step should persist the record after the client has
+    // uploaded the file to S3.
 
     // Ask adapter for a presigned PUT URL
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,7 +58,41 @@ export class FileService {
       opts?.contentType,
     );
 
-    return { fileId, uploadUrl };
+    // Return fileId, uploadUrl and storedName (storedName added to help
+    // the client confirm upload later). We keep the declared return type
+    // for compatibility but include storedName in the runtime object.
+    return { fileId, uploadUrl, storedName: storageName } as unknown as {
+      fileId: string;
+      uploadUrl: string;
+    };
+  }
+
+  /**
+   * Confirm a presigned upload by inserting the DB record. This is called
+   * after the client successfully PUTs the file to S3.
+   */
+  public async confirmPresignedUpload(
+    userId: string,
+    fileId: string,
+    originalFileName: string,
+    storedName: string,
+    opts?: FileInputStreamOptions,
+  ): Promise<void> {
+    const parsedUserId = typeof userId === "string" ? parseInt(userId, 10) : (userId as unknown as number);
+    const uploadedByValue = Number.isFinite(parsedUserId) && parsedUserId > 0 ? parsedUserId : null;
+    const metadata = fileMetadataSchema.parse({
+      contentType: opts?.contentType ?? null,
+      storedName,
+      uploadedBy: uploadedByValue,
+      uploadedAt: new Date().toISOString(),
+    });
+
+    await this.fileRepository.insertFile({
+      fileId,
+      fileName: this.normaliseOriginalName(originalFileName),
+      location: storedName,
+      metadata,
+    });
   }
 
   public async storeFileFromStream(
@@ -124,21 +147,44 @@ export class FileService {
 
       const location = fileData.location;
 
-      // If the stored location is already a public URL (S3), don't attempt to stream
+      // If the stored location is already a public URL, return it as-is.
       const isUrl =
         typeof location === "string" &&
         (location.startsWith("http://") || location.startsWith("https://"));
 
-      let stream: Readable | undefined;
+  let stream: Readable | undefined;
+  let returnedLocation: string = location as string;
+
       if (!isUrl) {
-        stream = await this.adapter.getStream(location);
+        // Prefer asking the adapter for a URL. Many adapters (S3) will
+        // provide a presigned GET URL instead of supporting direct
+        // streaming. If adapter.getUrl returns a valid http(s) URL, use
+        // that and do not attempt to stream. Otherwise fall back to
+        // adapter.getStream for adapters that support streaming.
+        try {
+          const url = await this.adapter.getUrl(location as string);
+          if (typeof url === "string" && (url.startsWith("http://") || url.startsWith("https://"))) {
+            returnedLocation = url;
+            stream = undefined;
+          } else {
+            // Adapter returned something that isn't an http URL; try streaming
+            stream = await this.adapter.getStream(location as string);
+          }
+        } catch (err) {
+          // If getUrl fails for any reason, attempt to stream. Note:
+          // S3 adapter's getStream intentionally throws ForbiddenError,
+          // so adapter.getUrl should succeed for S3. This catch ensures
+          // we still try streaming for adapters where getUrl isn't
+          // implemented or temporarily fails.
+          stream = await this.adapter.getStream(location as string);
+        }
       }
 
       return {
         stream,
         fileName: downloadName,
         contentType: metadata?.contentType ?? undefined,
-        location,
+        location: returnedLocation,
       };
     } catch (err) {
       if (err instanceof NotFoundError) {

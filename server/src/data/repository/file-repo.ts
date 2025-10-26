@@ -16,6 +16,10 @@ export class FileRepository {
     });
   }
 
+  public async deleteFile(fileId: string): Promise<void> {
+    await db.delete(files).where(eq(files.fileId, fileId));
+  }
+
   @Cache((fileId) => `file:${fileId}:data`, 60 * 60 * 12)
   public async getFile(fileId: string): Promise<FileRecord> {
     const [file] = await db

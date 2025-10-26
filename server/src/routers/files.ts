@@ -12,6 +12,7 @@ import {
   uploadForUserInputSchema,
 } from "../types/file-types.js";
 import log from "../utils/logger.js";
+import { z } from "zod";
 import { S3StorageAdapter } from "../storage/s3-adapter.js";
 
 // Choose adapter based on environment. If S3_BUCKET_NAME is set, use S3 adapter;
@@ -26,6 +27,68 @@ const adapter = process.env.S3_BUCKET_NAME
 
 const fileService = new FileService(new FileRepository(), adapter);
 
+// Input schema for generating presigned upload
+const createPresignedUploadInputSchema = z.object({
+  fileName: z.string().min(1),
+  contentType: z.string().optional(),
+  fileSize: z.number().optional(),
+});
+
+// Input schema for confirming upload
+const confirmUploadInputSchema = z.object({
+  fileId: z.string().min(1),
+  fileName: z.string().min(1),
+  storedName: z.string().min(1),
+  contentType: z.string().optional(),
+});
+
+const createPresignedUpload = protectedProcedure
+  .input(createPresignedUploadInputSchema)
+  .meta({
+    requiresAuth: true,
+    description: "Get S3 presigned upload URL for a file (metadata only)",
+  })
+  .mutation(async ({ ctx, input }) => {
+    if (!(process.env.S3_BUCKET_NAME && process.env.USE_PRESIGNED_UPLOADS === "true")) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Presigned uploads not enabled" });
+    }
+    const userId = ctx.auth.user.id;
+    try {
+      // generate presigned URL; fileService.createPresignedUpload returns storedName in runtime
+      // @ts-ignore
+      const resp = await fileService.createPresignedUpload(
+        userId,
+        input.fileName,
+        { contentType: input.contentType ?? "application/octet-stream" },
+        Number(process.env.PRESIGN_EXPIRY_SECONDS) || undefined,
+      );
+      // resp contains fileId, uploadUrl and storedName
+      // @ts-ignore
+      return { fileId: resp.fileId, uploadUrl: resp.uploadUrl, storedName: resp.storedName };
+    } catch (err) {
+      log.error(err, "Presigned upload creation failed");
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create upload URL" });
+    }
+  });
+
+const confirmUpload = protectedProcedure
+  .input(confirmUploadInputSchema)
+  .meta({
+    requiresAuth: true,
+    description: "Confirm S3 upload is complete and persist DB record",
+  })
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+    try {
+      await fileService.confirmPresignedUpload(userId, input.fileId, input.fileName, input.storedName, { contentType: input.contentType });
+      log.info({ fileId: input.fileId, userId }, "File upload confirmed and persisted");
+      return { ok: true };
+    } catch (err) {
+      log.error(err, "Failed to confirm presigned upload");
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to confirm upload" });
+    }
+  });
+
 const uploadForUser = protectedProcedure
   .input(uploadForUserInputSchema)
   .meta({
@@ -34,7 +97,6 @@ const uploadForUser = protectedProcedure
   })
   .mutation(async ({ ctx, input }) => {
     const userId = ctx.auth.user.id;
-
     const { file, contentType } = input;
       // If using S3 and presigned uploads are enabled, return an upload URL rather
       // than consuming the file stream on the server.
@@ -167,9 +229,33 @@ const getFile = procedure
     }
   });
 
+    // Delete file endpoint: remove object from storage and delete DB record
+    const deleteFileInputSchema = z.object({ fileId: z.string().min(1) });
+
+    const deleteFile = protectedProcedure
+      .input(deleteFileInputSchema)
+      .meta({ requiresAuth: true, description: "Delete a file and its DB record" })
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const fileRecord = await new FileRepository().getFile(input.fileId);
+          const location = fileRecord.location;
+          // Ask adapter to delete object (adapter may return boolean)
+          const deleted = await fileService.adapter.delete(location);
+          // Remove DB record
+          await new FileRepository().deleteFile(input.fileId);
+          return { ok: !!deleted };
+        } catch (err) {
+          log.error(err, "Failed to delete file");
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to delete file" });
+        }
+      });
+
 
 export const filesRouter = router({
   uploadForUser,
   uploadForChannel,
   getFile,
+  createPresignedUpload,
+  confirmUpload,
+  deleteFile,
 });

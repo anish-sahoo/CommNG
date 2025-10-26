@@ -7,6 +7,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { StorageAdapter, type FileInputStreamOptions, type FilePath } from "./storage-adapter.js";
+import { ForbiddenError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
 export class S3StorageAdapter extends StorageAdapter {
@@ -50,8 +51,10 @@ export class S3StorageAdapter extends StorageAdapter {
   }
 
   public async getStream(_path: string): Promise<Readable> {
-    throw new Error(
-      "Direct streaming from S3 is not supported for public-readable files. Use getUrl() instead."
+    // Streaming directly from S3 is not allowed in this adapter. Clients
+    // must use presigned GET URLs (getUrl) to retrieve file contents.
+    throw new ForbiddenError(
+      "Direct streaming from S3 is not supported. Use getUrl() instead."
     );
   }
 

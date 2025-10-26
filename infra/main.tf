@@ -376,6 +376,21 @@ resource "aws_s3_bucket_policy" "comm_ng_files_public_read" {
   })
 }
 
+resource "aws_s3_bucket_cors_configuration" "comm_ng_files_cors" {
+  bucket = aws_s3_bucket.comm_ng_files.id
+
+  cors_rule {
+    id = "allow-presigned-uploads"
+
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_origins = ["http://localhost:3001", "http://localhost:3000"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+
 # Public access block must allow public policies/ACLs for public reads to work
 resource "aws_s3_bucket_public_access_block" "comm_ng_files" {
   count  = var.create_public_bucket_policy ? 1 : 0
