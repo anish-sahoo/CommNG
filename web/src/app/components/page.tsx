@@ -9,12 +9,9 @@ import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
-<<<<<<< HEAD
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
-=======
-import { TextInput } from "@/components/text-input";
->>>>>>> features/add-text-input-component
 import { ReportsTable } from "@/components/table-view";
+import { TextInput } from "@/components/text-input";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -94,7 +91,7 @@ const Components = () => {
       );
     });
   };
-  
+
   const [singleLineText, setSingleLineText] = useState("");
   const [multiLineText, setMultiLineText] = useState("");
 
@@ -243,7 +240,6 @@ const Components = () => {
             </div>
             <ReportsTable isAdmin />
           </section>
-
 
           {/* Add Text Input sections */}
           <section className="space-y-6">

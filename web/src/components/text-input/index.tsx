@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
+import type * as React from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import * as React from "react"
-import { useState } from "react";
 
 type TextInputProps = {
   value: string;
@@ -18,8 +17,8 @@ type TextInputProps = {
   counterColor?: string;
 };
 
-export const TextInput = ({ 
-  value, 
+export const TextInput = ({
+  value,
   onChange,
   placeholder,
   maxLength,
@@ -28,17 +27,18 @@ export const TextInput = ({
   rows = 3,
   borderColor,
   textColor,
-  counterColor
+  counterColor,
 }: TextInputProps) => {
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const newValue = e.target.value;
-    
+
     // Respect maxLength if provided
     if (maxLength && newValue.length > maxLength) {
       return;
     }
-    
+
     onChange?.(newValue);
   };
 
@@ -47,11 +47,11 @@ export const TextInput = ({
 
   const inputStyles = {
     borderColor: borderColor,
-    color: textColor
+    color: textColor,
   };
 
   const counterStyles = {
-    color: counterColor
+    color: counterColor,
   };
 
   if (multiline) {
@@ -65,17 +65,18 @@ export const TextInput = ({
           rows={rows}
           className="resize-none pb-7"
           style={{
-            paddingBottom: showCount ? '1.75rem' : undefined,
-            ...inputStyles
+            paddingBottom: showCount ? "1.75rem" : undefined,
+            ...inputStyles,
           }}
         />
-        
+
         {showCount && (
-          <div 
+          <div
             className="absolute bottom-2 right-3 text-xs pointer-events-none bg-background px-1"
             style={counterStyles}
           >
-            {charCount}{maxLength ? `/${maxLength}` : ''}
+            {charCount}
+            {maxLength ? `/${maxLength}` : ""}
           </div>
         )}
       </div>
@@ -93,13 +94,14 @@ export const TextInput = ({
         className="pr-20"
         style={inputStyles}
       />
-      
+
       {showCount && (
-        <div 
+        <div
           className="absolute top-1/2 -translate-y-1/2 right-3 text-xs pointer-events-none"
           style={counterStyles}
         >
-          {charCount}{maxLength ? `/${maxLength}` : ''}
+          {charCount}
+          {maxLength ? `/${maxLength}` : ""}
         </div>
       )}
     </div>
