@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
+import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
@@ -33,6 +34,7 @@ const Components = () => {
   }, [mobileNavOpen]);
 
   const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+  const [selectedChipOptions, setSelectedChipOptions] = useState<string[]>([]);
 
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
@@ -159,6 +161,29 @@ const Components = () => {
             <LinkedCard
               href="https://example.com"
               content="How to Mentor Effectively: 5 Tips for Success"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Chip Select
+              </h2>
+            </div>
+            <ChipSelect
+              options={[
+                "Music",
+                "Creative arts",
+                "Outdoor activities",
+                "Gaming and entertainment",
+                "Cooking and baking",
+                "Volunteering and community involvement",
+                "DIY and crafts",
+                "Team sports",
+                "Personal fitness",
+              ]}
+              selectedOptions={selectedChipOptions}
+              onChange={setSelectedChipOptions}
             />
           </section>
 
