@@ -46,6 +46,11 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "feature",
 ]);
 
+export const channelPostPermissionEnum = pgEnum(
+  "channel_post_permission_enum",
+  ["admin", "everyone", "custom"],
+);
+
 export const users = pgTable(
   "user",
   {
@@ -125,10 +130,14 @@ export const channels = pgTable(
   {
     channelId: integer("channel_id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull(),
+    description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
     metadata: jsonb("metadata"),
+    postPermissionLevel: channelPostPermissionEnum("post_permission_level")
+      .notNull()
+      .default("admin"),
   },
   (table) => [uniqueIndex("ux_channels_name").on(table.name)],
 );

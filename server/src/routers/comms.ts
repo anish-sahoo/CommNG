@@ -14,8 +14,9 @@ import {
   postPostSchema,
   registerDeviceSchema,
   toggleReactionSchema,
+  updateChannelSchema,
 } from "../types/comms-types.js";
-import { ForbiddenError } from "../types/errors.js";
+import { ForbiddenError, UnauthorizedError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
 const commsRepo = new CommsRepository();
@@ -208,6 +209,23 @@ const createChannel = protectedProcedure
     }),
   );
 
+// update channel settings
+const updateChannelSettings = protectedProcedure
+  .input(updateChannelSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("updateChannel", async () => {
+      const userId = ctx.auth.user.id;
+      const accessible = await policyEngine.validate(
+        userId,
+        `channel:${input.channelId}:admin`,
+      );
+      if (!accessible) {
+        throw new UnauthorizedError("Invalid Request");
+      }
+      return await commsService.updateChannelSettings(input.channelId, input.metadata);
+    }),
+  );
+
 // Channel members endpoint
 const getChannelMembers = protectedProcedure
   .input(getChannelMembersSchema)
@@ -273,6 +291,7 @@ export const commsRouter = router({
   editPost,
   deletePost,
   createChannel,
+  updateChannelSettings,
   getChannelMembers,
   createSubscription,
   deleteSubscription,
