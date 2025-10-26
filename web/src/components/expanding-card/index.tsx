@@ -1,7 +1,8 @@
 "use client";
+
+import { useCollapse } from "react-collapsed";
 import { icons } from "@/components/icons";
 import { Card } from "@/components/ui/card";
-import { useCollapse } from "react-collapsed";
 
 type CollapsibleCardProps = {
   name: string;
@@ -55,6 +56,7 @@ export default function CollapsibleCard({
           </div>
         </div>
 
+        {/* chevron arrow */}
         <div className="p-2">
           <ArrowRight
             className={`h-5 w-5 transform transition-transform duration-200 ease-in-out ${
@@ -66,8 +68,12 @@ export default function CollapsibleCard({
 
       <div
         {...collapseProps}
-        // ensure smooth height animation and hide overflow while collapsing
-        style={{ ...(collapseProps as any).style, transition: "height 250ms ease" }}
+        // smooth animation
+        // hide overflow while collapsing
+        style={{
+          ...(collapseProps as { style?: React.CSSProperties }).style,
+          transition: "height 250ms ease",
+        }}
         className="overflow-hidden"
       >
         <div className="p-4 pt-0 text-sm text-muted-foreground">
