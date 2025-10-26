@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
+import ChannelCard from "@/components/channel-card";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
@@ -10,8 +11,6 @@ import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
 import { ReportsTable } from "@/components/table-view";
-import ChannelCard from "@/components/channel-card";
-
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -173,22 +172,20 @@ const Components = () => {
 
           <section className="space-y-6">
             <div className="space-y-2">
-             <h2 className="text-subheader font-semibold text-secondary">
-                Event Card
-             </h2>
-           <p className="text-sm text-secondary/70">
-                 Displays an image, icon, title, and supporting text.
-          </p>
-        </div>
-       <ChannelCard
-            title="Events"
-            description="Central hub for external event opportunities."
-            iconName="message"
-            imageSrc="https://via.placeholder.com/300x200"
-  />
-</section>
-
-
+              <h2 className="text-subheader font-semibold text-secondary">
+                Channel Card
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Displays an image, icon, title, and supporting text.
+              </p>
+            </div>
+            <ChannelCard
+              title="Events"
+              description="Central hub for external event opportunities."
+              iconName="message"
+              imageSrc="https://via.placeholder.com/300x200"
+            />
+          </section>
         </div>
       </main>
     </>

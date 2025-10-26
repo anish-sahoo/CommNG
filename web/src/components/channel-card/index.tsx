@@ -1,4 +1,5 @@
-import React from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { type IconName, icons } from "@/components/icons";
 
 interface ChannelCardProps {
@@ -6,6 +7,7 @@ interface ChannelCardProps {
   title: string;
   description: string;
   iconName: IconName;
+  href?: string;
 }
 
 const ChannelCard: React.FC<ChannelCardProps> = ({
@@ -13,14 +15,15 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
   title,
   description,
   iconName,
+  href = "http://localhost:3000/communications/1",
 }) => {
   const Icon = icons[iconName];
 
   return (
-    <div className="w-64 h-64 rounded-2xl overflow-hidden bg-white border border-neutral/50 shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="group w-64 h-64 rounded-2xl overflow-hidden bg-white border border-neutral/50 shadow-sm hover:shadow-md transition-all duration-200">
       <div className="h-3/5 bg-neutral flex items-center justify-center">
         {imageSrc ? (
-          <img
+          <Image
             src={imageSrc}
             alt={title}
             className="w-full h-full object-cover"
@@ -30,7 +33,10 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
         )}
       </div>
 
-      <div className="h-2/5 bg-primary p-5 flex flex-col justify-center rounded-b-2xl">
+      <Link
+        href={href}
+        className="h-2/5 bg-primary group-hover:bg-primary-dark transition-colors duration-200 p-5 flex flex-col justify-center rounded-b-2xl cursor-pointer"
+      >
         <div className="flex items-center gap-2 mb-1">
           {Icon && <Icon className="w-5 h-5 text-accent" />}
           <h3 className="text-subheader text-[#F7F7F7] font-semibold">
@@ -38,7 +44,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
           </h3>
         </div>
         <p className="text-body text-[#F7F7F7]/80">{description}</p>
-      </div>
+      </Link>
     </div>
   );
 };
