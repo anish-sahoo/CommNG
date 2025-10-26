@@ -20,7 +20,7 @@ const Avatar = () => (
 export const PostedCard = ({ name, rank, content }: PostedCardProps) => {
   return (
     <Card className="w-full p-4">
-      <li className="flex items-center gap-4 px-6 py-4">
+      <div className="flex items-center gap-4 px-6 py-4">
         <Avatar />
         <div className="flex flex-col gap-2 px-4 py-0 w-full">
           <div className="text-secondary text-subheader font-semibold">
@@ -31,7 +31,7 @@ export const PostedCard = ({ name, rank, content }: PostedCardProps) => {
           </div>
           <div className="text-secondary text-sm font-normal">{content}</div>
         </div>
-      </li>
+      </div>
     </Card>
   );
 };

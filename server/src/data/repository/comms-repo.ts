@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
 import {
   channelSubscriptions,
   channels,
+  messageReactions,
   messages,
   roles,
   userDevices,
@@ -34,7 +35,7 @@ export class CommsRepository {
   }
 
   async getChannelMembers(channel_id: number) {
-    const [members] = await db
+    const members = await db
       .select({
         userId: users.id,
         name: users.name,
@@ -280,22 +281,123 @@ export class CommsRepository {
     return channel;
   }
 
-  // Get all channels method
-  async getAllChannels() {
-    const [allChannels] = await db
-      .select({
+  async getAccessibleChannels(userId: string) {
+    const accessibleChannels = await db
+      .selectDistinct({
         channelId: channels.channelId,
         name: channels.name,
         metadata: channels.metadata,
       })
-      .from(channels);
+      .from(channels)
+      .leftJoin(
+        channelSubscriptions,
+        and(
+          eq(channelSubscriptions.channelId, channels.channelId),
+          eq(channelSubscriptions.userId, userId),
+        ),
+      )
+      .leftJoin(userRoles, eq(userRoles.userId, userId))
+      .leftJoin(
+        roles,
+        and(
+          eq(userRoles.roleId, roles.roleId),
+          eq(roles.channelId, channels.channelId),
+          eq(roles.namespace, "channel"),
+        ),
+      )
+      .where(
+        or(
+          sql`coalesce(${channels.metadata}->>'type', 'public') = 'public'`,
+          isNotNull(channelSubscriptions.subscriptionId),
+          isNotNull(roles.roleId),
+        ),
+      )
+      .orderBy(channels.name);
 
-    return allChannels;
+    return accessibleChannels;
   }
 
   // Get channel messages method
-  async getChannelMessages(channel_id: number) {
-    const [messagesList] = await db
+  private async getReactionsForMessages(
+    messageIds: number[],
+    currentUserId: string,
+  ) {
+    if (!messageIds.length) {
+      return new Map<
+        number,
+        {
+          emoji: string;
+          count: number;
+          reactedByCurrentUser: boolean;
+        }[]
+      >();
+    }
+
+    const valuesList = sql.join(
+      messageIds.map((id) => sql`${id}`),
+      sql`, `,
+    );
+
+    const reactionRows = await db.execute<{
+      message_id: number;
+      reactions: Array<{
+        emoji: string;
+        count: number;
+        reactedByCurrentUser: boolean;
+      }> | null;
+    }>(sql`
+      with message_list(message_id) as (
+        values ${valuesList}
+      )
+      select ml.message_id,
+        coalesce(
+          json_agg(
+            json_build_object(
+              'emoji', mr.emoji,
+              'count', count(mr.emoji),
+              'reactedByCurrentUser', bool_or(mr.user_id = ${currentUserId})
+            )
+            order by count(mr.emoji) desc, mr.emoji asc
+          ),
+          '[]'::json
+        ) as reactions
+      from message_list ml
+      left join ${messageReactions} mr on mr.message_id = ml.message_id
+      group by ml.message_id
+    `);
+
+    const result = new Map<
+      number,
+      {
+        emoji: string;
+        count: number;
+        reactedByCurrentUser: boolean;
+      }[]
+    >();
+
+    for (const row of reactionRows.rows) {
+      const reactionsArray = Array.isArray(row.reactions) ? row.reactions : [];
+      result.set(
+        row.message_id,
+        reactionsArray.map((reaction) => ({
+          emoji: reaction.emoji,
+          count: Number(reaction.count),
+          reactedByCurrentUser: Boolean(reaction.reactedByCurrentUser),
+        })),
+      );
+    }
+
+    for (const messageId of messageIds) {
+      if (!result.has(messageId)) {
+        result.set(messageId, []);
+      }
+    }
+
+    return result;
+  }
+
+  async getChannelMessages(channel_id: number, currentUserId: string) {
+    const messagesList = await db
       .select({
         messageId: messages.messageId,
         channelId: messages.channelId,
@@ -303,14 +405,62 @@ export class CommsRepository {
         message: messages.message,
         attachmentUrl: messages.attachmentUrl,
         createdAt: messages.createdAt,
+        authorName: users.name,
+        authorClearanceLevel: users.clearanceLevel,
+        authorDepartment: users.department,
       })
       .from(messages) // Retrieve from messages table
-      .where(eq(messages.channelId, channel_id)); // Filter by channel ID
+      .leftJoin(users, eq(messages.senderId, users.id))
+      .where(eq(messages.channelId, channel_id))
+      .orderBy(messages.createdAt);
 
-    if (!messagesList) {
-      throw new NotFoundError("No messages found for this channel");
-    }
+    const reactionMap = await this.getReactionsForMessages(
+      messagesList.map((message) => message.messageId),
+      currentUserId,
+    );
 
-    return messagesList;
+    return messagesList.map((message) => ({
+      ...message,
+      reactions: reactionMap.get(message.messageId) ?? [],
+    }));
+  }
+
+  async setMessageReaction({
+    messageId,
+    userId,
+    emoji,
+    active,
+  }: {
+    messageId: number;
+    userId: string;
+    emoji: string;
+    active: boolean;
+  }) {
+    await db.transaction(async (tx) => {
+      if (active) {
+        await tx
+          .insert(messageReactions)
+          .values({
+            messageId,
+            userId,
+            emoji,
+          })
+          .onConflictDoNothing();
+      } else {
+        await tx
+          .delete(messageReactions)
+          .where(
+            and(
+              eq(messageReactions.messageId, messageId),
+              eq(messageReactions.userId, userId),
+              eq(messageReactions.emoji, emoji),
+            ),
+          );
+      }
+    });
+
+    const reactions = await this.getReactionsForMessages([messageId], userId);
+
+    return reactions.get(messageId) ?? [];
   }
 }

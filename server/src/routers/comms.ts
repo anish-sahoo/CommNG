@@ -13,6 +13,7 @@ import {
   getChannelMessagesSchema,
   postPostSchema,
   registerDeviceSchema,
+  toggleReactionSchema,
 } from "../types/comms-types.js";
 import { ForbiddenError } from "../types/errors.js";
 import log from "../utils/logger.js";
@@ -72,9 +73,11 @@ const createPost = protectedProcedure
  */
 const getAllChannels = protectedProcedure.query(({ ctx }) =>
   withErrorHandling("getAllChannels", async () => {
-    log.debug("Getting all channels");
+    const userId = ctx.auth.user.id;
 
-    return await commsRepo.getAllChannels();
+    log.debug({ userId }, "Getting accessible channels");
+
+    return await commsRepo.getAccessibleChannels(userId);
   }),
 );
 
@@ -103,7 +106,44 @@ const getChannelMessages = protectedProcedure
       "Getting channel messages",
     );
 
-    return await commsRepo.getChannelMessages(input.channelId);
+    return await commsRepo.getChannelMessages(input.channelId, userId);
+  });
+
+const toggleMessageReaction = protectedProcedure
+  .input(toggleReactionSchema)
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const canRead = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!canRead) {
+      throw new ForbiddenError(
+        "You do not have permission to react in this channel",
+      );
+    }
+
+    const message = await commsRepo.getMessageById(input.messageId);
+
+    if (message.channelId !== input.channelId) {
+      throw new ForbiddenError(
+        "Message does not belong to the specified channel",
+      );
+    }
+
+    const reactions = await commsRepo.setMessageReaction({
+      messageId: input.messageId,
+      userId,
+      emoji: input.emoji,
+      active: input.active,
+    });
+
+    return {
+      messageId: input.messageId,
+      reactions,
+    };
   });
 
 /**
@@ -171,10 +211,12 @@ const createChannel = protectedProcedure
 // Channel members endpoint
 const getChannelMembers = protectedProcedure
   .input(getChannelMembersSchema)
-  .query(({ input }) => async () => {
-    log.debug("getChannelMembers");
-    return await commsRepo.getChannelMembers(input.channelId);
-  });
+  .query(({ input }) =>
+    withErrorHandling("getChannelMembers", async () => {
+      log.debug({ channelId: input.channelId }, "getChannelMembers");
+      return await commsRepo.getChannelMembers(input.channelId);
+    }),
+  );
 
 // Channel subscription endpoints
 const createSubscription = protectedProcedure
@@ -225,6 +267,9 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 export const commsRouter = router({
   registerDevice,
   createPost,
+  getAllChannels,
+  getChannelMessages,
+  toggleMessageReaction,
   editPost,
   deletePost,
   createChannel,

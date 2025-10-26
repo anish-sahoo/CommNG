@@ -1,10 +1,18 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { openAPI } from "better-auth/plugins";
+import { account, session, users, verification } from "./data/db/schema.js";
 import { db } from "./data/db/sql.js";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    schema: {
+      user: users,
+      account: account,
+      session: session,
+      verification: verification,
+    },
   }),
   emailAndPassword: {
     enabled: true,
@@ -14,11 +22,11 @@ export const auth = betterAuth({
       phoneNumber: {
         type: "string",
         required: false,
-        fieldName: "phone_number",
+        fieldName: "phoneNumber",
       },
       clearanceLevel: {
         type: "string",
-        fieldName: "clearance_level",
+        fieldName: "clearanceLevel",
       },
       department: {
         type: "string",
@@ -29,4 +37,7 @@ export const auth = betterAuth({
     },
   },
   baseURL: process.env.BACKEND_URL,
+  secret: process.env.BETTER_AUTH_SECRET,
+  basePath: "/api/auth",
+  plugins: [openAPI()],
 });

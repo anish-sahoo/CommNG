@@ -1,6 +1,8 @@
 "use client";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
 type Channel = {
@@ -9,27 +11,6 @@ type Channel = {
   href: string;
   type: "all" | "channel";
 };
-
-const channels: Channel[] = [
-  {
-    id: "all",
-    label: "All Channels",
-    href: "/communications",
-    type: "all",
-  },
-  {
-    id: "general",
-    label: "General",
-    href: "/communications/general",
-    type: "channel",
-  },
-  {
-    id: "events",
-    label: "Events",
-    href: "/communications/events",
-    type: "channel",
-  },
-];
 
 const ChannelLink = ({
   channel,
@@ -80,6 +61,25 @@ type CommsNavBarProps = {
 
 export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
   const pathname = usePathname();
+  const trpc = useTRPC();
+  const { data, isLoading } = useQuery(
+    trpc.comms.getAllChannels.queryOptions(),
+  );
+
+  const channels: Channel[] = [
+    {
+      id: "all",
+      label: "All Channels",
+      href: "/communications",
+      type: "all",
+    },
+    ...(data?.map((channel) => ({
+      id: channel.channelId.toString(),
+      label: channel.name,
+      href: `/communications/${channel.channelId}`,
+      type: "channel" as const,
+    })) ?? []),
+  ];
 
   return (
     <aside
@@ -89,12 +89,16 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
       )}
     >
       <ul className="flex flex-col gap-1">
+        {isLoading ? (
+          <li className="px-6 py-3 text-sm text-background/70">Loading…</li>
+        ) : null}
         {channels.map((channel) => {
           const isActive =
             channel.href === "/communications"
               ? pathname === channel.href ||
                 pathname.startsWith(`${channel.href}/`)
-              : pathname.startsWith(channel.href);
+              : pathname === channel.href ||
+                pathname.startsWith(`${channel.href}/`);
           return (
             <ChannelLink
               key={channel.id}
