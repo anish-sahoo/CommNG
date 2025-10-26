@@ -125,7 +125,10 @@ export class CommsService {
     return this.commsRepo.deleteMessage(message_id, channel_id);
   }
 
-  async updateChannelSettings(channel_id: number, metadata: ChannelUpdateMetadata) {
+  async updateChannelSettings(
+    channel_id: number,
+    metadata: ChannelUpdateMetadata,
+  ) {
     await this.getChannelById(channel_id);
     const updates: ((tx: Transaction) => Promise<unknown>)[] = [];
 
@@ -159,6 +162,8 @@ export class CommsService {
     if (result) {
       return this.commsRepo.getChannelDataByID(channel_id);
     }
-    throw new InternalServerError("Something went wrong updating channel settings");
+    throw new InternalServerError(
+      "Something went wrong updating channel settings",
+    );
   }
 }

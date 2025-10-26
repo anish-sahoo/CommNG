@@ -222,7 +222,10 @@ const updateChannelSettings = protectedProcedure
       if (!accessible) {
         throw new UnauthorizedError("Invalid Request");
       }
-      return await commsService.updateChannelSettings(input.channelId, input.metadata);
+      return await commsService.updateChannelSettings(
+        input.channelId,
+        input.metadata,
+      );
     }),
   );
 

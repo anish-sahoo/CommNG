@@ -1,4 +1,9 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type {
+  CommsRepository,
+  Transaction,
+} from "../src/data/repository/comms-repo.js";
+import type { ChannelUpdateMetadata } from "../src/types/comms-types.js";
 
 // In-memory model for this test
 type ReactionSummary = {
@@ -1735,20 +1740,29 @@ describe("updateChannelSettings (service -> repo)", () => {
 
     const { CommsService } = await import("../src/service/comms-service.js");
 
-    const captured: any[] = [];
-    const mockRepo = {
+    const captured: Array<(tx: Transaction) => Promise<unknown>> = [];
+    const mockRepo: Partial<CommsRepository> = {
       getChannelById: vi.fn().mockResolvedValue({ id: channelId }),
-      updateChannelSettings: vi.fn().mockImplementation(async (list: any) => {
-        // capture the passed array of update functions
-        captured.push(...(list ?? []));
-        return true;
-      }),
-      getChannelDataByID: vi.fn().mockResolvedValue({ channelId, name: "new-name", metadata: null }),
-    } as any;
+      updateChannelSettings: vi
+        .fn()
+        .mockImplementation(
+          async (list: Array<(tx: Transaction) => Promise<unknown>>) => {
+            // capture the passed array of update functions
+            captured.push(...(list ?? []));
+            return true;
+          },
+        ),
+      getChannelDataByID: vi
+        .fn()
+        .mockResolvedValue({ channelId, name: "new-name", metadata: null }),
+    };
 
-    const svc = new CommsService(mockRepo as any);
+    const svc = new CommsService(mockRepo as CommsRepository);
 
-    const result = await svc.updateChannelSettings(channelId, metadata as any);
+    const result = await svc.updateChannelSettings(
+      channelId,
+      metadata as ChannelUpdateMetadata,
+    );
 
     expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
     expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
@@ -1762,8 +1776,8 @@ describe("updateChannelSettings (service -> repo)", () => {
           where: vi.fn().mockResolvedValue(true),
         }),
       }),
-    } as any;
-    await captured[0](tx);
+    } as unknown as Transaction;
+    await captured[0]?.(tx);
     expect(tx.update).toHaveBeenCalled();
     // service should return the channel row from getChannelDataByID
     expect(result).toEqual({ channelId, name: "new-name", metadata: null });
@@ -1771,27 +1785,36 @@ describe("updateChannelSettings (service -> repo)", () => {
 
   it("populates listOfUpdates correctly for multiple metadata fields", async () => {
     const channelId = 101;
-    const metadata = {
+    const metadata: ChannelUpdateMetadata = {
       name: "multi",
-      postingPermissions: "moderated",
+      postingPermissions: "custom",
       description: "desc",
-    } as any;
+    };
 
     const { CommsService } = await import("../src/service/comms-service.js");
 
-    const captured: any[] = [];
-    const mockRepo = {
+    const captured: Array<(tx: Transaction) => Promise<unknown>> = [];
+    const mockRepo: Partial<CommsRepository> = {
       getChannelById: vi.fn().mockResolvedValue({ id: channelId }),
-      updateChannelSettings: vi.fn().mockImplementation(async (list: any) => {
-        captured.push(...(list ?? []));
-        return true;
-      }),
-      getChannelDataByID: vi.fn().mockResolvedValue({ channelId, name: "multi", metadata }),
-    } as any;
+      updateChannelSettings: vi
+        .fn()
+        .mockImplementation(
+          async (list: Array<(tx: Transaction) => Promise<unknown>>) => {
+            captured.push(...(list ?? []));
+            return true;
+          },
+        ),
+      getChannelDataByID: vi
+        .fn()
+        .mockResolvedValue({ channelId, name: "multi", metadata }),
+    };
 
-    const svc = new CommsService(mockRepo as any);
+    const svc = new CommsService(mockRepo as CommsRepository);
 
-    const result = await svc.updateChannelSettings(channelId, metadata);
+    const result = await svc.updateChannelSettings(
+      channelId,
+      metadata as ChannelUpdateMetadata,
+    );
 
     expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
     expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
@@ -1803,7 +1826,7 @@ describe("updateChannelSettings (service -> repo)", () => {
           where: vi.fn().mockResolvedValue(true),
         }),
       }),
-    } as any;
+    } as unknown as Transaction;
     // Execute all captured update functions and ensure tx.update is called for each
     for (const fn of captured) {
       await fn(tx);
