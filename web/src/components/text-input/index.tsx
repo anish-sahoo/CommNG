@@ -66,6 +66,7 @@ export const TextInput = ({
           className="resize-none pb-7"
           style={{
             paddingBottom: showCount ? "1.75rem" : undefined,
+            paddingRight: showCount ? "4rem" : undefined,
             ...inputStyles,
           }}
         />
@@ -91,7 +92,7 @@ export const TextInput = ({
         placeholder={placeholder}
         maxLength={maxLength}
         type="text"
-        className="pr-20"
+        className={showCount ? "pr-20" : ""}
         style={inputStyles}
       />
 

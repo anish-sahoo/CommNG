@@ -248,15 +248,14 @@ const Components = () => {
                 Text Input (Single-line)
               </h2>
               <p className="text-sm text-secondary/70">
-                Single-line input with character count
+                Single-line input without character count
               </p>
             </div>
             <TextInput
               value={singleLineText}
               onChange={setSingleLineText}
               placeholder="Enter text..."
-              maxLength={100}
-              showCharCount={true}
+              showCharCount={false}
               borderColor="#CDCDCD"
               counterColor="#CDCDCD"
             />
