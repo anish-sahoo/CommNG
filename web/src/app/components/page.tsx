@@ -6,11 +6,43 @@ import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
+import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { ReportsTable } from "@/components/table-view";
+
+const mentorQualityOptions: MultiSelectOption[] = [
+  {
+    value: "strong-communicator",
+    label: "Strong communicator",
+  },
+  {
+    value: "encouraging",
+    label: "Encouraging and empathetic",
+  },
+  {
+    value: "experienced-leader",
+    label: "Experienced leader",
+  },
+  {
+    value: "creative",
+    label: "Creative problem-solver",
+  },
+  {
+    value: "honest",
+    label: "Honest and authentic",
+  },
+  {
+    value: "motivated",
+    label: "Motivated and ambitious",
+  },
+  {
+    value: "open-minded",
+    label: "Open-minded and approachable",
+  },
+];
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -32,6 +64,7 @@ const Components = () => {
   }, [mobileNavOpen]);
 
   const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+  const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
 
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
@@ -235,6 +268,22 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
+          </section>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Multi Select for Forms
+              </h2>
+            </div>
+            <MultiSelect
+              label="What qualities do you look for in a mentor?"
+              helperText="Select up to 3"
+              name="mentorQualities"
+              options={mentorQualityOptions}
+              value={selectedQualities}
+              onChange={setSelectedQualities}
+              maxSelections={3}
+            />
           </section>
         </div>
       </main>
