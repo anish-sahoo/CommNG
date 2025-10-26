@@ -17,6 +17,14 @@ export class CommsService {
     return this.commsRepo.getChannelById(channel_id);
   }
 
+  async getChannelMembers(channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+
+    return this.commsRepo.getChannelMembers(channel_id);
+  }
+
   async createMessage(
     user_id: string,
     channel_id: number,

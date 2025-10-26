@@ -1,10 +1,13 @@
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 
 type ReactionProps = {
   emoji: string;
   count: number;
   onClick?: () => void;
   onToggle?: (active: boolean) => void;
+  initiallyActive?: boolean;
 };
 
 //Reaction logic
@@ -13,8 +16,13 @@ export const Reaction = ({
   count,
   onClick,
   onToggle,
+  initiallyActive = false,
 }: ReactionProps) => {
-  const [active, setActive] = useState(false);
+  const [active, setActive] = useState(initiallyActive);
+
+  useEffect(() => {
+    setActive(initiallyActive);
+  }, [initiallyActive]);
 
   const handleClick = () => {
     const next = !active;
@@ -23,27 +31,36 @@ export const Reaction = ({
     onToggle?.(next);
   };
 
-  const displayCount = count + (active ? 1 : 0);
-
-  // compute classes based on displayCount
   const baseClasses = [
+    "inline-flex",
+    "items-center",
+    "gap-1",
     "rounded-full",
-    "px-2",
-    "py-2",
+    "px-3",
+    "py-1.5",
     "text-xs",
     "font-semibold",
-    "reaction",
+    "border",
+    "transition",
+    "duration-200",
+    "ring-offset-background",
   ];
 
-  if (displayCount === 0) {
+  if (active) {
     baseClasses.push(
-      "border-2",
-      "border-primary-dark",
-      "bg-white",
-      "text-primary-dark",
+      "border-transparent",
+      "bg-primary",
+      "text-primary-foreground",
+      "hover:bg-primary-dark",
     );
-  } else if (displayCount === 1) {
-    baseClasses.push("bg-primary-dark", "text-white");
+  } else {
+    baseClasses.push(
+      "border-primary",
+      "bg-white",
+      "text-primary",
+      "hover:bg-primary",
+      "hover:text-primary-foreground",
+    );
   }
 
   //Reaction button UI
@@ -55,9 +72,7 @@ export const Reaction = ({
       aria-pressed={active}
     >
       <span className="emoji">{emoji}</span>
-      {displayCount > 0 && (
-        <span className="px-1 text-white">{displayCount}</span>
-      )}
+      {count > 0 && <span>{count}</span>}
     </button>
   );
 };

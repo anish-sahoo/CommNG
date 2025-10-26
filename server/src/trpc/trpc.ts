@@ -16,7 +16,14 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().create({
+  errorFormatter({ shape }) {
+    return {
+      ...shape,
+      data: { ...shape.data, stack: undefined },
+    };
+  },
+});
 
 /**
  * Export reusable router and procedure helpers

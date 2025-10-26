@@ -9,8 +9,11 @@ import {
   deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
+  getChannelMembersSchema,
+  getChannelMessagesSchema,
   postPostSchema,
   registerDeviceSchema,
+  toggleReactionSchema,
 } from "../types/comms-types.js";
 import { ForbiddenError } from "../types/errors.js";
 import log from "../utils/logger.js";
@@ -64,18 +67,84 @@ const createPost = protectedProcedure
     return createdPost;
   });
 
-// Channel creation endpoint
-const createChannel = protectedProcedure
-  .input(createChannelSchema)
-  .mutation(({ ctx, input }) =>
-    withErrorHandling("createChannel", async () => {
-      const userId = ctx.auth.user.id;
+/**
+ * getAllChannels
+ * Retrieves a list of all channels. (no matter if public or private?)
+ */
+const getAllChannels = protectedProcedure.query(({ ctx }) =>
+  withErrorHandling("getAllChannels", async () => {
+    const userId = ctx.auth.user.id;
 
-      log.debug({ userId, channelName: input.name }, "Creating channel");
+    log.debug({ userId }, "Getting accessible channels");
 
-      return await commsRepo.createChannel(input.name, input.metadata);
-    }),
-  );
+    return await commsRepo.getAccessibleChannels(userId);
+  }),
+);
+
+/**
+ * getChannelMessages
+ * Retrieves messages from a specific channel.
+ */
+const getChannelMessages = protectedProcedure
+  .input(getChannelMessagesSchema)
+  .query(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const isInChannel = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!isInChannel) {
+      throw new ForbiddenError(
+        "You do not have permission to get messages in this channel",
+      );
+    }
+
+    log.debug(
+      { userId, channelId: input.channelId },
+      "Getting channel messages",
+    );
+
+    return await commsRepo.getChannelMessages(input.channelId, userId);
+  });
+
+const toggleMessageReaction = protectedProcedure
+  .input(toggleReactionSchema)
+  .mutation(async ({ ctx, input }) => {
+    const userId = ctx.auth.user.id;
+
+    const canRead = await policyEngine.validate(
+      userId,
+      `channel:${input.channelId}:read`,
+    );
+
+    if (!canRead) {
+      throw new ForbiddenError(
+        "You do not have permission to react in this channel",
+      );
+    }
+
+    const message = await commsRepo.getMessageById(input.messageId);
+
+    if (message.channelId !== input.channelId) {
+      throw new ForbiddenError(
+        "Message does not belong to the specified channel",
+      );
+    }
+
+    const reactions = await commsRepo.setMessageReaction({
+      messageId: input.messageId,
+      userId,
+      emoji: input.emoji,
+      active: input.active,
+    });
+
+    return {
+      messageId: input.messageId,
+      reactions,
+    };
+  });
 
 /**
  * editPost
@@ -126,6 +195,29 @@ const deletePost = protectedProcedure
     return deletedPost;
   });
 
+// Channel creation endpoint
+const createChannel = protectedProcedure
+  .input(createChannelSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("createChannel", async () => {
+      const userId = ctx.auth.user.id;
+
+      log.debug({ userId, channelName: input.name }, "Creating channel");
+
+      return await commsRepo.createChannel(input.name, input.metadata);
+    }),
+  );
+
+// Channel members endpoint
+const getChannelMembers = protectedProcedure
+  .input(getChannelMembersSchema)
+  .query(({ input }) =>
+    withErrorHandling("getChannelMembers", async () => {
+      log.debug({ channelId: input.channelId }, "getChannelMembers");
+      return await commsRepo.getChannelMembers(input.channelId);
+    }),
+  );
+
 // Channel subscription endpoints
 const createSubscription = protectedProcedure
   .input(createSubscriptionSchema)
@@ -175,9 +267,13 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 export const commsRouter = router({
   registerDevice,
   createPost,
-  createChannel,
+  getAllChannels,
+  getChannelMessages,
+  toggleMessageReaction,
   editPost,
   deletePost,
+  createChannel,
+  getChannelMembers,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,
