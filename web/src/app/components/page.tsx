@@ -1,20 +1,21 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import ChannelCard from "@/components/channel-card";
-import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
+import CollapsibleCard from "@/components/expanding-card";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
-import CollapsibleCard from "@/components/expanding-card";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { ReportsTable } from "@/components/table-view";
-import { TextInput } from "@/components/text-input";
+import ChipSelect from "@/components/chip-select";
+import TextInput from "@/components/text-input";
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
