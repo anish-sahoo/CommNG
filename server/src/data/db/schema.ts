@@ -54,7 +54,9 @@ export const users = pgTable(
     email: text("email").notNull().unique(),
     emailVerified: boolean("email_verified").default(false).notNull(),
     phoneNumber: text("phone_number"),
-    image: text("image"),
+    image: uuid("image").references(() => files.fileId, {
+      onDelete: "set null",
+    }),
     clearanceLevel: text("clearance_level"),
     department: text("department"),
     branch: text("branch"),
@@ -262,6 +264,35 @@ export const messages = pgTable(
     index("ix_messages_sender_id").on(table.senderId),
   ],
 );
+
+export const messageReactions = pgTable(
+  "message_reactions",
+  {
+    reactionId: integer("reaction_id").primaryKey().generatedAlwaysAsIdentity(),
+    messageId: integer("message_id")
+      .references(() => messages.messageId, { onDelete: "cascade" })
+      .notNull(),
+    userId: text("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("ux_message_reactions_user").on(
+      table.messageId,
+      table.userId,
+      table.emoji,
+    ),
+    index("ix_message_reactions_message_id").on(table.messageId),
+    index("ix_message_reactions_user_id").on(table.userId),
+  ],
+);
+
+export type MessageReaction = typeof messageReactions.$inferSelect;
+export type NewMessageReaction = typeof messageReactions.$inferInsert;
 
 // MENTORS
 export const mentors = pgTable(

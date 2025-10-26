@@ -9,14 +9,13 @@ import { policyEngine } from "./service/policy-engine.js";
 import { appRouter } from "./trpc/app_router.js";
 import { createContext } from "./trpc/trpc.js";
 import log from "./utils/logger.js";
-import { registerTrpcUiRoute } from "./utils/trpc-ui.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 
-app.all("/api/auth/{*any}", toNodeHandler(auth));
+app.use("/api/auth", toNodeHandler(auth));
 
 app.use(
   "/api/trpc",
@@ -30,11 +29,10 @@ await connectPostgres();
 await connectRedis();
 await policyEngine.populateCache(60 * 60 * 12, 5000);
 
-if (process.env.NODE_ENV !== "production" || process.env.TRPC_UI === "true") {
-  registerTrpcUiRoute(app, appRouter, port);
-  log.info(`tRPC UI running at http://localhost:${port}/trpc-ui`);
-}
-
 app.listen(port, () => {
   log.info(`tRPC server running at http://localhost:${port}/api/trpc`);
+  log.info(`Better auth running at http://localhost:${port}/api/auth`);
+  log.info(
+    `Better-auth OpenAPI spec: http://localhost:${port}/api/auth/reference`,
+  );
 });

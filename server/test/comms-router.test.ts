@@ -1,6 +1,12 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 // In-memory model for this test
+type ReactionSummary = {
+  emoji: string;
+  count: number;
+  reactedByCurrentUser: boolean;
+};
+
 type MockMessage = {
   messageId: number;
   channelId: number;
@@ -8,6 +14,7 @@ type MockMessage = {
   message: string | null;
   attachmentUrl: string | null;
   createdAt: Date;
+  reactions?: ReactionSummary[];
 };
 
 type MockSubscription = {
@@ -27,6 +34,16 @@ type MockChannel = {
   createdAt: Date;
 };
 
+type MockChannelMember = {
+  userId: string;
+  name: string;
+  email: string;
+  clearanceLevel: string | null;
+  department: string | null;
+  roleKey: string;
+  action: string;
+};
+
 const mem: {
   users: {
     user_id: string;
@@ -34,7 +51,11 @@ const mem: {
     email: string;
     password: string;
   }[];
-  channels: { channel_id: number; name: string }[];
+  channels: {
+    channel_id: number;
+    name: string;
+    metadata: Record<string, unknown> | null;
+  }[];
   channelSubscriptions: Array<{
     id: number;
     user_id: string;
@@ -52,6 +73,11 @@ const mem: {
   }[];
   userRoles: { id: number; user_id: string; role_id: number }[];
   posts: MockMessage[];
+  reactions: Array<{
+    messageId: number;
+    userId: string;
+    emoji: string;
+  }>;
   _ids: {
     user: string;
     channel: number;
@@ -67,6 +93,7 @@ const mem: {
   roles: [],
   userRoles: [],
   posts: [],
+  reactions: [],
   _ids: {
     user: randomUUID(),
     channel: 0,
@@ -96,8 +123,11 @@ function createUser(name: string, email: string, password: string) {
   mem.users.push(u);
   return u;
 }
-function createChannel(name: string) {
-  const ch = { channel_id: ++mem._ids.channel, name };
+function createChannel(
+  name: string,
+  metadata: Record<string, unknown> | null = null,
+) {
+  const ch = { channel_id: ++mem._ids.channel, name, metadata };
   mem.channels.push(ch);
   return ch;
 }
@@ -138,6 +168,49 @@ function grantRole(user_id: string, role_id: number) {
   const ur = { id: ++mem._ids.userRole, user_id, role_id };
   mem.userRoles.push(ur);
   return ur;
+}
+
+function aggregateReactions(
+  messageId: number,
+  currentUserId: string,
+): ReactionSummary[] {
+  const messageReactions = mem.reactions.filter(
+    (reaction) => reaction.messageId === messageId,
+  );
+
+  if (!messageReactions.length) {
+    return [];
+  }
+
+  const map = new Map<
+    string,
+    { count: number; reactedByCurrentUser: boolean }
+  >();
+
+  for (const reaction of messageReactions) {
+    const entry = map.get(reaction.emoji) ?? {
+      count: 0,
+      reactedByCurrentUser: false,
+    };
+    entry.count += 1;
+    if (reaction.userId === currentUserId) {
+      entry.reactedByCurrentUser = true;
+    }
+    map.set(reaction.emoji, entry);
+  }
+
+  return Array.from(map.entries())
+    .map(([emoji, info]) => ({
+      emoji,
+      count: info.count,
+      reactedByCurrentUser: info.reactedByCurrentUser,
+    }))
+    .sort((a, b) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
+      }
+      return a.emoji.localeCompare(b.emoji);
+    });
 }
 
 function createContext(
@@ -200,6 +273,20 @@ vi.mock("../src/trpc/app_router.js", () => {
       getUserSubscriptions(input: {
         userId?: number;
       }): Promise<MockSubscriptionSummary[]>;
+      getChannelMessages(input: { channelId: number }): Promise<MockMessage[]>;
+      toggleMessageReaction(input: {
+        channelId: number;
+        messageId: number;
+        emoji: string;
+        active: boolean;
+      }): Promise<{
+        messageId: number;
+        reactions: ReactionSummary[];
+      }>;
+      getChannelMembers(input: {
+        channelId: number;
+      }): Promise<MockChannelMember[]>;
+      getAllChannels(): Promise<MockChannel[]>;
       createChannel(input: {
         name: string;
         metadata?: Record<string, unknown>;
@@ -209,6 +296,27 @@ vi.mock("../src/trpc/app_router.js", () => {
   type AppRouter = {
     createCaller(ctx: Context): CommsCaller;
   };
+
+  function ensureCanRead(userId: string, channelId: number) {
+    const hasSub = mem.channelSubscriptions.some(
+      (s) => s.user_id === userId && s.channel_id === channelId,
+    );
+
+    const roleIds = mem.userRoles
+      .filter((ur) => ur.user_id === userId)
+      .map((ur) => ur.role_id);
+
+    const hasRole = mem.roles.some(
+      (r) =>
+        roleIds.includes(r.role_id) &&
+        r.namespace === "channel" &&
+        r.channel_id === channelId,
+    );
+
+    if (!hasSub && !hasRole) {
+      throw new Error("FORBIDDEN");
+    }
+  }
 
   function ensureCanPost(userId: string, channelId: number) {
     const hasWriteSub = mem.channelSubscriptions.some(
@@ -273,6 +381,7 @@ vi.mock("../src/trpc/app_router.js", () => {
               message: input.content,
               attachmentUrl: null,
               createdAt: new Date(),
+              reactions: [],
             };
 
             mem.posts.push(post);
@@ -318,6 +427,7 @@ vi.mock("../src/trpc/app_router.js", () => {
               message: input.content,
               attachmentUrl: input.attachmentUrl ?? null,
               createdAt: post.createdAt,
+              reactions: post.reactions ?? [],
             };
 
             mem.posts[postIndex] = updated;
@@ -359,6 +469,9 @@ vi.mock("../src/trpc/app_router.js", () => {
             if (!deleted) {
               throw new Error("NOT_FOUND");
             }
+            mem.reactions = mem.reactions.filter(
+              (reaction) => reaction.messageId !== input.messageId,
+            );
             return deleted;
           },
 
@@ -425,9 +538,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             return result;
           },
 
-          async getUserSubscriptions(_input: {
-            userId?: number;
-          }): Promise<MockSubscriptionSummary[]> {
+          async getUserSubscriptions(): Promise<MockSubscriptionSummary[]> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
             const uid = ctx.auth.user.id;
@@ -450,6 +561,179 @@ vi.mock("../src/trpc/app_router.js", () => {
                 });
 
             return userSubscriptions;
+          },
+
+          // Channel members endpoint
+          async getChannelMembers(input: { channelId: number }) {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            const ch = mem.channels.find(
+              (c) => c.channel_id === input.channelId,
+            );
+            if (!ch) throw new Error("NOT_FOUND");
+
+            const members = mem.channelSubscriptions
+              .filter((s) => s.channel_id === input.channelId)
+              .map((s) => {
+                const user = mem.users.find((u) => u.user_id === s.user_id);
+                return {
+                  userId: s.user_id,
+                  name: user?.name || "Unknown",
+                  email: user?.email || "unknown@example.com",
+                  clearanceLevel: null,
+                  department: null,
+                  roleKey: `subscription:${s.permission}`,
+                  action: s.permission,
+                };
+              });
+
+            return members;
+          },
+
+          // Get all channels endpoint
+          async getAllChannels(): Promise<MockChannel[]> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            const uid = ctx.auth.user.id;
+
+            return mem.channels
+              .filter((channel) => {
+                const type = (channel.metadata as { type?: string } | null)
+                  ?.type;
+                const isPublic =
+                  typeof type !== "string" || type.toLowerCase() === "public";
+
+                if (isPublic) {
+                  return true;
+                }
+
+                const hasSubscription = mem.channelSubscriptions.some(
+                  (sub) =>
+                    sub.channel_id === channel.channel_id &&
+                    sub.user_id === uid,
+                );
+
+                if (hasSubscription) {
+                  return true;
+                }
+
+                const roleIds = mem.userRoles
+                  .filter((role) => role.user_id === uid)
+                  .map((role) => role.role_id);
+
+                const hasRole = mem.roles.some(
+                  (role) =>
+                    roleIds.includes(role.role_id) &&
+                    role.namespace === "channel" &&
+                    role.channel_id === channel.channel_id,
+                );
+
+                return hasRole;
+              })
+              .map((c) => ({
+                channelId: c.channel_id,
+                name: c.name,
+                metadata: c.metadata,
+                createdAt: new Date(),
+              }));
+          },
+
+          // Channel messages endpoint
+          async getChannelMessages(input: {
+            channelId: number;
+          }): Promise<MockMessage[]> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            const ch = mem.channels.find(
+              (c) => c.channel_id === input.channelId,
+            );
+            if (!ch) throw new Error("NOT_FOUND");
+
+            const uid = ctx.auth.user.id;
+            ensureCanRead(uid, input.channelId);
+
+            return mem.posts
+              .filter((p) => p.channelId === input.channelId)
+              .map((post) => ({
+                ...post,
+                reactions: aggregateReactions(post.messageId, uid),
+              }));
+          },
+
+          async toggleMessageReaction(input: {
+            channelId: number;
+            messageId: number;
+            emoji: string;
+            active: boolean;
+          }): Promise<{
+            messageId: number;
+            reactions: ReactionSummary[];
+          }> {
+            if (!ctx?.auth) throw new Error("UNAUTHORIZED");
+
+            const ch = mem.channels.find(
+              (c) => c.channel_id === input.channelId,
+            );
+            if (!ch) throw new Error("NOT_FOUND");
+
+            const post = mem.posts.find((p) => p.messageId === input.messageId);
+            if (!post) throw new Error("NOT_FOUND");
+            if (post.channelId !== input.channelId) {
+              throw new Error("FORBIDDEN");
+            }
+
+            const uid = ctx.auth.user.id;
+            ensureCanRead(uid, input.channelId);
+
+            if (input.active) {
+              const exists = mem.reactions.some(
+                (reaction) =>
+                  reaction.messageId === input.messageId &&
+                  reaction.userId === uid &&
+                  reaction.emoji === input.emoji,
+              );
+              if (!exists) {
+                mem.reactions.push({
+                  messageId: input.messageId,
+                  userId: uid,
+                  emoji: input.emoji,
+                });
+              }
+            } else {
+              mem.reactions = mem.reactions.filter(
+                (reaction) =>
+                  !(
+                    reaction.messageId === input.messageId &&
+                    reaction.userId === uid &&
+                    reaction.emoji === input.emoji
+                  ),
+              );
+            }
+
+            const reactions = aggregateReactions(input.messageId, uid);
+            const postIndex = mem.posts.findIndex(
+              (p) => p.messageId === input.messageId,
+            );
+            if (postIndex !== -1) {
+              const existingPost = mem.posts[postIndex];
+              if (!existingPost) {
+                throw new Error("Post not found for reactions update");
+              }
+              mem.posts[postIndex] = {
+                messageId: existingPost.messageId,
+                channelId: existingPost.channelId,
+                senderId: existingPost.senderId,
+                message: existingPost.message,
+                attachmentUrl: existingPost.attachmentUrl,
+                createdAt: existingPost.createdAt,
+                reactions,
+              };
+            }
+
+            return {
+              messageId: input.messageId,
+              reactions,
+            };
           },
 
           // Channel creation endpoint
@@ -481,6 +765,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             mem.channels.push({
               channel_id: channel.channelId,
               name: channel.name,
+              metadata: channel.metadata,
             });
 
             return channel;
@@ -590,6 +875,197 @@ describe("commsRouter.createPost", () => {
     expect(created.channelId).toBe(channelId);
     expect(created.senderId).toBe(otherUserId);
     expect(created.message ?? "").toContain("Permitted by role");
+  });
+});
+
+describe("commsRouter.getChannelMessages", () => {
+  let channelId: number;
+  let authorId: string;
+  let readerId: string;
+  let otherId: string;
+  let messageId: number;
+
+  beforeAll(async () => {
+    const author = createUser(
+      "Msg Author",
+      `msg-author-${Date.now()}@example.com`,
+      "pwd",
+    );
+    authorId = author.user_id;
+
+    const reader = createUser(
+      "Msg Reader",
+      `msg-reader-${Date.now()}@example.com`,
+      "pwd",
+    );
+    readerId = reader.user_id;
+
+    const other = createUser("Other", `other-${Date.now()}@example.com`, "pwd");
+    otherId = other.user_id;
+
+    const ch = createChannel(`msgs-channel-${Date.now()}`);
+    channelId = ch.channel_id;
+
+    // give author write permission and create a post
+    addSubscription(authorId, channelId, "write");
+    const caller = appRouter.createCaller(createContext(authorId));
+    const created = await caller.comms.createPost({
+      channelId,
+      content: "Hello channel",
+    });
+    messageId = created.messageId;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect(
+      caller.comms.getChannelMessages({ channelId }),
+    ).rejects.toThrow(/UNAUTHORIZED/i);
+  });
+
+  it("throws FORBIDDEN when user lacks read permission", async () => {
+    const caller = appRouter.createCaller(createContext(otherId));
+    await expect(
+      caller.comms.getChannelMessages({ channelId }),
+    ).rejects.toThrow(/FORBIDDEN/i);
+  });
+
+  it("returns messages when user has subscription (read/write)", async () => {
+    addSubscription(readerId, channelId, "read");
+
+    const caller = appRouter.createCaller(createContext(readerId));
+    const messages = await caller.comms.getChannelMessages({
+      channelId,
+    });
+
+    expect(Array.isArray(messages)).toBe(true);
+    const found = messages.find((m) => m.messageId === messageId);
+    expect(found).toBeDefined();
+    if (!found) {
+      throw new Error("Expected message not found");
+    }
+    expect(found.message).toBe("Hello channel");
+    expect(Array.isArray(found.reactions)).toBe(true);
+    expect(found.reactions.length).toBe(0);
+  });
+
+  it("returns messages when user has channel role", async () => {
+    const role = createRole("channel", channelId, "read", "messages", "READER");
+    grantRole(otherId, role.role_id);
+
+    const caller = appRouter.createCaller(createContext(otherId));
+    const messages = await caller.comms.getChannelMessages({
+      channelId,
+    });
+
+    expect(Array.isArray(messages)).toBe(true);
+    expect(messages.length).toBeGreaterThan(0);
+  });
+});
+
+describe("commsRouter.toggleMessageReaction", () => {
+  let channelId: number;
+  let authorId: string;
+  let reactorId: string;
+  let messageId: number;
+  const emoji = "👍";
+
+  beforeAll(async () => {
+    mem.reactions = [];
+
+    const author = createUser(
+      "Reaction Author",
+      `reaction-author-${Date.now()}@example.com`,
+      "pwd",
+    );
+    authorId = author.user_id;
+
+    const reactor = createUser(
+      "Reaction User",
+      `reaction-user-${Date.now()}@example.com`,
+      "pwd",
+    );
+    reactorId = reactor.user_id;
+
+    const channel = createChannel(`reaction-channel-${Date.now()}`);
+    channelId = channel.channel_id;
+
+    addSubscription(authorId, channelId, "write");
+    addSubscription(reactorId, channelId, "read");
+
+    const caller = appRouter.createCaller(createContext(authorId));
+    const created = await caller.comms.createPost({
+      channelId,
+      content: "Reaction-ready message",
+    });
+    messageId = created.messageId;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect(
+      caller.comms.toggleMessageReaction({
+        channelId,
+        messageId,
+        emoji,
+        active: true,
+      }),
+    ).rejects.toThrow(/UNAUTHORIZED/i);
+  });
+
+  it("throws FORBIDDEN when user lacks read permission", async () => {
+    const outsider = createUser(
+      "No Access",
+      `no-access-${Date.now()}@example.com`,
+      "pwd",
+    );
+
+    const caller = appRouter.createCaller(createContext(outsider.user_id));
+    await expect(
+      caller.comms.toggleMessageReaction({
+        channelId,
+        messageId,
+        emoji,
+        active: true,
+      }),
+    ).rejects.toThrow(/FORBIDDEN/i);
+  });
+
+  it("adds a reaction and returns updated counts", async () => {
+    const caller = appRouter.createCaller(createContext(reactorId));
+    const result = await caller.comms.toggleMessageReaction({
+      channelId,
+      messageId,
+      emoji,
+      active: true,
+    });
+
+    expect(result.messageId).toBe(messageId);
+    expect(result.reactions).toEqual([
+      { emoji, count: 1, reactedByCurrentUser: true },
+    ]);
+
+    const messages = await caller.comms.getChannelMessages({ channelId });
+    const target = messages.find((msg) => msg.messageId === messageId);
+    expect(target?.reactions).toEqual([
+      { emoji, count: 1, reactedByCurrentUser: true },
+    ]);
+  });
+
+  it("removes a reaction when toggled off", async () => {
+    const caller = appRouter.createCaller(createContext(reactorId));
+    const result = await caller.comms.toggleMessageReaction({
+      channelId,
+      messageId,
+      emoji,
+      active: false,
+    });
+
+    expect(result.reactions).toEqual([]);
+
+    const messages = await caller.comms.getChannelMessages({ channelId });
+    const target = messages.find((msg) => msg.messageId === messageId);
+    expect(target?.reactions ?? []).toEqual([]);
   });
 });
 
@@ -1050,6 +1526,100 @@ describe("commsRouter subscription endpoints", () => {
       expect(Array.isArray(subscriptions)).toBe(true);
       expect(subscriptions.length).toBe(0);
     });
+  });
+});
+
+// Channel Members Tests
+describe("commsRouter.getChannelMembers", () => {
+  let channelId: number;
+  let memberA: string;
+  let memberB: string;
+
+  beforeAll(() => {
+    const u1 = createUser(
+      "Member A",
+      `member-a-${Date.now()}@example.com`,
+      "pwd",
+    );
+    memberA = u1.user_id;
+
+    const u2 = createUser(
+      "Member B",
+      `member-b-${Date.now()}@example.com`,
+      "pwd",
+    );
+    memberB = u2.user_id;
+
+    const ch = createChannel(`members-channel-${Date.now()}`);
+    channelId = ch.channel_id;
+
+    addSubscription(memberA, channelId, "write");
+    addSubscription(memberB, channelId, "read");
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect(caller.comms.getChannelMembers({ channelId })).rejects.toThrow(
+      /UNAUTHORIZED/i,
+    );
+  });
+
+  it("throws NOT_FOUND for missing channel", async () => {
+    const caller = appRouter.createCaller(createContext(memberA));
+    await expect(
+      caller.comms.getChannelMembers({ channelId: 9999999 }),
+    ).rejects.toThrow(/NOT_FOUND/i);
+  });
+
+  it("returns members list for a valid channel", async () => {
+    const caller = appRouter.createCaller(createContext(memberA));
+    const members = await caller.comms.getChannelMembers({
+      channelId,
+    });
+
+    expect(Array.isArray(members)).toBe(true);
+    expect(members.length).toBeGreaterThanOrEqual(2);
+
+    const a = members.find((m) => m.userId === memberA);
+    const b = members.find((m) => m.userId === memberB);
+
+    expect(a).toBeDefined();
+    expect(b).toBeDefined();
+  });
+});
+
+// Get All Channels Tests
+describe("commsRouter.getAllChannels", () => {
+  let creatorId: string;
+
+  beforeAll(() => {
+    const u = createUser(
+      "Channels Creator",
+      `creator-${Date.now()}@example.com`,
+      "pwd",
+    );
+    creatorId = u.user_id;
+  });
+
+  it("throws UNAUTHORIZED if no user in context", async () => {
+    const caller = appRouter.createCaller({ auth: null });
+    await expect(caller.comms.getAllChannels()).rejects.toThrow(
+      /UNAUTHORIZED/i,
+    );
+  });
+
+  it("returns all channels", async () => {
+    // create some channels via helper so they're present in mem
+    const ch1 = createChannel(uniqueName("all-ch-1"));
+    const ch2 = createChannel(uniqueName("all-ch-2"));
+
+    const caller = appRouter.createCaller(createContext(creatorId));
+    const channels = await caller.comms.getAllChannels();
+
+    expect(Array.isArray(channels)).toBe(true);
+    // should at least contain the two channels we added
+    const names = channels.map((c) => c.name);
+    expect(names).toEqual(expect.arrayContaining([ch1.name, ch2.name]));
   });
 });
 
