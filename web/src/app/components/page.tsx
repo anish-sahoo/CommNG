@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
+import ChannelCard from "@/components/channel-card";
 import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
@@ -264,6 +265,23 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Channel Card
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Displays an image, icon, title, and supporting text.
+              </p>
+            </div>
+            <ChannelCard
+              title="Events"
+              description="Central hub for external event opportunities."
+              iconName="message"
+              href="http://localhost:3000/communications/1"
+            />
           </section>
 
           {/* Add Text Input sections */}
