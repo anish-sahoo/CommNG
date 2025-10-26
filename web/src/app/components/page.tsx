@@ -9,7 +9,11 @@ import ListView from "@/components/list-view";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
+<<<<<<< HEAD
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
+=======
+import { TextInput } from "@/components/text-input";
+>>>>>>> features/add-text-input-component
 import { ReportsTable } from "@/components/table-view";
 
 const Components = () => {
@@ -90,6 +94,9 @@ const Components = () => {
       );
     });
   };
+  
+  const [singleLineText, setSingleLineText] = useState("");
+  const [multiLineText, setMultiLineText] = useState("");
 
   return (
     <>
@@ -235,6 +242,50 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
+          </section>
+
+
+          {/* Add Text Input sections */}
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Single-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Single-line input with character count
+              </p>
+            </div>
+            <TextInput
+              value={singleLineText}
+              onChange={setSingleLineText}
+              placeholder="Enter text..."
+              maxLength={100}
+              showCharCount={true}
+              borderColor="#CDCDCD"
+              counterColor="#CDCDCD"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Multi-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Multi-line textarea with character limit
+              </p>
+            </div>
+            <TextInput
+              value={multiLineText}
+              onChange={setMultiLineText}
+              placeholder="Enter your message..."
+              multiline={true}
+              rows={5}
+              maxLength={500}
+              showCharCount={true}
+              borderColor="#283396"
+              counterColor="#283396"
+            />
           </section>
         </div>
       </main>
