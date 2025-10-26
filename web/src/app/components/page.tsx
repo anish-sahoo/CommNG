@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
+import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
@@ -12,6 +13,7 @@ import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { ReportsTable } from "@/components/table-view";
+import { TextInput } from "@/components/text-input";
 
 const mentorQualityOptions: MultiSelectOption[] = [
   {
@@ -64,6 +66,7 @@ const Components = () => {
   }, [mobileNavOpen]);
 
   const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+  const [selectedChipOptions, setSelectedChipOptions] = useState<string[]>([]);
   const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
 
   const [demoReactions, setDemoReactions] = useState<
@@ -123,6 +126,9 @@ const Components = () => {
       );
     });
   };
+
+  const [singleLineText, setSingleLineText] = useState("");
+  const [multiLineText, setMultiLineText] = useState("");
 
   return (
     <>
@@ -188,6 +194,29 @@ const Components = () => {
             <LinkedCard
               href="https://example.com"
               content="How to Mentor Effectively: 5 Tips for Success"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Chip Select
+              </h2>
+            </div>
+            <ChipSelect
+              options={[
+                "Music",
+                "Creative arts",
+                "Outdoor activities",
+                "Gaming and entertainment",
+                "Cooking and baking",
+                "Volunteering and community involvement",
+                "DIY and crafts",
+                "Team sports",
+                "Personal fitness",
+              ]}
+              selectedOptions={selectedChipOptions}
+              onChange={setSelectedChipOptions}
             />
           </section>
 
@@ -268,6 +297,48 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
+          </section>
+
+          {/* Add Text Input sections */}
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Single-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Single-line input without character count
+              </p>
+            </div>
+            <TextInput
+              value={singleLineText}
+              onChange={setSingleLineText}
+              placeholder="Enter text..."
+              showCharCount={false}
+              borderColor="#CDCDCD"
+              counterColor="#CDCDCD"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Multi-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Multi-line textarea with character limit
+              </p>
+            </div>
+            <TextInput
+              value={multiLineText}
+              onChange={setMultiLineText}
+              placeholder="Enter your message..."
+              multiline={true}
+              rows={5}
+              maxLength={500}
+              showCharCount={true}
+              borderColor="#283396"
+              counterColor="#283396"
+            />
           </section>
           <section className="space-y-6">
             <div className="space-y-2">
