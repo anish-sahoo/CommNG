@@ -1,11 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
-<<<<<<< HEAD
 import ChannelCard from "@/components/channel-card";
-=======
 import ChipSelect from "@/components/chip-select";
->>>>>>> main
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
@@ -270,7 +267,6 @@ const Components = () => {
             <ReportsTable isAdmin />
           </section>
 
-<<<<<<< HEAD
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
@@ -285,7 +281,9 @@ const Components = () => {
               description="Central hub for external event opportunities."
               iconName="message"
               href="http://localhost:3000/communications/1"
-=======
+            />
+          </section>
+
           {/* Add Text Input sections */}
           <section className="space-y-6">
             <div className="space-y-2">
@@ -325,7 +323,6 @@ const Components = () => {
               showCharCount={true}
               borderColor="#283396"
               counterColor="#283396"
->>>>>>> main
             />
           </section>
         </div>
