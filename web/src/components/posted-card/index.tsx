@@ -7,6 +7,7 @@ type PostedCardProps = {
   name: string;
   rank: string;
   content: string;
+  attachmentUrl?: string;
 };
 
 const UserIcon = icons.user;
@@ -17,7 +18,12 @@ const Avatar = () => (
   </div>
 );
 
-export const PostedCard = ({ name, rank, content }: PostedCardProps) => {
+export const PostedCard = ({
+  name,
+  rank,
+  content,
+  attachmentUrl,
+}: PostedCardProps) => {
   return (
     <Card className="w-full p-4">
       <div className="flex items-center gap-4 px-6 py-4">
@@ -30,6 +36,16 @@ export const PostedCard = ({ name, rank, content }: PostedCardProps) => {
             </div>
           </div>
           <div className="text-secondary text-sm font-normal">{content}</div>
+          {attachmentUrl ? (
+            <a
+              href={attachmentUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-semibold text-accent transition hover:text-accent/80"
+            >
+              View attachment
+            </a>
+          ) : null}
         </div>
       </div>
     </Card>

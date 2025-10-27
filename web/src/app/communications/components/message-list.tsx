@@ -9,6 +9,7 @@ export type ChannelMessage = {
   authorRole?: string | null;
   content: string;
   createdAt?: string | Date;
+  attachmentUrl?: string | null;
   reactions?: {
     emoji: string;
     count: number;
@@ -42,6 +43,7 @@ export function MessageList({ messages, onReactionToggle }: MessageListProps) {
             name={message.authorName ?? "Unknown Member"}
             rank={message.authorRank ?? message.authorRole ?? ""}
             content={message.content}
+            attachmentUrl={message.attachmentUrl ?? undefined}
           />
           {message.reactions?.length ? (
             <div className="flex flex-wrap items-center gap-2 pl-6 pr-4 sm:pl-8 sm:pr-0">

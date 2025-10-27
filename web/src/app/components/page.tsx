@@ -362,8 +362,8 @@ const Components = () => {
               rows={5}
               maxLength={500}
               showCharCount={true}
-              borderColor="#283396"
-              counterColor="#283396"
+              borderColor="text-primary"
+              counterColor="text-primary"
             />
           </section>
           <section className="space-y-6">

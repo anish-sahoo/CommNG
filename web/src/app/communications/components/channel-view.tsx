@@ -57,7 +57,9 @@ const fallbackMessages: ChannelMessage[] = [
     authorRank: "E-5",
     authorRole: "Paralegal Specialist",
     content:
-      "Reminder that our community town hall is tonight at 1900. Bring your questions and ideas—agenda posted in the files tab.",
+      "Reminder that our community town hall is tonight at 1900. Bring your questions and ideas—agenda posted in the files tab. Download the agenda below.",
+    attachmentUrl:
+      "https://example.com/docs/community-town-hall-agenda.pdf",
     reactions: [
       { emoji: "🗓️", count: 4 },
       { emoji: "👍", count: 6 },
