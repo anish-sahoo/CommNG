@@ -1,5 +1,10 @@
 import { and, eq, isNotNull, or, sql } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
+import {
+  ConflictError,
+  InternalServerError,
+  NotFoundError,
+} from "../../types/errors.js";
+import log from "../../utils/logger.js";
 import {
   channelSubscriptions,
   channels,
@@ -11,6 +16,12 @@ import {
   users,
 } from "../db/schema.js";
 import { db } from "../db/sql.js";
+
+export type Transaction = Parameters<typeof db.transaction>[0] extends (
+  arg: infer T,
+) => unknown
+  ? T
+  : never;
 
 export type UserPermissionsResult = {
   canPost: boolean;
@@ -257,14 +268,27 @@ export class CommsRepository {
     return device;
   }
 
-  // Channel creation method
-  async createChannel(name: string, metadata?: Record<string, unknown>) {
-    // Check if channel with this name already exists
-    const existingChannel = await db
+  async getChannelDataByName(name: string) {
+    return await db
       .select()
       .from(channels)
       .where(eq(channels.name, name))
       .limit(1);
+  }
+
+  async getChannelDataByID(channel_id: number) {
+    const [result] = await db
+      .select()
+      .from(channels)
+      .where(eq(channels.channelId, channel_id))
+      .limit(1);
+    return result;
+  }
+
+  // Channel creation method
+  async createChannel(name: string, metadata?: Record<string, unknown>) {
+    // Check if channel with this name already exists
+    const existingChannel = await this.getChannelDataByName(name);
 
     if (existingChannel.length > 0) {
       throw new ConflictError("Channel with this name already exists");
@@ -462,5 +486,21 @@ export class CommsRepository {
     const reactions = await this.getReactionsForMessages([messageId], userId);
 
     return reactions.get(messageId) ?? [];
+  }
+
+  async updateChannelSettings(
+    listOfUpdates: ((tx: Transaction) => Promise<unknown>)[],
+  ): Promise<boolean> {
+    try {
+      await db.transaction(async (tx) => {
+        for (const updateFn of listOfUpdates) {
+          await updateFn(tx);
+        }
+      });
+      return true;
+    } catch (err) {
+      log.error(err, "Error updating channel settings");
+      throw new InternalServerError("Error updating channel settings");
+    }
   }
 }

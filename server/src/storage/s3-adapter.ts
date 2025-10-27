@@ -1,22 +1,114 @@
 import type { Readable } from "node:stream";
 import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { ForbiddenError } from "../types/errors.js";
+import log from "../utils/logger.js";
+import {
   type FileInputStreamOptions,
   type FilePath,
   StorageAdapter,
 } from "./storage-adapter.js";
 
-export class S3Adapter extends StorageAdapter {
+export class S3StorageAdapter extends StorageAdapter {
+  private s3: S3Client;
+  private bucket: string;
+  private publicBaseUrl: string;
+
+  /**
+   * @param opts.bucket - S3 bucket name
+   * @param opts.region - AWS region
+   * @param opts.publicBaseUrl - public URL base of the bucket
+   */
+  constructor(opts: {
+    bucket: string;
+    region?: string;
+    publicBaseUrl: string;
+  }) {
+    super();
+    this.bucket = opts.bucket;
+    this.publicBaseUrl = opts.publicBaseUrl;
+    this.s3 = new S3Client({
+      region: opts.region ?? process.env.AWS_REGION ?? "us-east-1",
+    });
+    log.info(
+      { bucketName: this.bucket, base_url: this.publicBaseUrl },
+      "Starting AWS S3 connection",
+    );
+  }
+
   public async storeStream(
-    _filename: string,
-    _input: Readable,
-    _opts?: FileInputStreamOptions,
+    filename: string,
+    input: Readable,
+    opts?: FileInputStreamOptions,
   ): Promise<FilePath> {
-    return { path: "" };
+    // Perform a server-side Put as a fallback. Do NOT set public ACLs here;
+    // rely on presigned URLs / CloudFront for public access in production.
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: filename,
+        Body: input,
+        ContentType: opts?.contentType ?? "application/octet-stream",
+      }),
+    );
+
+    // Store the object key as the location so callers can request a GET url later
+    return { path: filename };
   }
-  public async delete(_path: string): Promise<boolean> {
-    return false;
+
+  public async getStream(_path: string): Promise<Readable> {
+    // Streaming directly from S3 is not allowed in this adapter. Clients
+    // must use presigned GET URLs (getUrl) to retrieve file contents.
+    throw new ForbiddenError(
+      "Direct streaming from S3 is not supported. Use getUrl() instead.",
+    );
   }
-  public async getUrl(_path: string): Promise<string> {
-    return "";
+
+  public async delete(path: string): Promise<boolean> {
+    try {
+      await this.s3.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+        }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public async getUrl(path: string): Promise<string> {
+    // Return a presigned GET URL so private buckets work correctly.
+    return await this.generatePresignedGetUrl(path);
+  }
+
+  public async generatePresignedUploadUrl(
+    key: string,
+    expiresSeconds = 900,
+    contentType?: string,
+  ): Promise<string> {
+    const cmd = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: contentType ?? "application/octet-stream",
+    });
+    return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSeconds });
+  }
+
+  public async generatePresignedGetUrl(
+    key: string,
+    expiresSeconds = 3600,
+  ): Promise<string> {
+    const cmd = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+    return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSeconds });
   }
 }

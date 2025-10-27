@@ -1,5 +1,15 @@
-import type { CommsRepository } from "../data/repository/comms-repo.js";
-import { BadRequestError, ForbiddenError } from "../types/errors.js";
+import { eq } from "drizzle-orm";
+import { channels } from "../data/db/schema.js";
+import type {
+  CommsRepository,
+  Transaction,
+} from "../data/repository/comms-repo.js";
+import type { ChannelUpdateMetadata } from "../types/comms-types.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+} from "../types/errors.js";
 import { policyEngine } from "./policy-engine.js";
 
 export class CommsService {
@@ -113,5 +123,47 @@ export class CommsService {
     }
 
     return this.commsRepo.deleteMessage(message_id, channel_id);
+  }
+
+  async updateChannelSettings(
+    channel_id: number,
+    metadata: ChannelUpdateMetadata,
+  ) {
+    await this.getChannelById(channel_id);
+    const updates: ((tx: Transaction) => Promise<unknown>)[] = [];
+
+    if (metadata.name) {
+      updates.push((tx: Transaction) =>
+        tx
+          .update(channels)
+          .set({ name: metadata.name })
+          .where(eq(channels.channelId, channel_id)),
+      );
+    }
+
+    if (metadata.postingPermissions) {
+      updates.push((tx) =>
+        tx
+          .update(channels)
+          .set({ postPermissionLevel: metadata.postingPermissions })
+          .where(eq(channels.channelId, channel_id)),
+      );
+    }
+
+    if (metadata.description) {
+      updates.push((tx) =>
+        tx
+          .update(channels)
+          .set({ description: metadata.description })
+          .where(eq(channels.channelId, channel_id)),
+      );
+    }
+    const result = await this.commsRepo.updateChannelSettings(updates);
+    if (result) {
+      return this.commsRepo.getChannelDataByID(channel_id);
+    }
+    throw new InternalServerError(
+      "Something went wrong updating channel settings",
+    );
   }
 }

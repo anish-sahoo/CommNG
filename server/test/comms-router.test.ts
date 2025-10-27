@@ -1,4 +1,9 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type {
+  CommsRepository,
+  Transaction,
+} from "../src/data/repository/comms-repo.js";
+import type { ChannelUpdateMetadata } from "../src/types/comms-types.js";
 
 // In-memory model for this test
 type ReactionSummary = {
@@ -1724,5 +1729,110 @@ describe("commsRouter.createChannel", () => {
         }),
       ).rejects.toThrow();
     });
+  });
+});
+
+// Tests for updateChannelSettings behavior (service -> repo interaction)
+describe("updateChannelSettings (service -> repo)", () => {
+  it("populates listOfUpdates correctly when only name is provided", async () => {
+    const channelId = 42;
+    const metadata = { name: "new-name" };
+
+    const { CommsService } = await import("../src/service/comms-service.js");
+
+    const captured: Array<(tx: Transaction) => Promise<unknown>> = [];
+    const mockRepo: Partial<CommsRepository> = {
+      getChannelById: vi.fn().mockResolvedValue({ id: channelId }),
+      updateChannelSettings: vi
+        .fn()
+        .mockImplementation(
+          async (list: Array<(tx: Transaction) => Promise<unknown>>) => {
+            // capture the passed array of update functions
+            captured.push(...(list ?? []));
+            return true;
+          },
+        ),
+      getChannelDataByID: vi
+        .fn()
+        .mockResolvedValue({ channelId, name: "new-name", metadata: null }),
+    };
+
+    const svc = new CommsService(mockRepo as CommsRepository);
+
+    const result = await svc.updateChannelSettings(
+      channelId,
+      metadata as ChannelUpdateMetadata,
+    );
+
+    expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
+    expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
+    expect(Array.isArray(captured)).toBe(true);
+    expect(captured.length).toBe(1);
+
+    // Ensure each update function calls tx.update when executed
+    const tx = {
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(true),
+        }),
+      }),
+    } as unknown as Transaction;
+    await captured[0]?.(tx);
+    expect(tx.update).toHaveBeenCalled();
+    // service should return the channel row from getChannelDataByID
+    expect(result).toEqual({ channelId, name: "new-name", metadata: null });
+  });
+
+  it("populates listOfUpdates correctly for multiple metadata fields", async () => {
+    const channelId = 101;
+    const metadata: ChannelUpdateMetadata = {
+      name: "multi",
+      postingPermissions: "custom",
+      description: "desc",
+    };
+
+    const { CommsService } = await import("../src/service/comms-service.js");
+
+    const captured: Array<(tx: Transaction) => Promise<unknown>> = [];
+    const mockRepo: Partial<CommsRepository> = {
+      getChannelById: vi.fn().mockResolvedValue({ id: channelId }),
+      updateChannelSettings: vi
+        .fn()
+        .mockImplementation(
+          async (list: Array<(tx: Transaction) => Promise<unknown>>) => {
+            captured.push(...(list ?? []));
+            return true;
+          },
+        ),
+      getChannelDataByID: vi
+        .fn()
+        .mockResolvedValue({ channelId, name: "multi", metadata }),
+    };
+
+    const svc = new CommsService(mockRepo as CommsRepository);
+
+    const result = await svc.updateChannelSettings(
+      channelId,
+      metadata as ChannelUpdateMetadata,
+    );
+
+    expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
+    expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
+    expect(captured.length).toBe(3);
+
+    const tx = {
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue(true),
+        }),
+      }),
+    } as unknown as Transaction;
+    // Execute all captured update functions and ensure tx.update is called for each
+    for (const fn of captured) {
+      await fn(tx);
+    }
+
+    expect(tx.update).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ channelId, name: "multi", metadata });
   });
 });

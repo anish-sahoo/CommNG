@@ -1,17 +1,57 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
+import ChannelCard from "@/components/channel-card";
+import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
+import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import SearchBar from "@/components/search-bar";
 import { ReportsTable } from "@/components/table-view";
+import { TextInput } from "@/components/text-input";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
+
+const mentorQualityOptions: MultiSelectOption[] = [
+  {
+    value: "strong-communicator",
+    label: "Strong communicator",
+  },
+  {
+    value: "encouraging",
+    label: "Encouraging and empathetic",
+  },
+  {
+    value: "experienced-leader",
+    label: "Experienced leader",
+  },
+  {
+    value: "creative",
+    label: "Creative problem-solver",
+  },
+  {
+    value: "honest",
+    label: "Honest and authentic",
+  },
+  {
+    value: "motivated",
+    label: "Motivated and ambitious",
+  },
+  {
+    value: "open-minded",
+    label: "Open-minded and approachable",
+  },
+];
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -32,7 +72,10 @@ const Components = () => {
     };
   }, [mobileNavOpen]);
 
-  const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+  const [selectedDropdownValue, setSelectedDropdownValue] =
+    useState<string>("");
+  const [selectedChipOptions, setSelectedChipOptions] = useState<string[]>([]);
+  const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
 
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
@@ -91,6 +134,11 @@ const Components = () => {
       );
     });
   };
+
+  const [singleLineText, setSingleLineText] = useState("");
+  const [multiLineText, setMultiLineText] = useState("");
+
+  const [files, setFiles] = useState<File[] | undefined>();
 
   return (
     <>
@@ -171,6 +219,29 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
+                Chip Select
+              </h2>
+            </div>
+            <ChipSelect
+              options={[
+                "Music",
+                "Creative arts",
+                "Outdoor activities",
+                "Gaming and entertainment",
+                "Cooking and baking",
+                "Volunteering and community involvement",
+                "DIY and crafts",
+                "Team sports",
+                "Personal fitness",
+              ]}
+              selectedOptions={selectedChipOptions}
+              onChange={setSelectedChipOptions}
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
                 Posted Card
               </h2>
             </div>
@@ -245,6 +316,104 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Channel Card
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Displays an image, icon, title, and supporting text.
+              </p>
+            </div>
+            <ChannelCard
+              title="Events"
+              description="Central hub for external event opportunities."
+              iconName="message"
+              href="http://localhost:3000/communications/1"
+            />
+          </section>
+
+          {/* Add Text Input sections */}
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Single-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Single-line input without character count
+              </p>
+            </div>
+            <TextInput
+              value={singleLineText}
+              onChange={setSingleLineText}
+              placeholder="Enter text..."
+              showCharCount={false}
+              borderColor="#CDCDCD"
+              counterColor="#CDCDCD"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Text Input (Multi-line)
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Multi-line textarea with character limit
+              </p>
+            </div>
+            <TextInput
+              value={multiLineText}
+              onChange={setMultiLineText}
+              placeholder="Enter your message..."
+              multiline={true}
+              rows={5}
+              maxLength={500}
+              showCharCount={true}
+              borderColor="#283396"
+              counterColor="#283396"
+            />
+          </section>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Multi Select for Forms
+              </h2>
+            </div>
+            <MultiSelect
+              label="What qualities do you look for in a mentor?"
+              helperText="Select up to 3"
+              name="mentorQualities"
+              options={mentorQualityOptions}
+              value={selectedQualities}
+              onChange={setSelectedQualities}
+              maxSelections={3}
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                File dropzone
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Component to allow users to upload/drag & drop files. We have to
+                manage uploading, but this gives us UI to accept files in the
+                first place
+              </p>
+            </div>
+            <Dropzone
+              onDrop={(files) => {
+                setFiles(files);
+              }}
+              src={files}
+              maxFiles={5}
+            >
+              <DropzoneEmptyState />
+              <DropzoneContent />
+            </Dropzone>
           </section>
         </div>
       </main>

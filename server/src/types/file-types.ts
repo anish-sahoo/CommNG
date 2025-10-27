@@ -1,4 +1,3 @@
-import type { Readable } from "node:stream";
 import type { ReadableStream as ReadableStreamWeb } from "node:stream/web";
 import { z } from "zod";
 
@@ -109,7 +108,7 @@ export const fileMetadataSchema = z
       .trim()
       .min(1, "storedName cannot be empty")
       .nullable(),
-    uploadedBy: z.number().int().positive().nullable(),
+    uploadedBy: z.string().nullable(),
     uploadedAt: z.string().datetime().nullable().optional(),
   })
   .strict();
@@ -129,8 +128,28 @@ export type FileDownloadPayload = {
   data: string;
 };
 
-export type FileStreamNullable = {
-  stream: Readable;
-  fileName: string;
-  contentType?: string;
-} | null;
+export const fileStreamSchema = z.object({
+  // stream is not validated at runtime, but kept for type completeness
+  stream: z.any().optional(),
+  fileName: z.string(),
+  contentType: z.string().optional(),
+  location: z.string(),
+});
+
+export const createPresignedUploadInputSchema = z.object({
+  fileName: z.string().min(1),
+  contentType: z.string().optional(),
+  fileSize: z.number().optional(),
+});
+
+export const confirmUploadInputSchema = z.object({
+  fileId: z.string().min(1),
+  fileName: z.string().min(1),
+  storedName: z.string().min(1),
+  contentType: z.string().optional(),
+});
+
+export const deleteFileInputSchema = z.object({ fileId: z.string().min(1) });
+
+export type FileStream = z.infer<typeof fileStreamSchema>;
+export type FileStreamNullable = FileStream | null;
