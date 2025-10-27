@@ -39,6 +39,13 @@ export const messageBlastStatusEnum = pgEnum("message_blast_status_enum", [
   "failed",
 ]);
 
+export const reportStatusEnum = pgEnum("report_status_enum", [
+  "assigned",
+  "resolved",
+  "in_progress",
+  "pending",
+]);
+
 export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "global",
   "channel",
@@ -435,6 +442,29 @@ export const messageBlasts = pgTable(
   ],
 );
 
+// REPORTS: track user reports/issues
+export const reports = pgTable(
+  "reports",
+  {
+    reportId: integer("report_id").primaryKey().generatedAlwaysAsIdentity(),
+    title: text("title").notNull(),
+    summary: text("summary").notNull(),
+    status: reportStatusEnum("status").default("pending").notNull(),
+    comments: text("comments"),
+    issuedTo: text("issued_to"),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ix_reports_status").on(table.status),
+    index("ix_reports_created_at").on(table.createdAt),
+  ],
+);
+
 export type UserDevice = typeof userDevices.$inferSelect;
 export type NewUserDevice = typeof userDevices.$inferInsert;
 export type Role = typeof roles.$inferSelect;
@@ -445,6 +475,8 @@ export type Mentee = typeof mentees.$inferSelect;
 export type NewMentee = typeof mentees.$inferInsert;
 export type MessageBlast = typeof messageBlasts.$inferSelect;
 export type NewMessageBlast = typeof messageBlasts.$inferInsert;
+export type Report = typeof reports.$inferSelect;
+export type NewReport = typeof reports.$inferInsert;
 
 // const roleKeys = await db
 //   .select({ roleKey: roles.roleKey })
