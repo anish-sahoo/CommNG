@@ -124,6 +124,15 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
+                Search Bar
+              </h2>
+            </div>
+            <SearchBar />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
                 Button
               </h2>
             </div>
@@ -236,15 +245,6 @@ const Components = () => {
               </p>
             </div>
             <ReportsTable isAdmin />
-          </section>
-
-          <section className="space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-subheader font-semibold text-secondary">
-                Search Bar
-              </h2>
-            </div>
-            <SearchBar />
           </section>
         </div>
       </main>
