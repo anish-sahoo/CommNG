@@ -1,5 +1,6 @@
 "use client";
 
+import { icons } from "@/components/icons";
 import { Input } from "@/components/ui/input";
 
 type SearchBarProps = React.InputHTMLAttributes<HTMLInputElement> & {
@@ -12,24 +13,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   icon,
   ...props
 }) => {
-  const defaultIcon = (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#DDA139"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-muted-foreground"
-      aria-hidden="true"
-    >
-      <path d="m21 21-4.34-4.34" />
-      <circle cx="11" cy="11" r="8" />
-    </svg>
-  );
+  const Search = icons.search;
 
   return (
     <div className="relative">
@@ -37,7 +21,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
         className="absolute top-1/2 transform -translate-y-1/2"
         style={{ left: "10px" }}
       >
-        {icon ?? defaultIcon}
+        {icon ?? (
+          <Search
+            className="h-[18px] w-[18px]"
+            style={{ stroke: "#DDA139", strokeWidth: 3 }}
+          />
+        )}
       </span>
       <Input
         {...props}
