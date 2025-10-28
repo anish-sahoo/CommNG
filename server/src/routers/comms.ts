@@ -12,7 +12,6 @@ import {
   getChannelMembersSchema,
   getChannelMessagesSchema,
   postPostSchema,
-  registerDeviceSchema,
   toggleReactionSchema,
   updateChannelSchema,
 } from "../types/comms-types.js";
@@ -21,20 +20,6 @@ import log from "../utils/logger.js";
 
 const commsRepo = new CommsRepository();
 const commsService = new CommsService(commsRepo);
-
-const registerDevice = protectedProcedure
-  .input(registerDeviceSchema)
-  .mutation(({ ctx, input }) =>
-    withErrorHandling("registerDevice", async () => {
-      log.debug({ deviceType: input.deviceType }, "registerDevice");
-
-      return await commsRepo.registerDevice(
-        ctx.auth.user.id, // TODO: get from auth context
-        input.deviceType,
-        input.deviceToken,
-      );
-    }),
-  );
 
 /**
  * createPost
@@ -286,7 +271,6 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 );
 
 export const commsRouter = router({
-  registerDevice,
   createPost,
   getAllChannels,
   getChannelMessages,

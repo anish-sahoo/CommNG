@@ -11,7 +11,6 @@ import {
   messageReactions,
   messages,
   roles,
-  userDevices,
   userRoles,
   users,
 } from "../db/schema.js";
@@ -249,23 +248,6 @@ export class CommsRepository {
         eq(channelSubscriptions.channelId, channels.channelId),
       )
       .where(eq(channelSubscriptions.userId, userId));
-  }
-
-  async registerDevice(
-    userId: string,
-    deviceType: string,
-    deviceToken: string,
-  ) {
-    const [device] = await db
-      .insert(userDevices)
-      .values({
-        userId,
-        deviceType,
-        deviceToken,
-      })
-      .returning();
-
-    return device;
   }
 
   async getChannelDataByName(name: string) {
