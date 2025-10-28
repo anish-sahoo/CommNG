@@ -17,10 +17,6 @@ export const deletePostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
 });
-export const registerDeviceSchema = z.object({
-  deviceType: z.string(),
-  deviceToken: z.string(),
-});
 
 export const createChannelSchema = z.object({
   name: z
@@ -79,7 +75,6 @@ export const deleteSubscriptionSchema = z.object({
   subscriptionId: z.coerce.number().int().positive(),
 });
 
-export type RegisterDeviceInput = z.infer<typeof registerDeviceSchema>;
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;

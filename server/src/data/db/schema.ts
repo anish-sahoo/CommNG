@@ -361,24 +361,29 @@ export const mentorshipMatches = pgTable(
   ],
 );
 
-// USER DEVICES: track devices for push notifications
-export const userDevices = pgTable(
-  "user_devices",
+// Push subscriptions table — structured storage for web-push subscriptions.
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
   {
-    deviceId: integer("device_id").primaryKey().generatedAlwaysAsIdentity(),
+    subscriptionId: integer("subscription_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    deviceType: text("device_type").notNull(), // "ios", "android", "web"
-    deviceToken: text("device_token").notNull(), // FCM/APNS token
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    keys: jsonb("keys"),
+    topics: jsonb("topics"),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
     isActive: boolean("is_active").default(true).notNull(),
   },
   (table) => [
-    index("ix_user_devices_user_id").on(table.userId),
-    index("ix_user_devices_token").on(table.deviceToken),
+    uniqueIndex("ux_push_subscriptions_endpoint").on(table.endpoint),
+    index("ix_push_subscriptions_user_id").on(table.userId),
   ],
 );
 
@@ -435,8 +440,8 @@ export const messageBlasts = pgTable(
   ],
 );
 
-export type UserDevice = typeof userDevices.$inferSelect;
-export type NewUserDevice = typeof userDevices.$inferInsert;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
 export type File = typeof files.$inferSelect;
