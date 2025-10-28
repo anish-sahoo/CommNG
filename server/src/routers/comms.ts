@@ -47,7 +47,7 @@ const createPost = protectedProcedure
       userId,
       input.channelId,
       input.content,
-      input.attachmentUrl,
+      input.attachmentFileIds,
     );
 
     return createdPost;
@@ -157,7 +157,7 @@ const editPost = protectedProcedure
       input.channelId,
       input.messageId,
       input.content,
-      input.attachmentUrl,
+      input.attachmentFileIds,
     );
 
     return updatedPost;

@@ -274,6 +274,32 @@ export const messages = pgTable(
   ],
 );
 
+export const messageAttachments = pgTable(
+  "message_attachments",
+  {
+    attachmentId: integer("attachment_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    messageId: integer("message_id")
+      .references(() => messages.messageId, { onDelete: "cascade" })
+      .notNull(),
+    fileId: uuid("file_id")
+      .references(() => files.fileId, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ix_message_attachments_message_id").on(table.messageId),
+    index("ix_message_attachments_file_id").on(table.fileId),
+    uniqueIndex("ux_message_attachments_message_file").on(
+      table.messageId,
+      table.fileId,
+    ),
+  ],
+);
+
 export const messageReactions = pgTable(
   "message_reactions",
   {

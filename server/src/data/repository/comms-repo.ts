@@ -1,13 +1,16 @@
-import { and, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import {
   ConflictError,
   InternalServerError,
   NotFoundError,
 } from "../../types/errors.js";
+import { fileMetadataSchema } from "../../types/file-types.js";
 import log from "../../utils/logger.js";
 import {
   channelSubscriptions,
   channels,
+  files,
+  messageAttachments,
   messageReactions,
   messages,
   roles,
@@ -29,7 +32,57 @@ export type UserPermissionsResult = {
   hasMessageRolePermission: boolean;
 };
 
+export type MessageAttachmentRecord = {
+  fileId: string;
+  fileName: string;
+  contentType?: string | null;
+};
+
 export class CommsRepository {
+  private async getAttachmentsForMessages(
+    executor: Transaction | typeof db,
+    messageIds: number[],
+  ): Promise<Map<number, MessageAttachmentRecord[]>> {
+    const attachmentMap = new Map<number, MessageAttachmentRecord[]>();
+
+    if (messageIds.length === 0) {
+      return attachmentMap;
+    }
+
+    const attachmentRows = await executor
+      .select({
+        messageId: messageAttachments.messageId,
+        fileId: messageAttachments.fileId,
+        fileName: files.fileName,
+        metadata: files.metadata,
+      })
+      .from(messageAttachments)
+      .innerJoin(files, eq(messageAttachments.fileId, files.fileId))
+      .where(inArray(messageAttachments.messageId, messageIds));
+
+    for (const row of attachmentRows) {
+      const parsedMetadata = fileMetadataSchema.safeParse(row.metadata);
+      const contentType = parsedMetadata.success
+        ? (parsedMetadata.data.contentType ?? null)
+        : null;
+      const existing = attachmentMap.get(row.messageId) ?? [];
+      existing.push({
+        fileId: row.fileId,
+        fileName: row.fileName,
+        contentType,
+      });
+      attachmentMap.set(row.messageId, existing);
+    }
+
+    for (const messageId of messageIds) {
+      if (!attachmentMap.has(messageId)) {
+        attachmentMap.set(messageId, []);
+      }
+    }
+
+    return attachmentMap;
+  }
+
   async getChannelById(channel_id: number) {
     const [channel] = await db
       .select({ id: channels.channelId })
@@ -72,30 +125,55 @@ export class CommsRepository {
     user_id: string,
     channel_id: number,
     content: string,
-    attachment_url?: string,
+    attachmentFileIds?: string[],
   ) {
-    const [created] = await db
-      .insert(messages)
-      .values({
-        channelId: channel_id,
-        senderId: user_id,
-        message: content,
-        attachmentUrl: attachment_url,
-      })
-      .returning({
-        messageId: messages.messageId,
-        channelId: messages.channelId,
-        senderId: messages.senderId,
-        message: messages.message,
-        attachmentUrl: messages.attachmentUrl,
-        createdAt: messages.createdAt,
-      });
+    return await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(messages)
+        .values({
+          channelId: channel_id,
+          senderId: user_id,
+          message: content,
+        })
+        .returning({
+          messageId: messages.messageId,
+          channelId: messages.channelId,
+          senderId: messages.senderId,
+          message: messages.message,
+          createdAt: messages.createdAt,
+        });
 
-    if (!created) {
-      throw new ConflictError("Message post failed!");
-    }
+      if (!created) {
+        throw new ConflictError("Message post failed!");
+      }
 
-    return created;
+      const uniqueAttachmentIds = Array.from(
+        new Set(attachmentFileIds ?? []),
+      ).filter((fileId) => fileId);
+
+      if (uniqueAttachmentIds.length > 0) {
+        await tx
+          .insert(messageAttachments)
+          .values(
+            uniqueAttachmentIds.map((fileId) => ({
+              messageId: created.messageId,
+              fileId,
+            })),
+          )
+          .onConflictDoNothing({
+            target: [messageAttachments.messageId, messageAttachments.fileId],
+          });
+      }
+
+      const attachmentMap = await this.getAttachmentsForMessages(tx, [
+        created.messageId,
+      ]);
+
+      return {
+        ...created,
+        attachments: attachmentMap.get(created.messageId) ?? [],
+      };
+    });
   }
 
   async getMessageById(message_id: number) {
@@ -105,7 +183,6 @@ export class CommsRepository {
         channelId: messages.channelId,
         senderId: messages.senderId,
         message: messages.message,
-        attachmentUrl: messages.attachmentUrl,
         createdAt: messages.createdAt,
       })
       .from(messages)
@@ -116,41 +193,79 @@ export class CommsRepository {
       throw new NotFoundError("Message not found");
     }
 
-    return message;
+    const attachmentMap = await this.getAttachmentsForMessages(db, [
+      message.messageId,
+    ]);
+
+    return {
+      ...message,
+      attachments: attachmentMap.get(message.messageId) ?? [],
+    };
   }
 
   async updateMessage(
     message_id: number,
     channel_id: number,
     content: string,
-    attachment_url?: string,
+    attachmentFileIds?: string[],
   ) {
-    const [updated] = await db
-      .update(messages)
-      .set({
-        message: content,
-        attachmentUrl: attachment_url ?? null,
-      })
-      .where(
-        and(
-          eq(messages.messageId, message_id),
-          eq(messages.channelId, channel_id),
-        ),
-      )
-      .returning({
-        messageId: messages.messageId,
-        channelId: messages.channelId,
-        senderId: messages.senderId,
-        message: messages.message,
-        attachmentUrl: messages.attachmentUrl,
-        createdAt: messages.createdAt,
-      });
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(messages)
+        .set({
+          message: content,
+        })
+        .where(
+          and(
+            eq(messages.messageId, message_id),
+            eq(messages.channelId, channel_id),
+          ),
+        )
+        .returning({
+          messageId: messages.messageId,
+          channelId: messages.channelId,
+          senderId: messages.senderId,
+          message: messages.message,
+          createdAt: messages.createdAt,
+        });
 
-    if (!updated) {
-      throw new ConflictError("Message update failed!");
-    }
+      if (!updated) {
+        throw new ConflictError("Message update failed!");
+      }
 
-    return updated;
+      if (attachmentFileIds) {
+        await tx
+          .delete(messageAttachments)
+          .where(eq(messageAttachments.messageId, message_id));
+
+        const uniqueFileIds = Array.from(new Set(attachmentFileIds)).filter(
+          (fileId) => fileId,
+        );
+
+        if (uniqueFileIds.length > 0) {
+          await tx
+            .insert(messageAttachments)
+            .values(
+              uniqueFileIds.map((fileId) => ({
+                messageId: message_id,
+                fileId,
+              })),
+            )
+            .onConflictDoNothing({
+              target: [messageAttachments.messageId, messageAttachments.fileId],
+            });
+        }
+      }
+
+      const attachmentMap = await this.getAttachmentsForMessages(tx, [
+        updated.messageId,
+      ]);
+
+      return {
+        ...updated,
+        attachments: attachmentMap.get(updated.messageId) ?? [],
+      };
+    });
   }
 
   async deleteMessage(message_id: number, channel_id: number) {
@@ -167,7 +282,6 @@ export class CommsRepository {
         channelId: messages.channelId,
         senderId: messages.senderId,
         message: messages.message,
-        attachmentUrl: messages.attachmentUrl,
         createdAt: messages.createdAt,
       });
 
@@ -409,7 +523,6 @@ export class CommsRepository {
         channelId: messages.channelId,
         senderId: messages.senderId,
         message: messages.message,
-        attachmentUrl: messages.attachmentUrl,
         createdAt: messages.createdAt,
         authorName: users.name,
         authorClearanceLevel: users.clearanceLevel,
@@ -425,9 +538,15 @@ export class CommsRepository {
       currentUserId,
     );
 
+    const attachmentMap = await this.getAttachmentsForMessages(
+      db,
+      messagesList.map((message) => message.messageId),
+    );
+
     return messagesList.map((message) => ({
       ...message,
       reactions: reactionMap.get(message.messageId) ?? [],
+      attachments: attachmentMap.get(message.messageId) ?? [],
     }));
   }
 

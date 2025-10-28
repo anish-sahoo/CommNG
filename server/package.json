@@ -10,7 +10,6 @@
     "db:generate": "npx dotenv -e .env -- drizzle-kit generate --config=drizzle.config.ts",
     "db:migrate": "npx dotenv -e .env -- drizzle-kit migrate --config=drizzle.config.ts",
     "db:studio": "npx dotenv -e .env -- drizzle-kit studio --config=drizzle.config.ts",
-    "db:seed": "npx dotenv -e .env -- tsx src/utils/seed.ts",
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
     "lintfix": "npx @biomejs/biome check --write"

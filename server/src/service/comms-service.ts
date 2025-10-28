@@ -39,7 +39,7 @@ export class CommsService {
     user_id: string,
     channel_id: number,
     content: string,
-    attachment_url?: string,
+    attachment_file_ids?: string[],
   ) {
     // TODO: sanitize string inputs for security/profanity
 
@@ -51,7 +51,7 @@ export class CommsService {
       user_id,
       channel_id,
       content,
-      attachment_url,
+      attachment_file_ids,
     );
   }
 
@@ -60,7 +60,7 @@ export class CommsService {
     channel_id: number,
     message_id: number,
     content: string,
-    attachment_url?: string,
+    attachment_file_ids?: string[],
   ) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -88,7 +88,7 @@ export class CommsService {
       message_id,
       channel_id,
       content,
-      attachment_url,
+      attachment_file_ids,
     );
   }
 

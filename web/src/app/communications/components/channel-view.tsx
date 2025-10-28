@@ -17,95 +17,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, ChannelShell, MessageList } from "./index";
-
-// Examples
-const fallbackMessages: ChannelMessage[] = [
-  {
-    id: 1,
-    authorName: "Brandon Johnson",
-    authorRank: "E-1",
-    authorRole: "Participant",
-    content:
-      "Are there any additional resources regarding the mentorship program? I would like to participate and receive a mentor, but I would like more insight prior to applying. Thanks!",
-    reactions: [
-      { emoji: "💬", count: 3 },
-      { emoji: "👍", count: 2 },
-      { emoji: "👏", count: 2 },
-    ],
-  },
-  {
-    id: 2,
-    authorName: "Gary Tomlinson",
-    authorRank: "IT Admin",
-    content:
-      "Hello everyone! We are going through some bug fixes this afternoon, so if the platform seems slow, try checking in at a later time. Thanks for your cooperation while we get these changes fixed.",
-    reactions: [{ emoji: "👍", count: 17 }],
-  },
-  {
-    id: 3,
-    authorName: "Catherine Murray",
-    authorRank: "E-7",
-    content:
-      "I will be in the Boston area this afternoon if anyone would like to have coffee and discuss their journey within the National Guard. Signal me if you're interested in chatting!",
-    reactions: [{ emoji: "👍", count: 9 }],
-  },
-  {
-    id: 4,
-    authorName: "Malissa Zweig",
-    authorRank: "E-5",
-    authorRole: "Paralegal Specialist",
-    content:
-      "Reminder that our community town hall is tonight at 1900. Bring your questions and ideas—agenda posted in the files tab. Download the agenda below.",
-    attachmentUrl:
-      "https://example.com/docs/community-town-hall-agenda.pdf",
-    reactions: [
-      { emoji: "🗓️", count: 4 },
-      { emoji: "👍", count: 6 },
-    ],
-  },
-  {
-    id: 5,
-    authorName: "Yvette Morales",
-    authorRank: "O-2",
-    authorRole: "Intel Analyst",
-    content:
-      "Heads up: weather watch in effect for tomorrow morning drills. Monitor the channel for last-minute updates.",
-    reactions: [
-      { emoji: "🌦️", count: 5 },
-      { emoji: "👀", count: 2 },
-    ],
-  },
-  {
-    id: 6,
-    authorName: "Roger Thompson",
-    authorRank: "E-7",
-    authorRole: "Training Lead",
-    content:
-      "Great work from the logistics squad on yesterday's exercise. Share any lessons learned so we can include them in next week's briefing.",
-    reactions: [
-      { emoji: "👏", count: 11 },
-      { emoji: "📝", count: 3 },
-    ],
-  },
-  {
-    id: 7,
-    authorName: "Maya Chen",
-    authorRank: "E-2",
-    authorRole: "Medical Technician",
-    content:
-      "New wellness resources are live in the knowledge base. Would love feedback on what you'd like to see next.",
-    reactions: [
-      { emoji: "❤️", count: 7 },
-      { emoji: "👍", count: 5 },
-    ],
-  },
-];
 
 function cloneMessages(messages: ChannelMessage[]): ChannelMessage[] {
   return messages.map((message) => ({
     ...message,
+    attachments: (message.attachments ?? []).map((attachment) => ({
+      ...attachment,
+    })),
     reactions: (message.reactions ?? []).map((reaction) => ({
       ...reaction,
       reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
@@ -132,6 +53,7 @@ function areMessagesEqual(a: ChannelMessage[], b: ChannelMessage[]): boolean {
       left.authorName !== right.authorName ||
       left.authorRank !== right.authorRank ||
       left.authorRole !== right.authorRole ||
+      (left.attachments?.length ?? 0) !== (right.attachments?.length ?? 0) ||
       (left.reactions?.length ?? 0) !== (right.reactions?.length ?? 0)
     ) {
       return false;
@@ -153,6 +75,27 @@ function areMessagesEqual(a: ChannelMessage[], b: ChannelMessage[]): boolean {
         leftReaction.count !== rightReaction.count ||
         (leftReaction.reactedByCurrentUser ?? false) !==
           (rightReaction.reactedByCurrentUser ?? false)
+      ) {
+        return false;
+      }
+    }
+
+    const leftAttachments = left.attachments ?? [];
+    const rightAttachments = right.attachments ?? [];
+
+    for (
+      let attachmentIndex = 0;
+      attachmentIndex < leftAttachments.length;
+      attachmentIndex += 1
+    ) {
+      const leftAttachment = leftAttachments[attachmentIndex];
+      const rightAttachment = rightAttachments[attachmentIndex];
+
+      if (
+        leftAttachment.fileId !== rightAttachment.fileId ||
+        leftAttachment.fileName !== rightAttachment.fileName ||
+        (leftAttachment.contentType ?? null) !==
+          (rightAttachment.contentType ?? null)
       ) {
         return false;
       }
@@ -191,13 +134,16 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     trpc.comms.getChannelMessages.queryOptions(channelInput),
   );
 
-  const channelList = channelListQuery.data ?? [];
+  const channelListRaw =
+    channelListQuery.data && channelListQuery.data.length > 0
+      ? channelListQuery.data
+      : [DEMO_CHANNEL];
+
+  const channelList = channelListRaw;
 
   const messages = messagesQuery.data ?? [];
 
-  const [messagesState, setMessagesState] = useState<ChannelMessage[]>(() =>
-    cloneMessages(fallbackMessages),
-  );
+  const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
   const channelName = useMemo(() => {
     if (!channelList.length || !parsedChannelId) {
@@ -223,6 +169,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       authorRole: message.authorDepartment ?? undefined,
       content: message.message ?? "",
       createdAt: message.createdAt,
+      attachments: message.attachments ?? [],
       reactions: (message.reactions ?? []).map((reaction) => ({
         emoji: reaction.emoji,
         count: reaction.count,
