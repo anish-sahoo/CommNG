@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import z from "zod";
 import TextInput from "@/components/text-input";
