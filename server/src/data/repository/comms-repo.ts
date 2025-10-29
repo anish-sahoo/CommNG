@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import type { QueryResult } from "pg";
 import {
   ConflictError,
   InternalServerError,
@@ -454,37 +455,9 @@ export class CommsRepository {
     }
 
     const valuesList = sql.join(
-      messageIds.map((id) => sql`${id}`),
+      messageIds.map((id) => sql`(${id}::int)`),
       sql`, `,
     );
-
-    const reactionRows = await db.execute<{
-      message_id: number;
-      reactions: Array<{
-        emoji: string;
-        count: number;
-        reactedByCurrentUser: boolean;
-      }> | null;
-    }>(sql`
-      with message_list(message_id) as (
-        values ${valuesList}
-      )
-      select ml.message_id,
-        coalesce(
-          json_agg(
-            json_build_object(
-              'emoji', mr.emoji,
-              'count', count(mr.emoji),
-              'reactedByCurrentUser', bool_or(mr.user_id = ${currentUserId})
-            )
-            order by count(mr.emoji) desc, mr.emoji asc
-          ),
-          '[]'::json
-        ) as reactions
-      from message_list ml
-      left join ${messageReactions} mr on mr.message_id = ml.message_id
-      group by ml.message_id
-    `);
 
     const result = new Map<
       number,
@@ -494,6 +467,60 @@ export class CommsRepository {
         reactedByCurrentUser: boolean;
       }[]
     >();
+
+    let reactionRows: QueryResult<{
+      message_id: number;
+      reactions: Array<{
+        emoji: string;
+        count: number;
+        reactedByCurrentUser: boolean;
+      }> | null;
+    }> | null = null;
+
+    try {
+      reactionRows = await db.execute<{
+        message_id: number;
+        reactions: Array<{
+          emoji: string;
+          count: number;
+          reactedByCurrentUser: boolean;
+        }> | null;
+      }>(sql`
+        with message_list(message_id) as (values ${valuesList}),
+        reaction_totals as (
+          select mr.message_id,
+                 mr.emoji,
+                 count(*) as reaction_count,
+                 bool_or(mr.user_id = (${currentUserId})) as reacted_by_current_user
+          from message_list ml
+          left join ${messageReactions} mr on mr.message_id = ml.message_id
+          where mr.message_id is not null
+          group by mr.message_id, mr.emoji
+        )
+        select ml.message_id,
+               coalesce(
+                 json_agg(
+                   json_build_object(
+                     'emoji', rt.emoji,
+                     'count', rt.reaction_count,
+                     'reactedByCurrentUser', rt.reacted_by_current_user
+                   )
+                   order by rt.reaction_count desc, rt.emoji asc
+                 ) filter (where rt.emoji is not null),
+                 '[]'::json
+               ) as reactions
+        from message_list ml
+        left join reaction_totals rt on rt.message_id = ml.message_id
+        group by ml.message_id;
+      `);
+    } catch (error) {
+      log.error({ error }, "Failed to load reactions for channel messages");
+      return result;
+    }
+
+    if (!reactionRows) {
+      return result;
+    }
 
     for (const row of reactionRows.rows) {
       const reactionsArray = Array.isArray(row.reactions) ? row.reactions : [];
