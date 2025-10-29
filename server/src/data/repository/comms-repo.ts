@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import type { QueryResult } from "pg";
 import {
   ConflictError,
@@ -558,7 +558,7 @@ export class CommsRepository {
       .from(messages) // Retrieve from messages table
       .leftJoin(users, eq(messages.senderId, users.id))
       .where(eq(messages.channelId, channel_id))
-      .orderBy(messages.createdAt);
+      .orderBy(desc(messages.createdAt));
 
     const reactionMap = await this.getReactionsForMessages(
       messagesList.map((message) => message.messageId),
