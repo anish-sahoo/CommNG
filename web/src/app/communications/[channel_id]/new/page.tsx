@@ -318,7 +318,6 @@ export default function NewChannelPostPage({
             rows={10}
             maxLength={5000}
             showCharCount={true}
-            borderColor="text-primary"
             counterColor="text-primary"
           />
           <div className="space-y-3">

@@ -1,9 +1,9 @@
 export const DEMO_CHANNEL = {
   channelId: 1,
-  name: "Demo Channel",
+  name: "Events and Opportunities",
   metadata: {
-    summary: "Demo communications channel.",
-    description: "Demo communications channel",
+    summary: "Share any events you wish to invite people to",
+    description: "Share any events you wish to invite people to",
     icon: "communications",
   },
 } as const;
