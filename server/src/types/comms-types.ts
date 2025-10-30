@@ -1,51 +1,66 @@
 import { z } from "zod";
 
+const attachmentFileIdsSchema = z
+  .array(z.string().uuid())
+  .max(10, "Too many attachments")
+  .optional();
+
 export const postPostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   content: z.string().min(1, "Post content cannot be empty"),
-  attachmentUrl: z.string().url().optional(),
+  attachmentFileIds: attachmentFileIdsSchema,
 });
 
 export const editPostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
   content: z.string().min(1, "Post content cannot be empty"),
-  attachmentUrl: z.string().url().optional(),
+  attachmentFileIds: attachmentFileIdsSchema,
 });
 
 export const deletePostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
 });
-export const registerDeviceSchema = z.object({
-  deviceType: z.string(),
-  deviceToken: z.string(),
-});
 
-// Channel creation schema
 export const createChannelSchema = z.object({
   name: z
     .string()
     .min(1, "Channel name cannot be empty")
     .max(100, "Channel name too long"),
-  metadata: z.record(z.unknown()).optional(), // Optional JSON metadata
+  metadata: z
+    .object({
+      description: z.string().optional(),
+      isPrivate: z.boolean().optional(),
+      tags: z.array(z.string()).optional(),
+    })
+    .loose()
+    .optional(),
 });
 
-export type CreateChannelInput = z.infer<typeof createChannelSchema>;
+export const channelUpdateMetadata = z.object({
+  name: z
+    .string()
+    .min(1, "Channel name cannot be empty")
+    .max(100, "Channel name too long"),
+  description: z.string().optional(),
+  postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
+});
+
+export const updateChannelSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+  metadata: channelUpdateMetadata,
+});
 
 // Channel members schema
 export const getChannelMembersSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
 
-export type GetChannelMembersInput = z.infer<typeof getChannelMembersSchema>;
-
 // Get channel messages schema
 export const getChannelMessagesSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
-
-export type GetChannelMessagesInput = z.infer<typeof getChannelMessagesSchema>;
 
 export const toggleReactionSchema = z.object({
   channelId: z.coerce.number().int().positive(),
@@ -53,8 +68,6 @@ export const toggleReactionSchema = z.object({
   emoji: z.string().min(1),
   active: z.boolean(),
 });
-
-export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>;
 
 // Channel subscription schemas
 export const createSubscriptionSchema = z.object({
@@ -67,7 +80,12 @@ export const deleteSubscriptionSchema = z.object({
   subscriptionId: z.coerce.number().int().positive(),
 });
 
-export type RegisterDeviceInput = z.infer<typeof registerDeviceSchema>;
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;
+export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>;
+export type GetChannelMessagesInput = z.infer<typeof getChannelMessagesSchema>;
+export type GetChannelMembersInput = z.infer<typeof getChannelMembersSchema>;
+export type UpdateChannelInput = z.infer<typeof updateChannelSchema>;
+export type CreateChannelInput = z.infer<typeof createChannelSchema>;
+export type ChannelUpdateMetadata = z.infer<typeof channelUpdateMetadata>;

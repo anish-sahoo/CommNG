@@ -1,4 +1,5 @@
 "use client";
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 type NavItem = {
   id: number;
   label: string;
-  href: string;
+  href: Route;
   icon: keyof typeof icons;
 };
 

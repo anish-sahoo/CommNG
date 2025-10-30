@@ -39,6 +39,9 @@ export function QueryProvider({ children }: PropsWithChildren) {
       links: [
         httpBatchLink({
           url: trpcUrl,
+          fetch(url, options) {
+            return fetch(url, { ...options, credentials: "include" });
+          },
         }),
       ],
     }),

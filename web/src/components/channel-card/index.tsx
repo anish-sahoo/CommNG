@@ -20,28 +20,28 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
   const Icon = icons[iconName];
 
   return (
-    <div className="group w-64 h-64 rounded-2xl overflow-hidden bg-white border border-neutral/50 shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="h-3/5 bg-neutral flex items-center justify-center">
+    <div className="group h-64 w-64 overflow-hidden rounded-2xl border border-neutral/50 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+      <div className="flex h-3/5 items-center justify-center bg-neutral">
         {imageSrc ? (
           <Image
             src={imageSrc}
             alt={title}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             width={300}
             height={200}
           />
         ) : (
-          <span className="text-secondary/50 text-body">Image Placeholder</span>
+          <span className="text-body text-secondary/50">Image Placeholder</span>
         )}
       </div>
 
       <Link
         href={href}
-        className="h-2/5 bg-primary group-hover:bg-primary-dark transition-colors duration-200 p-5 flex flex-col justify-center rounded-b-2xl cursor-pointer"
+        className="flex h-2/5 cursor-pointer flex-col justify-center rounded-b-2xl bg-primary p-5 transition-colors duration-200 group-hover:bg-primary-dark"
       >
-        <div className="flex items-center gap-2 mb-1">
-          {Icon && <Icon className="w-5 h-5 text-accent" />}
-          <h3 className="text-subheader text-background font-semibold">
+        <div className="mb-1 flex items-center gap-2">
+          {Icon && <Icon className="h-5 w-5 text-accent" />}
+          <h3 className="text-subheader font-semibold text-background">
             {title}
           </h3>
         </div>

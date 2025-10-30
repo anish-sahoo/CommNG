@@ -9,6 +9,11 @@ export abstract class StorageAdapter {
   abstract getStream(path: string): Promise<Readable>;
   abstract delete(path: string): Promise<boolean>;
   abstract getUrl(path: string): Promise<string>;
+  abstract generatePresignedUploadUrl(
+    storageName: string,
+    expiresSeconds: number,
+    contentType: string | undefined,
+  ): Promise<string>;
 }
 
 export type FileInputStreamOptions = {

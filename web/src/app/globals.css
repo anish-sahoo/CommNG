@@ -3,16 +3,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  /* Font aliases */
-  --font-family-sans:
-    var(--font-open-sans), "Open Sans", ui-sans-serif, system-ui, -apple-system,
+@theme {
+  --font-sans:
+    var(--font-open-sans), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-family-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-  --font-sans: var(--font-family-sans);
-  --font-mono: var(--font-family-mono);
 
   /* Color bridge tokens */
   --color-background: var(--background);
@@ -176,7 +170,6 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sans);
     text-rendering: optimizeLegibility;
   }
 }

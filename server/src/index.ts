@@ -13,7 +13,14 @@ import log from "./utils/logger.js";
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    // Allow the request origin (works for same-origin serving and local dev).
+    // We keep credentials: true to allow auth cookies.
+    origin: true,
+    credentials: true, // allow cookies/authorization headers
+  }),
+);
 
 app.use("/api/auth", toNodeHandler(auth));
 

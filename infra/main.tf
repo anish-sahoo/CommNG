@@ -253,3 +253,87 @@ output "db_master_password_secret_arn" {
   description = "ARN of the AWS Secrets Manager secret where the password is stored"
   value       = aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
 }
+
+output "s3_bucket_name" {
+  description = "S3 bucket name used for application files"
+  value       = aws_s3_bucket.comm_ng_files.bucket
+}
+
+output "s3_bucket_domain" {
+  description = "S3 bucket domain name"
+  value       = aws_s3_bucket.comm_ng_files.bucket_domain_name
+}
+
+# ------------------------------------------------------------
+# S3 bucket for application files (public view, server-only uploads)
+# ------------------------------------------------------------
+
+resource "aws_s3_bucket" "comm_ng_files" {
+  bucket = "dev-comm-ng-files-${random_id.bucket_suffix.hex}"
+
+  tags = {
+    Name        = "dev-comm-ng-files"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "comm_ng_files_versioning" {
+  bucket = aws_s3_bucket.comm_ng_files.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "comm_ng_files_sse" {
+  bucket = aws_s3_bucket.comm_ng_files.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "comm_ng_files_lifecycle" {
+  bucket = aws_s3_bucket.comm_ng_files.id
+
+  rule {
+    id     = "expire-old-objects"
+    status = "Enabled"
+
+    filter {
+      prefix = ""
+    }
+
+    expiration {
+      days = 365
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_cors_configuration" "comm_ng_files_cors" {
+  bucket = aws_s3_bucket.comm_ng_files.id
+
+  cors_rule {
+    id = "allow-presigned-uploads"
+
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "PUT", "POST"]
+    allowed_origins = ["http://localhost:3001", "http://localhost:3000"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
+
+# A tiny random id for a stable but unique bucket name in dev
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+

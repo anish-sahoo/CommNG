@@ -46,6 +46,11 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "feature",
 ]);
 
+export const channelPostPermissionEnum = pgEnum(
+  "channel_post_permission_enum",
+  ["admin", "everyone", "custom"],
+);
+
 export const users = pgTable(
   "user",
   {
@@ -125,10 +130,14 @@ export const channels = pgTable(
   {
     channelId: integer("channel_id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull(),
+    description: text("description"),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
     metadata: jsonb("metadata"),
+    postPermissionLevel: channelPostPermissionEnum("post_permission_level")
+      .notNull()
+      .default("admin"),
   },
   (table) => [uniqueIndex("ux_channels_name").on(table.name)],
 );
@@ -265,6 +274,32 @@ export const messages = pgTable(
   ],
 );
 
+export const messageAttachments = pgTable(
+  "message_attachments",
+  {
+    attachmentId: integer("attachment_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    messageId: integer("message_id")
+      .references(() => messages.messageId, { onDelete: "cascade" })
+      .notNull(),
+    fileId: uuid("file_id")
+      .references(() => files.fileId, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("ix_message_attachments_message_id").on(table.messageId),
+    index("ix_message_attachments_file_id").on(table.fileId),
+    uniqueIndex("ux_message_attachments_message_file").on(
+      table.messageId,
+      table.fileId,
+    ),
+  ],
+);
+
 export const messageReactions = pgTable(
   "message_reactions",
   {
@@ -352,24 +387,29 @@ export const mentorshipMatches = pgTable(
   ],
 );
 
-// USER DEVICES: track devices for push notifications
-export const userDevices = pgTable(
-  "user_devices",
+// Push subscriptions table — structured storage for web-push subscriptions.
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
   {
-    deviceId: integer("device_id").primaryKey().generatedAlwaysAsIdentity(),
+    subscriptionId: integer("subscription_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    deviceType: text("device_type").notNull(), // "ios", "android", "web"
-    deviceToken: text("device_token").notNull(), // FCM/APNS token
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    keys: jsonb("keys"),
+    topics: jsonb("topics"),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
     isActive: boolean("is_active").default(true).notNull(),
   },
   (table) => [
-    index("ix_user_devices_user_id").on(table.userId),
-    index("ix_user_devices_token").on(table.deviceToken),
+    uniqueIndex("ux_push_subscriptions_endpoint").on(table.endpoint),
+    index("ix_push_subscriptions_user_id").on(table.userId),
   ],
 );
 
@@ -426,8 +466,8 @@ export const messageBlasts = pgTable(
   ],
 );
 
-export type UserDevice = typeof userDevices.$inferSelect;
-export type NewUserDevice = typeof userDevices.$inferInsert;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type Role = typeof roles.$inferSelect;
 export type NewRole = typeof roles.$inferInsert;
 export type File = typeof files.$inferSelect;

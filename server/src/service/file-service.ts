@@ -6,22 +6,77 @@ import type {
   FileInputStreamOptions,
   StorageAdapter,
 } from "../storage/storage-adapter.js";
-import { NotFoundError } from "../types/errors.js";
+import { ForbiddenError } from "../types/errors.js";
 import {
   type FileLike,
   type FileMetadata,
   type FileStreamNullable,
   fileMetadataSchema,
 } from "../types/file-types.js";
+import { ensureNOTUsingAws } from "../utils/aws.js";
 import log from "../utils/logger.js";
 
 export class FileService {
   private fileRepository: FileRepository;
-  private adapter: StorageAdapter;
+  public adapter: StorageAdapter;
 
   constructor(fileRepository: FileRepository, adapter: StorageAdapter) {
     this.fileRepository = fileRepository;
     this.adapter = adapter;
+  }
+
+  /**
+   * Create a DB record and return a presigned upload URL which the client
+   * can PUT to directly. Requires the adapter to implement
+   * `generatePresignedUploadUrl` (S3 adapter does).
+   */
+  public async createPresignedUpload(
+    _userId: string,
+    originalFileName: string,
+    opts?: FileInputStreamOptions,
+    expiresSeconds?: number,
+    _uploadedByOverride?: number,
+  ): Promise<{ fileId: string; uploadUrl: string; storedName: string }> {
+    const safeOriginalName = this.normaliseOriginalName(originalFileName);
+    const fileId = randomUUID();
+    const extension = this.resolveExtension(
+      safeOriginalName,
+      opts?.contentType,
+    );
+    const storageName = extension ? `${fileId}${extension}` : fileId;
+    const uploadUrl = await this.adapter.generatePresignedUploadUrl(
+      storageName,
+      expiresSeconds ?? 900,
+      opts?.contentType,
+    );
+
+    // Return fileId, uploadUrl and storedName (storedName added to help
+    // the client confirm upload later)
+    return { fileId, uploadUrl, storedName: storageName };
+  }
+
+  /**
+   * Confirm a presigned upload by inserting the DB record. This is called
+   * after the client successfully PUTs the file to S3.
+   */
+  public async confirmPresignedUpload(
+    userId: string,
+    fileId: string,
+    originalFileName: string,
+    storedName: string,
+    opts?: FileInputStreamOptions,
+  ): Promise<void> {
+    await this.fileRepository.insertFile({
+      fileId,
+      fileName: this.normaliseOriginalName(originalFileName),
+      location: storedName,
+      metadata: {
+        contentType: opts?.contentType ?? null,
+        storedName,
+        uploadedBy: userId,
+        uploadedAt: new Date().toISOString(),
+      },
+    });
   }
 
   public async storeFileFromStream(
@@ -36,9 +91,10 @@ export class FileService {
       safeOriginalName,
       opts?.contentType,
     );
+    ensureNOTUsingAws("Not supported if using AWS");
     const storageName = extension ? `${fileId}${extension}` : fileId;
 
-    log.info(
+    log.debug(
       `Store file ${safeOriginalName} for user ${userId} as ${storageName} (${opts?.contentType ?? "unknown"})`,
     );
 
@@ -66,26 +122,72 @@ export class FileService {
   }
 
   public async getFileStream(fileId: string): Promise<FileStreamNullable> {
-    try {
-      const fileData = await this.fileRepository.getFile(fileId);
-      const stream = await this.adapter.getStream(fileData.location);
-      const metadata = this.normaliseMetadata(fileData.metadata);
-      const downloadName = this.resolveDownloadName(
-        fileData.fileName,
-        metadata?.storedName ?? fileData.location,
-      );
+    const fileData = await this.fileRepository.getFile(fileId);
+    const metadata = this.normaliseMetadata(fileData.metadata);
+    const downloadName = this.resolveDownloadName(
+      fileData.fileName,
+      metadata?.storedName ?? fileData.location,
+    );
 
+    const location = fileData.location;
+    // If the stored location is already a public URL (S3/public),
+    // streaming is not allowed via the server. Clients should request
+    // the URL instead. Throw Forbidden so callers can fallback to
+    // the URL-based flow.
+    const isUrl =
+      location.startsWith("http://") || location.startsWith("https://");
+
+    if (isUrl) {
+      throw new ForbiddenError(
+        "File is stored as a URL and cannot be streamed from the server. Use getFileUrl instead.",
+      );
+    }
+    const stream = await this.adapter.getStream(location);
+    return {
+      stream,
+      fileName: downloadName,
+      contentType: metadata?.contentType ?? undefined,
+      location,
+    };
+  }
+
+  /**
+   * Return a downloadable URL for the given fileId. This will return the
+   * stored public URL directly if the DB record contains one, or ask the
+   * adapter to produce a URL (presigned GET) for stored locations.
+   */
+  public async getFileUrl(fileId: string): Promise<{
+    fileName: string;
+    contentType?: string;
+    url: string;
+    location: string;
+  }> {
+    const fileData = await this.fileRepository.getFile(fileId);
+    const metadata = this.normaliseMetadata(fileData.metadata);
+    const downloadName = this.resolveDownloadName(
+      fileData.fileName,
+      metadata?.storedName ?? fileData.location,
+    );
+
+    const location = fileData.location;
+
+    // If already a public URL, return it.
+    if (location.startsWith("http://") || location.startsWith("https://")) {
       return {
-        stream,
         fileName: downloadName,
         contentType: metadata?.contentType ?? undefined,
+        url: location,
+        location,
       };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        return null;
-      }
-      throw err;
     }
+
+    const url = await this.adapter.getUrl(location);
+    return {
+      fileName: downloadName,
+      contentType: metadata?.contentType ?? undefined,
+      url,
+      location,
+    };
   }
 
   public async fileLikeToReadable(file: FileLike): Promise<Readable> {

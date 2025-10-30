@@ -3,6 +3,7 @@ import * as fsp from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { ForbiddenError } from "../types/errors.js";
 import {
   type FileInputStreamOptions,
   type FilePath,
@@ -11,6 +12,8 @@ import {
 
 export class FileSystemStorageAdapter extends StorageAdapter {
   private STORAGE_BASE_PATH = process.env.STORAGE_BASE_PATH ?? "../storage/";
+  private BASE_URL =
+    process.env.LOCAL_FILE_BASE_URL ?? "http://localhost:3000/files"; // optional
 
   public async storeStream(
     filename: string,
@@ -21,22 +24,18 @@ export class FileSystemStorageAdapter extends StorageAdapter {
     const finalPath = path.join(destDir, filename);
     const finalDir = path.dirname(finalPath);
 
-    // Ensure the destination directory (including subdirectories) exists
     await fsp.mkdir(finalDir, { recursive: true });
-    // Create temp file in the same directory as final file for atomic rename
     const tmpPath = path.join(finalDir, `.${filename}.tmp`);
 
     const ws = fs.createWriteStream(tmpPath, { flags: "w" });
     try {
-      // pipeline will throw if the stream errors
       await pipeline(input, ws);
-      // move into final location atomically (works because same filesystem/directory)
       await fsp.rename(tmpPath, finalPath);
+
       const relativePath =
         path.relative(destDir, finalPath) || path.basename(finalPath);
       return { path: relativePath };
     } catch (err) {
-      // cleanup temp file on error
       try {
         await fsp.unlink(tmpPath);
       } catch (_) {}
@@ -45,18 +44,36 @@ export class FileSystemStorageAdapter extends StorageAdapter {
   }
 
   public async getStream(filePath: string): Promise<Readable> {
-    // Verify file exists first
     const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
     const absolutePath = path.join(destDir, filePath);
     await fsp.access(absolutePath, fs.constants.R_OK);
-    // Return a readable stream
     return fs.createReadStream(absolutePath);
   }
 
-  public async delete(_path: string): Promise<boolean> {
-    return false;
+  public async delete(filePath: string): Promise<boolean> {
+    try {
+      const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
+      const absolutePath = path.join(destDir, filePath);
+      await fsp.unlink(absolutePath);
+      return true;
+    } catch {
+      return false;
+    }
   }
-  public async getUrl(_path: string): Promise<string> {
-    return "";
+
+  public async getUrl(filePath: string): Promise<string> {
+    // Return a URL to serve locally (optional, requires express/static serving)
+    return `${this.BASE_URL}/${filePath}`;
+  }
+
+  public async generatePresignedUploadUrl(
+    _storageName: string,
+    _expiresSeconds: number,
+    _contentType: string | undefined,
+  ): Promise<string> {
+    // Filesystem adapter does not support presigned uploads.
+    throw new ForbiddenError(
+      "Presigned uploads are not supported by the filesystem adapter.",
+    );
   }
 }

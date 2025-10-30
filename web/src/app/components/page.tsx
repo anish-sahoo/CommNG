@@ -10,12 +10,50 @@ import CollapsibleCard from "@/components/expanding-card";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
+import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import Navigation from "@/components/navigation";
 import PostedCard from "@/components/posted-card";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
+import SearchBar from "@/components/search-bar";
 import { ReportsTable } from "@/components/table-view";
-import TextInput from "@/components/text-input";
+import { TextInput } from "@/components/text-input";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
+
+const mentorQualityOptions: MultiSelectOption[] = [
+  {
+    value: "strong-communicator",
+    label: "Strong communicator",
+  },
+  {
+    value: "encouraging",
+    label: "Encouraging and empathetic",
+  },
+  {
+    value: "experienced-leader",
+    label: "Experienced leader",
+  },
+  {
+    value: "creative",
+    label: "Creative problem-solver",
+  },
+  {
+    value: "honest",
+    label: "Honest and authentic",
+  },
+  {
+    value: "motivated",
+    label: "Motivated and ambitious",
+  },
+  {
+    value: "open-minded",
+    label: "Open-minded and approachable",
+  },
+];
 
 const Components = () => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -36,8 +74,10 @@ const Components = () => {
     };
   }, [mobileNavOpen]);
 
-  const [selectedDropdownValue, setSelectedDropdownValue] = useState("");
+  const [selectedDropdownValue, setSelectedDropdownValue] =
+    useState<string>("");
   const [selectedChipOptions, setSelectedChipOptions] = useState<string[]>([]);
+  const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
 
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
@@ -100,6 +140,8 @@ const Components = () => {
   const [singleLineText, setSingleLineText] = useState("");
   const [multiLineText, setMultiLineText] = useState("");
 
+  const [files, setFiles] = useState<File[] | undefined>();
+
   return (
     <>
       <Navigation
@@ -129,6 +171,15 @@ const Components = () => {
               Communication UI Patterns
             </h1>
           </header>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Search Bar
+              </h2>
+            </div>
+            <SearchBar />
+          </section>
 
           <section className="space-y-6">
             <div className="space-y-2">
@@ -319,7 +370,7 @@ const Components = () => {
               onChange={setSingleLineText}
               placeholder="Enter text..."
               showCharCount={false}
-              borderColor="#CDCDCD"
+              className="border-neutral"
               counterColor="#CDCDCD"
             />
           </section>
@@ -341,9 +392,48 @@ const Components = () => {
               rows={5}
               maxLength={500}
               showCharCount={true}
-              borderColor="#283396"
-              counterColor="#283396"
+              className="border-primary"
+              counterColor="text-primary"
             />
+          </section>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Multi Select for Forms
+              </h2>
+            </div>
+            <MultiSelect
+              label="What qualities do you look for in a mentor?"
+              helperText="Select up to 3"
+              name="mentorQualities"
+              options={mentorQualityOptions}
+              value={selectedQualities}
+              onChange={setSelectedQualities}
+              maxSelections={3}
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                File dropzone
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Component to allow users to upload/drag & drop files. We have to
+                manage uploading, but this gives us UI to accept files in the
+                first place
+              </p>
+            </div>
+            <Dropzone
+              onDrop={(files) => {
+                setFiles(files);
+              }}
+              src={files}
+              maxFiles={5}
+            >
+              <DropzoneEmptyState />
+              <DropzoneContent />
+            </Dropzone>
           </section>
         </div>
       </main>
