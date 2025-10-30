@@ -1,10 +1,12 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import ChannelCard from "@/components/channel-card";
 import ChipSelect from "@/components/chip-select";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
+import CollapsibleCard from "@/components/expanding-card";
 import { icons } from "@/components/icons";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
@@ -153,7 +155,8 @@ const Components = () => {
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full bg-transparent px-3 py-2 text-primary transition hover:text-primary focus-visible:outline-none"
+              className="inline-flex items-center gap-2 rounded-full bg-transparent px-3 py-2 text-primary
+              transition hover:text-primary focus-visible:outline-none"
               aria-label="Open navigation"
             >
               <MenuIcon className="h-6 w-6" aria-hidden="true" />
@@ -248,7 +251,8 @@ const Components = () => {
             <PostedCard
               name="Brandon Johnson"
               rank="E-1"
-              content="Are there any additional resources regarding the mentorship program? I would like to participate and receive a mentor, but I would like more insight on the program prior to applying. Thanks!"
+              content="Are there any additional resources regarding the mentorship program? I would like to participate 
+              and receive a mentor, but I would like more insight on the program prior to applying. Thanks!"
             />
           </section>
 
@@ -272,6 +276,22 @@ const Components = () => {
               ))}
               <AddReaction onSelect={handleDemoAddReaction} />
             </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Collapsible Card
+              </h2>
+            </div>
+            <CollapsibleCard
+              name="Brandon Johnson"
+              rank="E-1"
+              job="DoorDash Driver"
+              location="Hadley, MA"
+              information="I'm eager to learn from those who've walked the path before me, so I can grow faster and avoid mistakes along the way."
+              contact="617-222-3333"
+            />
           </section>
 
           <section className="space-y-6">
