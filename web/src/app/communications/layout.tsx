@@ -35,7 +35,7 @@ export default function CommunicationsLayout({
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
       />
-      <div className="flex flex-1 flex-col px-4 pb-10 pt-16 sm:px-5 md:px-6 lg:ml-[21rem] lg:pl-0 lg:pr-10 lg:pt-16">
+      <div className="flex flex-1 flex-col px-4 p-10 sm:px-5 md:px-6 lg:ml-[21rem] lg:pl-10 lg:pr-10 lg:pt-16">
         <div className="mb-4 flex justify-start lg:hidden">
           <button
             type="button"
