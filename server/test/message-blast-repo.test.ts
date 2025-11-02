@@ -16,12 +16,12 @@ const mem: {
     createdAt: Date;
     updatedAt: Date;
   }>;
-  _ids: {
+  ids: {
     blast: number;
   };
 } = {
   messageBlasts: [],
-  _ids: {
+  ids: {
     blast: 0,
   },
 };
@@ -103,7 +103,7 @@ function createMessageBlast(
   status: "draft" | "sent" | "failed" = "draft",
 ) {
   const blast = {
-    blastId: ++mem._ids.blast,
+    blastId: ++mem.ids.blast,
     senderId,
     title,
     content,
@@ -181,7 +181,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
   beforeAll(() => {
     senderId = randomUUID();
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
   });
 
   it("returns blasts with null target audience for any user", async () => {
@@ -210,7 +210,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("filters blasts by branch correctly", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     const targetAudience: TargetAudience = {
       army: { ranks: [], departments: [] },
@@ -290,7 +290,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("filters blasts by rank correctly", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     const targetAudience: TargetAudience = {
       army: { ranks: ["Colonel", "Major"], departments: [] },
@@ -398,7 +398,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("filters blasts by department correctly", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     const targetAudience: TargetAudience = {
       army: { ranks: [], departments: ["Engineering", "Medical"] },
@@ -483,7 +483,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("filters blasts by both rank and department", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     const targetAudience: TargetAudience = {
       army: { ranks: ["Colonel"], departments: ["Engineering"] },
@@ -585,7 +585,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("does not return expired blasts", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     // Create an expired blast
     const _expiredBlast = createMessageBlast(
@@ -615,7 +615,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("does not return draft or failed blasts", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     // Create a draft blast
     const _draftBlast = createMessageBlast(
@@ -655,7 +655,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("returns multiple matching blasts", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     const targetAudience: TargetAudience = {
       army: { ranks: ["Colonel"], departments: [] },
@@ -749,7 +749,7 @@ describe("MessageBlastRepository.getMessageBlastsForUser", () => {
 
   it("treats empty arrays as requiring no specific values (edge case)", async () => {
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
 
     // Target audience with empty arrays for both ranks and departments
     const targetAudience: TargetAudience = {
@@ -838,7 +838,7 @@ describe("MessageBlastRepository CRUD operations", () => {
   beforeAll(() => {
     senderId = randomUUID();
     mem.messageBlasts = [];
-    mem._ids.blast = 0;
+    mem.ids.blast = 0;
   });
 
   it("creates a message blast", async () => {
