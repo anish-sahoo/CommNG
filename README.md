@@ -42,83 +42,24 @@ Establishing meaningful connections and organizational transparency between lead
 - **System Admins**: Approve mentors, manage matches
 
 ## Getting Started
+### 1. Project Orientation
+- **[Configuration Overview](./CONFIGURATION.md)** – high-level architecture, shared domain routing, and environment variable strategy.
+- **[Notification System](./NOTIFICATIONS.md)** – Web Push/VAPID details and testing notes.
 
-### Prerequisites
-- Node.js 18+
-- Docker
-- PostgreSQL
+### 2. Local Development
+- **[Local Development Setup](./LOCAL-SETUP.md)** – prerequisites, environment files, local services, and developer scripts.
 
-### Setup
+### 3. Secrets & Credentials
+- **[Secrets Management](./SECRETS-SETUP.md)** – how to generate VAPID keys, populate AWS Secrets Manager, and manage sensitive values.
 
-1. Clone and install dependencies:
-```bash
-git clone <repository-url>
-cd CommNG/server && npm install
-cd ../web && npm install
-```
+### 4. Infrastructure & Deployment
+- **[Infrastructure Guide](./INFRA.md)** – Terraform provisioning, GitHub Actions workflows, and deployment process.
+- **[Deployment Checklist](./DEPLOYMENT-CHECKLIST.md)** – pre-flight verification before promoting changes.
+- **[Quick Reference](./QUICK-REFERENCE.md)** – frequently-used CLI commands, ECS/ECR operations, and troubleshooting tips.
 
-2. Start development servers:
-```bash
-0. Install node and docker
-
-1. Clone and install dependencies:
-```bash
-git clone <repository-url>
-cd CommNG/server && npm install
-cd ../web && npm install
-```
-
-2. Setup backend databases
-```bash
-cd CommNG/
-cp .env.example .env # and populate this file with credentials
-docker compose up -d # starts docker containers for redis
-```
-
-3. Start development servers:
-```bash
-# Backend
-cd server && npm run dev
-
-# Frontend  
-cd web && npm run dev
-```
-
-4. Populate DB:
-
-Note: Only run these lines if the DB isn't initialized yet
-```bash
-cd server
-npm run db:migrate
-npm run db:seed # only run this line if you want mock data
-```
-
-5. Access:
-- Frontend: http://localhost:3000
-- API: http://localhost:3000/api/trpc
-- tRPC UI: http://localhost:3000/trpc-ui
-
-
-### Troubleshooting
-```bash
-docker compose down -v # deleting docker containers (only when something goes wrong, otherwise just stop it in the Docker Desktop UI)
-docker compose up -d # re-creates everything
-```
-
-## Development
-
-### Scripts
-- `npm run dev` - Development server
-- `npm run test` - Run tests
-- `npm run lint` - Lint code
-- `npm run format` - Format code
-- `npm run lintfix` - Format code
-
-#### Backend specific:
-- `npm run db:generate` - Create a migration, run this after changing things in the db schema
-- `db:migrate` - Apply latest migration to the db
-- `db:studio` - Drizzle Studio UI
-- `db:seed` - Seed the db with some random data
+### Additional Notes
+- All documentation assumes AWS region `us-east-1` unless otherwise stated.
+- Update the documents when infrastructure or tooling changes to keep this index accurate.
 
 ### Standards
 - Biome for formatting/linting
