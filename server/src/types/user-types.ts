@@ -20,6 +20,12 @@ export const getUserDataInputSchema = z.object({
 
 export type GetUserDataInput = z.infer<typeof getUserDataInputSchema>;
 
+export const checkEmailExistsInputSchema = z.object({
+  email: z.string().email(),
+});
+
+export type CheckEmailExistsInput = z.infer<typeof checkEmailExistsInputSchema>;
+
 export type RoleNamespace = "global" | "channel" | "mentor" | "feature";
 export type RoleSummary = {
   roleId: number;
