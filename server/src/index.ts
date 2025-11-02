@@ -32,6 +32,11 @@ app.use(
   }),
 );
 
+// Health check endpoint for ALB
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
 await connectPostgres();
 await connectRedis();
 await policyEngine.populateCache(60 * 60 * 12, 5000);

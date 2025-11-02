@@ -24,8 +24,13 @@ Establishing meaningful connections and organizational transparency between lead
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express, tRPC
-- **Database**: PostgreSQL
-- **Infrastructure**: Docker, Kubernetes, AWS/GCP
+- **Database**: PostgreSQL (RDS)
+- **Cache**: Valkey/Redis (ElastiCache)
+- **Storage**: S3
+- **Infrastructure**: Docker, ECS Fargate, AWS
+- **Load Balancing**: Application Load Balancer
+- **CI/CD**: GitHub Actions
+- **IaC**: Terraform
 - **Security**: TLS encryption, DoD compliance
 
 ## User Types
@@ -182,6 +187,25 @@ docker compose up -d # re-creates everything
 - Testing details
 - Type: bug fix, feature, refactor, docs
 - Scope: frontend, backend, infrastructure, data, DevOps
+
+## Infrastructure
+
+The application is deployed on AWS using ECS Fargate with auto-scaling capabilities. For detailed setup and deployment instructions, see:
+
+- **[Infrastructure Guide](docs/INFRA.md)** - Complete setup, Terraform, and GitHub Actions documentation
+- **[Quick Reference](docs/QUICK-REFERENCE.md)** - Common commands and troubleshooting
+
+### Quick Deploy
+
+```bash
+# 1. Set up infrastructure
+cd infra
+terraform init
+terraform apply
+
+# 2. Deploy via GitHub Actions
+# Go to Actions → Select workflow → Run workflow
+```
 
 ## License
 
