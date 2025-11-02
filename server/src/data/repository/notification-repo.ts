@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
+import type { TargetAudience } from "../../types/message-blast-types.js";
 import { pushSubscriptions, users } from "../db/schema.js";
 import { db } from "../db/sql.js";
-import type { TargetAudience } from "../../types/message-blast-types.js";
 
 export type ActivePushSubscription = {
   endpoint: string;
@@ -85,9 +85,11 @@ export class NotificationRepository {
   async getSubscriptionsByTargetAudience(
     targetAudience?: TargetAudience | null,
   ): Promise<ActivePushSubscription[]> {
-    const targetAudienceJson = targetAudience
-      ? JSON.stringify(targetAudience)
-      : null;
+    if (!targetAudience || targetAudience === null) {
+      return await this.getAllActiveWebPushSubscriptions("");
+    }
+
+    const targetAudienceJson = JSON.stringify(targetAudience);
 
     const rows = await db
       .select({
@@ -102,16 +104,14 @@ export class NotificationRepository {
       .where(
         and(
           eq(pushSubscriptions.isActive, true),
-          targetAudienceJson
-            ? sql`
-                ${users.branch} IS NOT NULL AND
-                (${targetAudienceJson}::jsonb ? ${users.branch}) AND
-                (
-                  (${users.rank} IS NULL OR (${targetAudienceJson}::jsonb->${users.branch}->'ranks' ? ${users.rank})) AND
-                  (${users.department} IS NULL OR (${targetAudienceJson}::jsonb->${users.branch}->'departments' ? ${users.department}))
-                )
-              `
-            : sql`TRUE`,
+          sql`
+            ${users.branch} IS NOT NULL AND
+            (${targetAudienceJson}::jsonb ? ${users.branch}) AND
+            (
+              (${users.rank} IS NULL OR (${targetAudienceJson}::jsonb->${users.branch}->'ranks' ? ${users.rank})) AND
+              (${users.department} IS NULL OR (${targetAudienceJson}::jsonb->${users.branch}->'departments' ? ${users.department}))
+            )
+          `,
         ),
       );
 

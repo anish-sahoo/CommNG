@@ -36,7 +36,6 @@ export const messageBlastSchema = z.object({
 export type MessageBlastSchema = z.infer<typeof messageBlastSchema>;
 
 export const createMessageBlastInputSchema = z.object({
-  senderId: z.uuid(),
   title: z.string().min(1),
   content: z.string().min(1),
   targetAudience: targetAudienceSchema.optional(),

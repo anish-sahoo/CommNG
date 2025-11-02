@@ -5,7 +5,6 @@ import {
   type NotificationPayload,
   subscribeInputSchema,
 } from "../types/notification-types.js";
-import log from "../utils/logger.js";
 
 const subscribe = protectedProcedure
   .input(subscribeInputSchema)
@@ -13,7 +12,6 @@ const subscribe = protectedProcedure
   .mutation(async ({ input, ctx }) => {
     return withErrorHandling("subscribeToNotifications", async () => {
       const userId = ctx.auth.user.id;
-      log.info(ctx.auth.user, "User Data");
       if (!userId) {
         throw new Error("Unauthorized");
       }

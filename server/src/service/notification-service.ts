@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import type { ActivePushSubscription } from "../data/repository/notification-repo.js";
 import { NotificationRepository } from "../data/repository/notification-repo.js";
+import type { TargetAudience } from "../types/message-blast-types.js";
 import type {
   NotificationPayload,
   SubscribeInput,
@@ -67,7 +68,7 @@ export class NotificationService {
    * @param payload - Notification payload to send
    */
   async sendTargetedNotifications(
-    targetAudience: any,
+    targetAudience: TargetAudience | null,
     payload: NotificationPayload,
   ) {
     const rows: ActivePushSubscription[] =

@@ -9,7 +9,7 @@ export function Cache<T extends unknown[]>(
 
   return (
     _target,
-    propertyKey,
+    _propertyKey,
     descriptor: PropertyDescriptor,
   ): PropertyDescriptor => {
     const original = descriptor.value as (...args: T) => Promise<unknown>;
@@ -22,15 +22,26 @@ export function Cache<T extends unknown[]>(
       const key = keyBuilder(...args);
       const cached = await redisClient.GET(key);
       if (cached) {
-        log.debug(`[Cache HIT] ${String(propertyKey)} -> ${key}`);
-        return JSON.parse(cached);
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed != null) {
+            log.debug(`[Cache HIT] ${String(_propertyKey)} -> ${key}`);
+            return parsed;
+          }
+        } catch (_e) {
+          // invalid json, treat as miss
+        }
       }
 
-      log.debug(`[Cache MISS] ${String(propertyKey)} -> ${key}`);
+      log.debug(`[Cache MISS] ${String(_propertyKey)} -> ${key}`);
       const result = await original.apply(this, args);
 
-      await redisClient.SET(key, JSON.stringify(result));
-      await redisClient.EXPIRE(key, ttlSeconds);
+      if (result != null) {
+        await redisClient.SET(key, JSON.stringify(result));
+        if (ttlSeconds > 0) {
+          await redisClient.EXPIRE(key, ttlSeconds);
+        }
+      }
 
       return result;
     };

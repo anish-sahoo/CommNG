@@ -29,7 +29,7 @@ export class MessageBlastService {
       );
     }
     const result = await this.messageBlastRepository.createMessageBlast(
-      input.senderId,
+      userId,
       input.title,
       input.content,
       input.targetAudience,
@@ -39,7 +39,7 @@ export class MessageBlastService {
       throw new InternalServerError("Something went wrong");
     }
     notificationService
-      .sendTargetedNotifications(input.targetAudience, {
+      .sendTargetedNotifications(input.targetAudience || null, {
         title: input.title,
         body: input.content,
       })
