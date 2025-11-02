@@ -131,3 +131,14 @@ export type UpdateMessageBlastOutput = {
   createdAt: string | Date;
   updatedAt: string | Date;
 };
+
+export const messageBlastInsertSchema = z.object({
+  senderId: z.uuid(),
+  title: z.string().min(1),
+  content: z.string().min(1),
+  targetAudience: targetAudienceSchema.optional(),
+  validUntil: z.date().optional(),
+  status: z.enum(["draft", "sent", "failed"]).optional().default("draft"),
+});
+
+export type MessageBlastInsert = z.infer<typeof messageBlastInsertSchema>;

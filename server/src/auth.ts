@@ -24,9 +24,9 @@ export const auth = betterAuth({
         required: false,
         fieldName: "phoneNumber",
       },
-      clearanceLevel: {
+      rank: {
         type: "string",
-        fieldName: "clearanceLevel",
+        fieldName: "rank",
       },
       department: {
         type: "string",

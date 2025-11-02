@@ -165,7 +165,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     return messages.map((message) => ({
       id: message.messageId,
       authorName: message.authorName ?? undefined,
-      authorRank: message.authorClearanceLevel ?? undefined,
+      authorRank: message.authorRank ?? undefined,
       authorRole: message.authorDepartment ?? undefined,
       content: message.message ?? "",
       createdAt: message.createdAt,

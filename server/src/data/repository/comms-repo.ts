@@ -104,7 +104,8 @@ export class CommsRepository {
         userId: users.id,
         name: users.name,
         email: users.email,
-        clearanceLevel: users.clearanceLevel,
+        rank: users.rank,
+        branch: users.branch,
         department: users.department,
         roleKey: roles.roleKey,
         action: roles.action,
@@ -552,10 +553,11 @@ export class CommsRepository {
         message: messages.message,
         createdAt: messages.createdAt,
         authorName: users.name,
-        authorClearanceLevel: users.clearanceLevel,
+        authorRank: users.rank,
         authorDepartment: users.department,
+        authorBranch: users.branch,
       })
-      .from(messages) // Retrieve from messages table
+      .from(messages)
       .leftJoin(users, eq(messages.senderId, users.id))
       .where(eq(messages.channelId, channel_id))
       .orderBy(desc(messages.createdAt));

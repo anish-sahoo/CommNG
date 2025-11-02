@@ -49,7 +49,7 @@ type MockChannelMember = {
   userId: string;
   name: string;
   email: string;
-  clearanceLevel: string | null;
+  rank: string | null;
   department: string | null;
   roleKey: string;
   action: string;
@@ -246,7 +246,7 @@ function createContext(
         emailVerified: true,
         name,
         branch: "test-branch",
-        clearanceLevel: "test-clearance",
+        rank: "test-clearance",
         department: "test-dept",
         createdAt: now,
         updatedAt: now,
@@ -621,7 +621,7 @@ vi.mock("../src/trpc/app_router.js", () => {
                   userId: s.user_id,
                   name: user?.name || "Unknown",
                   email: user?.email || "unknown@example.com",
-                  clearanceLevel: null,
+                  rank: null,
                   department: null,
                   roleKey: `subscription:${s.permission}`,
                   action: s.permission,

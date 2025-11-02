@@ -5,6 +5,7 @@ import type {
   CreateMessageBlastOutput,
   GetMessageBlastOutput,
   MessageBlastDbRow,
+  MessageBlastInsert,
   TargetAudience,
   UpdateMessageBlastOutput,
 } from "../../types/message-blast-types.js";
@@ -35,11 +36,11 @@ export class MessageBlastRepository {
     validUntil?: Date,
     status: "draft" | "sent" | "failed" = "draft",
   ): Promise<CreateMessageBlastOutput> {
-    const values: any = {
+    const values: MessageBlastInsert = {
       senderId,
       title,
       content,
-      targetAudience: targetAudience || null,
+      targetAudience,
       status,
     };
 
