@@ -21,6 +21,7 @@ type TextInputProps = {
   counterColor?: string;
   id?: string;
   name?: string;
+  disabled?: boolean;
 } & (
   | {
       multiline: true;
@@ -37,11 +38,16 @@ export const TextInput = ({
   value,
   placeholder,
   counterColor,
+  disabled,
   ...rest
 }: TextInputProps) => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
+    if (disabled) {
+      return;
+    }
+
     const newValue = e.target.value;
 
     // Respect maxLength if provided
@@ -67,6 +73,7 @@ export const TextInput = ({
           onChange={handleChange}
           placeholder={placeholder}
           maxLength={maxLength}
+          disabled={disabled}
           rows={rest.rows ?? 3}
           className={cn(
             "resize-none pb-7",
@@ -95,6 +102,7 @@ export const TextInput = ({
         onChange={handleChange}
         placeholder={placeholder}
         maxLength={maxLength}
+        disabled={disabled}
         type={rest.type}
         className={cn(showCount && "pr-20", className)}
       />

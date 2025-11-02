@@ -15,4 +15,8 @@ export class UserService {
   async getUserData(user_id: string) {
     return this.usersRepo.getUserData(user_id);
   }
+
+  async doesUserExistByEmail(email: string) {
+    return this.usersRepo.doesUserExistByEmail(email);
+  }
 }

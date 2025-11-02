@@ -58,6 +58,7 @@ type AppNavBarProps = {
 export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
   const pathname = usePathname();
   const ProfileIcon = icons.user;
+  const isProfileActive = pathname.startsWith("/profile");
 
   return (
     <nav
@@ -88,9 +89,19 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
       </ul>
 
       <div className="mt-auto flex h-16 w-full items-end justify-center pb-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary bg-accent text-primary">
+        <Link
+          href="/profile"
+          aria-label="Profile"
+          aria-current={isProfileActive ? "page" : undefined}
+          className={cn(
+            "flex h-12 w-12 items-center justify-center rounded-full border-2 transition-colors duration-200",
+            isProfileActive
+              ? "border-accent bg-accent text-primary"
+              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+          )}
+        >
           <ProfileIcon className="h-6 w-6" strokeWidth={2} />
-        </div>
+        </Link>
       </div>
     </nav>
   );

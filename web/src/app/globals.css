@@ -18,6 +18,7 @@
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-foreground: var(--primary-foreground);
+  --color-error: var(--error);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -80,6 +81,8 @@
   --primary: #283396;
   --primary-dark: #202978;
   --primary-foreground: #f7f7f7;
+
+  --error: #d83a3a;
 
   --secondary: #222121;
   --secondary-foreground: #f9f9fb;

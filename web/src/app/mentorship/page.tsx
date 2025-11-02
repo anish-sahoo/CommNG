@@ -1,19 +1,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import camaraderie from "../../../public/mentorship-images/camaraderie.jpg";
+import professional_growth from "../../../public/mentorship-images/professional_growth.jpg";
+import service_responsibility from "../../../public/mentorship-images/service_responsibility.jpg";
 
 const cards = [
   {
     title: "Leadership and Professional Growth",
-    src: "/mentorship-images/professional_growth.jpg",
+    src: professional_growth,
   },
   {
     title: "Service and Community Responsibility",
-    src: "/mentorship-images/service_responsibility.jpg",
+    src: service_responsibility,
   },
   {
     title: "Camaraderie and Mutual Support",
-    src: "/mentorship-images/camaraderie.jpg",
+    src: camaraderie,
   },
 ];
 

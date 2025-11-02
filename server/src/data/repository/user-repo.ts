@@ -29,4 +29,12 @@ export class UserRepository {
     }
     return userRow;
   }
+
+  async doesUserExistByEmail(email: string) {
+    const [userRow] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email));
+    return Boolean(userRow);
+  }
 }
