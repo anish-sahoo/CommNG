@@ -49,7 +49,7 @@ export default function CommunicationsOverviewPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-12">
-      <header className="flex justify-end">
+      <header className="flex pt-2 justify-center lg:justify-end">
         <SearchBar
           value={search}
           onChange={(event) => setSearch(event.target.value)}
