@@ -34,7 +34,6 @@ export const menteeStatusEnum = pgEnum("mentee_status_enum", [
 
 export const messageBlastStatusEnum = pgEnum("message_blast_status_enum", [
   "draft",
-  "scheduled",
   "sent",
   "failed",
 ]);
@@ -62,7 +61,7 @@ export const users = pgTable(
     image: uuid("image").references(() => files.fileId, {
       onDelete: "set null",
     }),
-    clearanceLevel: text("clearance_level"),
+    rank: text("rank"),
     department: text("department"),
     branch: text("branch"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -449,8 +448,10 @@ export const messageBlasts = pgTable(
     title: text("title").notNull(),
     content: text("content").notNull(),
     targetAudience: jsonb("target_audience"),
-    scheduledAt: timestamp("scheduled_at", { withTimezone: false }),
     sentAt: timestamp("sent_at", { withTimezone: false }),
+    validUntil: timestamp("valid_until", { withTimezone: false })
+      .notNull()
+      .default(sql`NOW() + INTERVAL '24 hours'`),
     status: messageBlastStatusEnum("status").default("draft").notNull(),
     createdAt: timestamp("created_at", { withTimezone: false })
       .defaultNow()
@@ -462,7 +463,7 @@ export const messageBlasts = pgTable(
   (table) => [
     index("ix_message_blasts_sender_id").on(table.senderId),
     index("ix_message_blasts_status").on(table.status),
-    index("ix_message_blasts_scheduled_at").on(table.scheduledAt),
+    index("ix_message_blasts_valid_until").on(table.validUntil),
   ],
 );
 

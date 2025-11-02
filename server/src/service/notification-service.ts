@@ -58,6 +58,43 @@ export class NotificationService {
       }
     }
   }
+
+  /**
+   * Send notifications to users matching the target audience.
+   * If targetAudience is null/undefined, sends to all active subscribers (global broadcast).
+   *
+   * @param targetAudience - Optional targeting criteria by branch, with ranks and departments
+   * @param payload - Notification payload to send
+   */
+  async sendTargetedNotifications(
+    targetAudience: any,
+    payload: NotificationPayload,
+  ) {
+    const rows: ActivePushSubscription[] =
+      await this.repo.getSubscriptionsByTargetAudience(targetAudience);
+
+    log.info(
+      { targetAudience, recipientCount: rows.length },
+      "Sending targeted notifications",
+    );
+
+    for (const row of rows) {
+      const subscription = {
+        endpoint: row.endpoint,
+        keys: {
+          p256dh: row.p256dh,
+          auth: row.auth,
+        },
+      };
+
+      try {
+        await webpush.sendNotification(subscription, JSON.stringify(payload));
+      } catch (err) {
+        await this.repo.removeSubscriptionByEndpoint(row.endpoint);
+        log.error(err, "Error sending web-push notification");
+      }
+    }
+  }
 }
 
 // singleton instance exported for app-wide use

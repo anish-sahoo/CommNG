@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const attachmentFileIdsSchema = z
-  .array(z.string().uuid())
+  .array(z.uuid())
   .max(10, "Too many attachments")
   .optional();
 

@@ -14,7 +14,7 @@ export class UserRepository {
         name: users.name,
         email: users.email,
         phoneNumber: users.phoneNumber,
-        clearanceLevel: users.clearanceLevel,
+        rank: users.rank,
         department: users.department,
         branch: users.branch,
         createdAt: users.createdAt,
