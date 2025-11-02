@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -150,18 +151,31 @@ export default function Page() {
               />
 
               {stage === "password" ? (
-                <TextInput
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(value) => {
-                    setPassword(value);
-                    setErrorMessage(null);
-                  }}
-                  className="w-full"
-                />
+                <div>
+                  <TextInput
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(value) => {
+                      setPassword(value);
+                      setErrorMessage(null);
+                    }}
+                    className="w-full"
+                  />
+                  <Link href="/forgot-password">
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="text-xs text-primary underline-offset-4 p-0"
+                      >
+                        Forgot password?
+                      </Button>
+                    </div>
+                  </Link>
+                </div>
               ) : null}
             </div>
 
@@ -187,18 +201,20 @@ export default function Page() {
               </Button>
 
               {stage === "password" ? (
-                <Button
-                  type="button"
-                  variant="link"
-                  className="text-sm font-semibold text-primary underline-offset-4"
-                  onClick={() => {
-                    setStage("email");
-                    setPassword("");
-                    setIsSigningIn(false);
-                  }}
-                >
-                  Use a different email
-                </Button>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm font-semibold text-primary underline-offset-4"
+                    onClick={() => {
+                      setStage("email");
+                      setPassword("");
+                      setIsSigningIn(false);
+                    }}
+                  >
+                    Use a different email
+                  </Button>
+                </div>
               ) : null}
             </div>
           </div>
