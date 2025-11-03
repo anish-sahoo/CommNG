@@ -23,6 +23,9 @@ export class AuthRepository {
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
       .where(eq(userRoles.userId, userId));
+    if (!rows) {
+      return [];
+    }
     return rows.map((r) => r.key);
   }
 

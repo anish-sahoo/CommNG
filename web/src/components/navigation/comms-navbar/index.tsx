@@ -1,14 +1,16 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
+import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
-type Channel = {
+type Channel<T extends string = string> = {
   id: string;
   label: string;
-  href: string;
+  href: Route<`/communications/${T}`>;
   type: "all" | "channel";
 };
 
@@ -66,6 +68,8 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
     trpc.comms.getAllChannels.queryOptions(),
   );
 
+  const channelData = data && data.length > 0 ? data : [DEMO_CHANNEL];
+
   const channels: Channel[] = [
     {
       id: "all",
@@ -73,10 +77,10 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
       href: "/communications",
       type: "all",
     },
-    ...(data?.map((channel) => ({
+    ...(channelData.map((channel) => ({
       id: channel.channelId.toString(),
       label: channel.name,
-      href: `/communications/${channel.channelId}`,
+      href: `/communications/${channel.channelId}` as const,
       type: "channel" as const,
     })) ?? []),
   ];
@@ -95,8 +99,7 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
         {channels.map((channel) => {
           const isActive =
             channel.href === "/communications"
-              ? pathname === channel.href ||
-                pathname.startsWith(`${channel.href}/`)
+              ? pathname === channel.href
               : pathname === channel.href ||
                 pathname.startsWith(`${channel.href}/`);
           return (

@@ -6,6 +6,11 @@
     "domains": {
       "next": "recommended",
       "react": "recommended"
+    },
+    "rules": {
+      "correctness": {
+        "noChildrenProp": "off"
+      }
     }
   }
 }

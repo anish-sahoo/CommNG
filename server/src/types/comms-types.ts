@@ -1,25 +1,26 @@
 import { z } from "zod";
 
+const attachmentFileIdsSchema = z
+  .array(z.uuid())
+  .max(10, "Too many attachments")
+  .optional();
+
 export const postPostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   content: z.string().min(1, "Post content cannot be empty"),
-  attachmentUrl: z.string().url().optional(),
+  attachmentFileIds: attachmentFileIdsSchema,
 });
 
 export const editPostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
   content: z.string().min(1, "Post content cannot be empty"),
-  attachmentUrl: z.string().url().optional(),
+  attachmentFileIds: attachmentFileIdsSchema,
 });
 
 export const deletePostSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   messageId: z.coerce.number().int().positive(),
-});
-export const registerDeviceSchema = z.object({
-  deviceType: z.string(),
-  deviceToken: z.string(),
 });
 
 export const createChannelSchema = z.object({
@@ -79,7 +80,6 @@ export const deleteSubscriptionSchema = z.object({
   subscriptionId: z.coerce.number().int().positive(),
 });
 
-export type RegisterDeviceInput = z.infer<typeof registerDeviceSchema>;
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;

@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { policyEngine } from "../service/policy-engine.js";
 import { middleware } from "../trpc/trpc.js";
 
-export const requirePermission = (permission: string) =>
+export const requirePermission = (permission: string, error_message?: string) =>
   middleware(async ({ ctx, next }) => {
     if (permission.length === 0) {
       return next();
@@ -16,7 +16,7 @@ export const requirePermission = (permission: string) =>
     if (!allowed) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Insufficient permission",
+        message: error_message ?? "Insufficient permission",
       });
     }
     return next();

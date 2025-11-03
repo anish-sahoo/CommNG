@@ -14,7 +14,7 @@ export class UserRepository {
         name: users.name,
         email: users.email,
         phoneNumber: users.phoneNumber,
-        clearanceLevel: users.clearanceLevel,
+        rank: users.rank,
         department: users.department,
         branch: users.branch,
         createdAt: users.createdAt,
@@ -28,5 +28,13 @@ export class UserRepository {
       throw new NotFoundError(`User ${user_id} not found`);
     }
     return userRow;
+  }
+
+  async doesUserExistByEmail(email: string) {
+    const [userRow] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email));
+    return Boolean(userRow);
   }
 }

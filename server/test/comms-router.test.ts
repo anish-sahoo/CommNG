@@ -22,12 +22,18 @@ type ReactionSummary = {
   reactedByCurrentUser: boolean;
 };
 
+type MockAttachment = {
+  fileId: string;
+  fileName: string;
+  contentType?: string | null;
+};
+
 type MockMessage = {
   messageId: number;
   channelId: number;
   senderId: string | null;
   message: string | null;
-  attachmentUrl: string | null;
+  attachments: MockAttachment[];
   createdAt: Date;
   reactions?: ReactionSummary[];
 };
@@ -53,7 +59,7 @@ type MockChannelMember = {
   userId: string;
   name: string;
   email: string;
-  clearanceLevel: string | null;
+  rank: string | null;
   department: string | null;
   roleKey: string;
   action: string;
@@ -250,7 +256,7 @@ function createContext(
         emailVerified: true,
         name,
         branch: "test-branch",
-        clearanceLevel: "test-clearance",
+        rank: "test-clearance",
         department: "test-dept",
         createdAt: now,
         updatedAt: now,
@@ -266,12 +272,13 @@ vi.mock("../src/trpc/app_router.js", () => {
       createPost(input: {
         channelId: number;
         content: string;
+        attachmentFileIds?: string[];
       }): Promise<MockMessage>;
       editPost(input: {
         channelId: number;
         messageId: number;
         content: string;
-        attachmentUrl?: string;
+        attachmentFileIds?: string[];
       }): Promise<MockMessage>;
       deletePost(input: {
         channelId: number;
@@ -378,6 +385,7 @@ vi.mock("../src/trpc/app_router.js", () => {
           async createPost(input: {
             channelId: number;
             content: string;
+            attachmentFileIds?: string[];
           }): Promise<MockMessage> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
@@ -389,12 +397,26 @@ vi.mock("../src/trpc/app_router.js", () => {
             const uid = ctx.auth.user.id;
             ensureCanPost(uid, input.channelId);
 
+            if (
+              input.attachmentFileIds &&
+              input.attachmentFileIds.length > 10
+            ) {
+              throw new Error("Too many attachments");
+            }
+
+            const attachments =
+              input.attachmentFileIds?.map((fileId) => ({
+                fileId,
+                fileName: `file-${fileId}`,
+                contentType: null,
+              })) ?? [];
+
             const post: MockMessage = {
               messageId: ++mem._ids.post,
               channelId: input.channelId,
               senderId: uid,
               message: input.content,
-              attachmentUrl: null,
+              attachments,
               createdAt: new Date(),
               reactions: [],
             };
@@ -407,7 +429,7 @@ vi.mock("../src/trpc/app_router.js", () => {
             channelId: number;
             messageId: number;
             content: string;
-            attachmentUrl?: string;
+            attachmentFileIds?: string[];
           }): Promise<MockMessage> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
@@ -435,12 +457,26 @@ vi.mock("../src/trpc/app_router.js", () => {
               throw new Error("FORBIDDEN");
             }
 
+            if (
+              input.attachmentFileIds &&
+              input.attachmentFileIds.length > 10
+            ) {
+              throw new Error("Too many attachments");
+            }
+
             const updated: MockMessage = {
               messageId: post.messageId,
               channelId: post.channelId,
               senderId: post.senderId,
               message: input.content,
-              attachmentUrl: input.attachmentUrl ?? null,
+              attachments:
+                input.attachmentFileIds !== undefined
+                  ? input.attachmentFileIds.map((fileId) => ({
+                      fileId,
+                      fileName: `file-${fileId}`,
+                      contentType: null,
+                    }))
+                  : post.attachments,
               createdAt: post.createdAt,
               reactions: post.reactions ?? [],
             };
@@ -595,7 +631,7 @@ vi.mock("../src/trpc/app_router.js", () => {
                   userId: s.user_id,
                   name: user?.name || "Unknown",
                   email: user?.email || "unknown@example.com",
-                  clearanceLevel: null,
+                  rank: null,
                   department: null,
                   roleKey: `subscription:${s.permission}`,
                   action: s.permission,
@@ -739,7 +775,7 @@ vi.mock("../src/trpc/app_router.js", () => {
                 channelId: existingPost.channelId,
                 senderId: existingPost.senderId,
                 message: existingPost.message,
-                attachmentUrl: existingPost.attachmentUrl,
+                attachments: existingPost.attachments,
                 createdAt: existingPost.createdAt,
                 reactions,
               };
@@ -865,7 +901,7 @@ describe("commsRouter.createPost", () => {
     expect(created.channelId).toBe(channelId);
     expect(created.senderId).toBe(authedUserId);
     expect(created.message ?? "").toContain("Permitted by subscription");
-    expect(created.attachmentUrl).toBeNull();
+    expect(created.attachments).toHaveLength(0);
   });
 
   it("allows posting via channel role (action='write')", async () => {
@@ -890,6 +926,50 @@ describe("commsRouter.createPost", () => {
     expect(created.channelId).toBe(channelId);
     expect(created.senderId).toBe(otherUserId);
     expect(created.message ?? "").toContain("Permitted by role");
+    expect(created.attachments).toHaveLength(0);
+  });
+
+  it("stores attachment file ids when provided", async () => {
+    addSubscription(authedUserId, channelId, "write");
+    const fileId = randomUUID();
+
+    const caller = appRouter.createCaller(createContext(authedUserId));
+    const created: MockMessage = await caller.comms.createPost({
+      channelId,
+      content: "Post with attachments",
+      attachmentFileIds: [fileId],
+    });
+
+    expect(created.attachments).toEqual([
+      {
+        fileId,
+        fileName: `file-${fileId}`,
+        contentType: null,
+      },
+    ]);
+
+    const stored = mem.posts.find((p) => p.messageId === created.messageId);
+    expect(stored?.attachments).toEqual([
+      {
+        fileId,
+        fileName: `file-${fileId}`,
+        contentType: null,
+      },
+    ]);
+  });
+
+  it("rejects posts with more than 10 attachments", async () => {
+    addSubscription(authedUserId, channelId, "write");
+    const caller = appRouter.createCaller(createContext(authedUserId));
+    const attachmentFileIds = Array.from({ length: 11 }, () => randomUUID());
+
+    await expect(
+      caller.comms.createPost({
+        channelId,
+        content: "Too many files",
+        attachmentFileIds,
+      }),
+    ).rejects.toThrow(/Too many attachments/i);
   });
 });
 
@@ -962,6 +1042,7 @@ describe("commsRouter.getChannelMessages", () => {
     expect(found.message).toBe("Hello channel");
     expect(Array.isArray(found.reactions)).toBe(true);
     expect(found.reactions.length).toBe(0);
+    expect(found.attachments).toHaveLength(0);
   });
 
   it("returns messages when user has channel role", async () => {
@@ -975,6 +1056,30 @@ describe("commsRouter.getChannelMessages", () => {
 
     expect(Array.isArray(messages)).toBe(true);
     expect(messages.length).toBeGreaterThan(0);
+  });
+
+  it("includes attachment metadata in results", async () => {
+    const fileId = randomUUID();
+    const authorCaller = appRouter.createCaller(createContext(authorId));
+    const created = await authorCaller.comms.createPost({
+      channelId,
+      content: "Message with attachment",
+      attachmentFileIds: [fileId],
+    });
+
+    const readerCaller = appRouter.createCaller(createContext(authorId));
+    const messages = await readerCaller.comms.getChannelMessages({
+      channelId,
+    });
+
+    const found = messages.find((m) => m.messageId === created.messageId);
+    expect(found?.attachments).toEqual([
+      {
+        fileId,
+        fileName: `file-${fileId}`,
+        contentType: null,
+      },
+    ]);
   });
 });
 
@@ -1196,16 +1301,54 @@ describe("commsRouter.editPost", () => {
       channelId,
       messageId,
       content: "Updated content",
-      attachmentUrl: "https://example.com/file.png",
     });
 
     expect(updated).toBeDefined();
     expect(updated.message).toBe("Updated content");
-    expect(updated.attachmentUrl).toBe("https://example.com/file.png");
+    expect(updated.attachments).toHaveLength(0);
 
     const stored = mem.posts.find((p) => p.messageId === messageId);
     expect(stored?.message).toBe("Updated content");
-    expect(stored?.attachmentUrl).toBe("https://example.com/file.png");
+    expect(stored?.attachments ?? []).toHaveLength(0);
+  });
+
+  it("replaces attachments when attachment file IDs are provided", async () => {
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
+    const newFileId = randomUUID();
+
+    const updated: MockMessage = await caller.comms.editPost({
+      channelId,
+      messageId,
+      content: "Updated with attachments",
+      attachmentFileIds: [newFileId],
+    });
+
+    expect(updated.attachments).toEqual([
+      { fileId: newFileId, fileName: `file-${newFileId}`, contentType: null },
+    ]);
+
+    const stored = mem.posts.find((p) => p.messageId === messageId);
+    expect(stored?.attachments).toEqual([
+      { fileId: newFileId, fileName: `file-${newFileId}`, contentType: null },
+    ]);
+  });
+
+  it("rejects edits with more than 10 attachments", async () => {
+    const caller = appRouter.createCaller(
+      createContext(authorId, "Author User", "author@example.com"),
+    );
+    const attachmentFileIds = Array.from({ length: 11 }, () => randomUUID());
+
+    await expect(
+      caller.comms.editPost({
+        channelId,
+        messageId,
+        content: "Overflow attachments",
+        attachmentFileIds,
+      }),
+    ).rejects.toThrow(/Too many attachments/i);
   });
 });
 

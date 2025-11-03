@@ -81,10 +81,7 @@ const confirmUpload = protectedProcedure
         return { ok: true };
       } catch (err) {
         log.error(err, "Failed to confirm presigned upload");
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to confirm upload",
-        });
+        throw new InternalServerError("Failed to confirm upload");
       }
     }),
   );
@@ -112,10 +109,7 @@ const uploadForUser = protectedProcedure
         return { fileId };
       } catch (err) {
         log.error(err, "File upload failed");
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to store file",
-        });
+        throw new InternalServerError("Failed to store file");
       }
     }),
   );
@@ -155,10 +149,7 @@ const uploadForChannel = protectedProcedure
         return { fileId };
       } catch (err) {
         log.error(err, "Channel file upload failed");
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to store file",
-        });
+        throw new InternalServerError("Failed to store file");
       }
     }),
   );
@@ -182,10 +173,7 @@ const getFile = procedure
         return payload;
       } catch (err) {
         log.error(err, "File retrieval failed");
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to retrieve file",
-        });
+        throw new InternalServerError("Failed to retrieve file");
       }
     }),
   );
@@ -203,10 +191,7 @@ const deleteFile = protectedProcedure
         return { ok: deleted };
       } catch (err) {
         log.error(err, "Failed to delete file");
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete file",
-        });
+        throw new InternalServerError("Failed to delete file");
       }
     }),
   );
