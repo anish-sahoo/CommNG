@@ -23,6 +23,12 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import {
+  BroadcastModal,
+  CreatePostModal,
+  LeaveChannelModal,
+  RemoveMemberModal,
+} from "@/components/modal";
 
 const mentorQualityOptions: MultiSelectOption[] = [
   {
@@ -78,6 +84,13 @@ const Components = () => {
     useState<string>("");
   const [selectedChipOptions, setSelectedChipOptions] = useState<string[]>([]);
   const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
+
+  // Modal states
+  const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const [createPostModalOpen, setCreatePostModalOpen] = useState(false);
+  const [leaveChannelModalOpen, setLeaveChannelModalOpen] = useState(false);
+  const [removeMemberModalOpen, setRemoveMemberModalOpen] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
 
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
@@ -435,8 +448,80 @@ const Components = () => {
               <DropzoneContent />
             </Dropzone>
           </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Modals
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Modal components for various use cases
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <SelectableButton
+                text="Broadcast Modal"
+                onClick={() => setBroadcastModalOpen(true)}
+              />
+              <SelectableButton
+                text="Create Post Modal"
+                onClick={() => setCreatePostModalOpen(true)}
+              />
+              <SelectableButton
+                text="Leave Channel Modal"
+                onClick={() => setLeaveChannelModalOpen(true)}
+              />
+              <SelectableButton
+                text="Remove Member Modal"
+                onClick={() => setRemoveMemberModalOpen(true)}
+              />
+            </div>
+          </section>
         </div>
       </main>
+
+      {/* Modals */}
+      <BroadcastModal
+        open={broadcastModalOpen}
+        onOpenChange={setBroadcastModalOpen}
+        title="Severe Weather Alert"
+        message="All units, please ensure readiness status is updated in JIS by 1800 today. Severe weather response protocols may be activated later this week. Commanders, verify your unit rosters and vehicle readiness before COB."
+        onAcknowledge={() => {
+          console.log("Acknowledged");
+        }}
+      />
+
+      <CreatePostModal
+        open={createPostModalOpen}
+        onOpenChange={setCreatePostModalOpen}
+        onPost={async (content) => {
+          setIsPosting(true);
+          console.log("Posting:", content);
+          // Simulate API call
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          setIsPosting(false);
+        }}
+        isPosting={isPosting}
+      />
+
+      <LeaveChannelModal
+        open={leaveChannelModalOpen}
+        onOpenChange={setLeaveChannelModalOpen}
+        onLeave={async () => {
+          console.log("Leaving channel");
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }}
+      />
+
+      <RemoveMemberModal
+        open={removeMemberModalOpen}
+        onOpenChange={setRemoveMemberModalOpen}
+        memberName="John Adddams"
+        onRemove={async () => {
+          console.log("Removing member");
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }}
+      />
     </>
   );
 };
