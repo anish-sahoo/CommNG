@@ -29,8 +29,10 @@ export class MentorRepository {
 
     return {
       ...mentor,
-      eligibilityData:
-        mentor.eligibilityData as Record<string, unknown> | null | undefined,
+      eligibilityData: mentor.eligibilityData as
+        | Record<string, unknown>
+        | null
+        | undefined,
     };
   }
 
@@ -55,8 +57,10 @@ export class MentorRepository {
 
     return {
       ...mentor,
-      eligibilityData:
-        mentor.eligibilityData as Record<string, unknown> | null | undefined,
+      eligibilityData: mentor.eligibilityData as
+        | Record<string, unknown>
+        | null
+        | undefined,
     };
   }
 }
