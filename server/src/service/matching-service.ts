@@ -7,6 +7,8 @@ import log from "../utils/logger.js";
  * Service to handle mentorship matching logic
  */
 export class MatchingService {
+  // Maximum number of match requests to fan out per trigger
+  private static readonly MAX_MATCH_REQUESTS = 10;
   /**
    * Trigger matching process when a mentor is created
    */
@@ -23,8 +25,13 @@ export class MatchingService {
       count: activeMentees.length,
     });
 
-    // For each active mentee, create a matching request
-    for (const mentee of activeMentees) {
+    // Pick a random subset of active mentees up to MAX_MATCH_REQUESTS
+    const selectedMentees = [...activeMentees]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, MatchingService.MAX_MATCH_REQUESTS);
+
+    // For each selected mentee, create a matching request
+    for (const mentee of selectedMentees) {
       try {
         await this.createMatchingRequest(mentee.userId, mentorUserId);
       } catch (error) {
@@ -53,8 +60,13 @@ export class MatchingService {
       count: availableMentors.length,
     });
 
-    // For each available mentor, create a matching request
-    for (const mentor of availableMentors) {
+    // Pick a random subset of available mentors up to MAX_MATCH_REQUESTS
+    const selectedMentors = [...availableMentors]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, MatchingService.MAX_MATCH_REQUESTS);
+
+    // For each selected mentor, create a matching request
+    for (const mentor of selectedMentors) {
       try {
         await this.createMatchingRequest(menteeUserId, mentor.userId);
       } catch (error) {
