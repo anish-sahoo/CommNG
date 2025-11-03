@@ -1,4 +1,3 @@
-import { TRPCError } from "@trpc/server";
 import { FileRepository } from "../data/repository/file-repo.js";
 import { FileService } from "../service/file-service.js";
 import { policyEngine } from "../service/policy-engine.js";
