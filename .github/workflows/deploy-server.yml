@@ -1,5 +1,8 @@
 name: Deploy Server to ECS
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:
