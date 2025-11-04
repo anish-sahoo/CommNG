@@ -1,9 +1,5 @@
 name: Deploy Web to ECS
 
-permissions:
-  contents: write
-  pull-requests: write
-
 on:
   workflow_dispatch:
     inputs:
@@ -42,14 +38,14 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ADMIN_PAT }}
 
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump version
+      - name: Bump version and push
         id: version
         run: |
           cd web
@@ -71,80 +67,7 @@ jobs:
           cd ..
           git add web/package.json web/package-lock.json
           git commit -m "chore(web): bump version to $NEW_VERSION [skip ci]"
-
-      - name: Create Pull Request
-        id: cpr
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: version-bump/web-${{ steps.version.outputs.new_version }}
-          base: ${{ inputs.branch }}
-          title: "chore(web): bump version to ${{ steps.version.outputs.new_version }}"
-          body: |
-            ## Version Bump
-            
-            Automated version bump for web deployment.
-            
-            - **New Version**: ${{ steps.version.outputs.new_version }}
-            - **Environment**: ${{ inputs.environment }}
-            - **Base Branch**: ${{ inputs.branch }}
-          commit-message: "chore(web): bump version to ${{ steps.version.outputs.new_version }} [skip ci]"
-          delete-branch: true
-
-      - name: Auto-approve Pull Request
-        if: steps.cpr.outputs.pull-request-number != ''
-        continue-on-error: true
-        run: |
-          gh pr review ${{ steps.cpr.outputs.pull-request-number }} --approve
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for PR approval and merge
-        if: steps.cpr.outputs.pull-request-number != ''
-        run: |
-          echo "Waiting for PR approval..."
-          echo "PR URL: https://github.com/${{ github.repository }}/pull/${{ steps.cpr.outputs.pull-request-number }}"
-          
-          for i in {1..60}; do
-            # Check if PR is approved and all checks have passed
-            PR_DATA=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json reviews,statusCheckRollup)
-            REVIEWS=$(echo "$PR_DATA" | jq '.reviews | length')
-            
-            if [ "$REVIEWS" -gt 0 ]; then
-              echo "PR has been approved!"
-              
-              # Check if all status checks have passed
-              CHECKS_STATE=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[] | select(.conclusion != null) | .conclusion' | grep -v "SUCCESS" | wc -l)
-              PENDING_CHECKS=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[] | select(.status == "IN_PROGRESS" or .status == "PENDING") | .status' | wc -l)
-              
-              if [ "$PENDING_CHECKS" -gt 0 ]; then
-                echo "Waiting for status checks to complete..."
-                sleep 10
-                continue
-              fi
-              
-              if [ "$CHECKS_STATE" -eq 0 ]; then
-                echo "All checks passed, merging PR..."
-                gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --merge
-                echo "PR successfully merged!"
-                break
-              else
-                echo "Some checks failed, waiting..."
-                sleep 10
-                continue
-              fi
-            fi
-            
-            if [ $i -eq 60 ]; then
-              echo "Timeout waiting for PR approval after 10 minutes"
-              exit 1
-            fi
-            
-            echo "Attempt $i/60: Waiting for approval..."
-            sleep 10
-          done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git push origin ${{ inputs.branch }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
