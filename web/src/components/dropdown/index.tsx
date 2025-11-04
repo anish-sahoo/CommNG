@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export interface DropdownMenuItemConfig {
+  id: string;
   icon?: keyof typeof icons;
   label: string;
   onClick: () => void;
@@ -50,19 +51,17 @@ export function DropdownButtons({
         {triggerContent || defaultTrigger}
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} sideOffset={sideOffset}>
-        {items.map((item, index) => {
+        {items.map((item) => {
           const IconComponent = item.icon ? icons[item.icon] : null;
 
           return (
-            <div key={index}>
+            <div key={item.id}>
               <DropdownMenuItem
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={item.onClick}
               >
-                {IconComponent && (
-                  <IconComponent className="h-4 w-4 text-accent" />
-                )}
-                {item.label}
+                {IconComponent && <IconComponent className="h-4 w-4" />}
+                <span>{item.label}</span>
               </DropdownMenuItem>
               {item.separator && <DropdownMenuSeparator />}
             </div>

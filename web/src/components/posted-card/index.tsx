@@ -3,12 +3,15 @@ import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { DropdownMenuItemConfig, DropdownButtons } from "@/components/dropdown";
+import {
+  DropdownButtons,
+  type DropdownMenuItemConfig,
+} from "@/components/dropdown";
 import { icons } from "@/components/icons";
+import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Modal } from "@/components/modal";
 import { useTRPC } from "@/lib/trpc";
 
 type AttachmentDescriptor = {
@@ -77,10 +80,10 @@ export const PostedCard = ({
           onError: (error) => {
             setEditError(error.message);
           },
-        }
+        },
       );
     },
-    [channelId, postId, editPost, queryClient, channelMessagesQueryKey]
+    [channelId, postId, editPost, queryClient, channelMessagesQueryKey],
   );
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -103,7 +106,7 @@ export const PostedCard = ({
         onError: (error) => {
           setDeleteError(error.message);
         },
-      }
+      },
     );
   }, [postId, channelId, deletePost, queryClient, channelMessagesQueryKey]);
 
@@ -113,6 +116,7 @@ export const PostedCard = ({
 
   const actionMenuItems: DropdownMenuItemConfig[] = [
     {
+      id: "edit-post",
       icon: "edit",
       label: "Edit",
       onClick: () => {
@@ -123,6 +127,7 @@ export const PostedCard = ({
       separator: true,
     },
     {
+      id: "delete-post",
       icon: "trash" as const,
       label: deletePost.isPending ? "Deleting…" : "Delete",
       onClick: handleDeletePost,

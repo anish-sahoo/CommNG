@@ -150,20 +150,20 @@ const Components = () => {
         })
         .filter(
           (
-            reaction
+            reaction,
           ): reaction is {
             emoji: string;
             count: number;
             reactedByUser: boolean;
-          } => reaction !== null
-        )
+          } => reaction !== null,
+        ),
     );
   };
 
   const handleDemoAddReaction = (emoji: string) => {
     setDemoReactions((previous) => {
       const existingIndex = previous.findIndex(
-        (reaction) => reaction.emoji === emoji
+        (reaction) => reaction.emoji === emoji,
       );
 
       if (existingIndex === -1) {
@@ -177,7 +177,7 @@ const Components = () => {
               count: reaction.count + 1,
               reactedByUser: true,
             }
-          : reaction
+          : reaction,
       );
     });
   };
