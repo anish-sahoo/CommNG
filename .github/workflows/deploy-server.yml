@@ -91,31 +91,36 @@ jobs:
           commit-message: "chore(server): bump version to ${{ steps.version.outputs.new_version }} [skip ci]"
           delete-branch: true
 
-      - name: Enable Pull Request Auto-merge
-        if: steps.cpr.outputs.pull-request-number != ''
-        run: |
-          gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --squash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Auto-approve Pull Request
         if: steps.cpr.outputs.pull-request-number != ''
+        continue-on-error: true
         run: |
           gh pr review ${{ steps.cpr.outputs.pull-request-number }} --approve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait for PR to merge
+      - name: Wait for PR approval and merge
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
-          echo "Waiting for PR to auto-merge..."
-          for i in {1..30}; do
-            STATUS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json state --jq '.state')
-            if [ "$STATUS" = "MERGED" ]; then
+          echo "Waiting for PR approval..."
+          echo "PR URL: https://github.com/${{ github.repository }}/pull/${{ steps.cpr.outputs.pull-request-number }}"
+          
+          for i in {1..60}; do
+            # Check if PR is approved
+            REVIEWS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json reviews --jq '.reviews | length')
+            if [ "$REVIEWS" -gt 0 ]; then
+              echo "PR has been approved, merging..."
+              gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --merge
               echo "PR successfully merged!"
               break
             fi
-            echo "Attempt $i/30: PR status is $STATUS, waiting..."
+            
+            if [ $i -eq 60 ]; then
+              echo "Timeout waiting for PR approval after 10 minutes"
+              exit 1
+            fi
+            
+            echo "Attempt $i/60: Waiting for approval..."
             sleep 10
           done
         env:
