@@ -12,7 +12,7 @@ export function Cache<T extends unknown[]>(
     _propertyKey,
     descriptor: PropertyDescriptor,
   ): PropertyDescriptor => {
-    if (!descriptor || typeof descriptor.value !== 'function') {
+    if (!descriptor || typeof descriptor.value !== "function") {
       return descriptor;
     }
 

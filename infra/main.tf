@@ -905,7 +905,7 @@ resource "aws_ecs_task_definition" "server" {
         },
         {
           name      = "REDIS_PASSWORD"
-          valueFrom = aws_secretsmanager_secret.cache_auth.arn
+          valueFrom = "${aws_secretsmanager_secret.cache_auth.arn}::"
         },
         {
           name      = "BETTER_AUTH_SECRET"
