@@ -99,7 +99,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait for PR approval and merge
+      - name: Wait for PR approval and enable auto-merge
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
           echo "Waiting for PR approval..."
@@ -109,9 +109,12 @@ jobs:
             # Check if PR is approved
             REVIEWS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json reviews --jq '.reviews | length')
             if [ "$REVIEWS" -gt 0 ]; then
-              echo "PR has been approved, merging..."
-              gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --merge
-              echo "PR successfully merged!"
+              echo "PR has been approved!"
+              
+              # Enable auto-merge to handle branch protection policies
+              echo "Enabling auto-merge..."
+              gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --merge
+              echo "Auto-merge enabled, waiting for checks and merge..."
               break
             fi
             
@@ -121,6 +124,29 @@ jobs:
             fi
             
             echo "Attempt $i/60: Waiting for approval..."
+            sleep 10
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for PR to merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          echo "Waiting for PR to complete merge..."
+          
+          for i in {1..60}; do
+            STATUS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json state --jq '.state')
+            if [ "$STATUS" = "MERGED" ]; then
+              echo "PR successfully merged!"
+              break
+            fi
+            
+            if [ $i -eq 60 ]; then
+              echo "Timeout waiting for PR to merge after 10 minutes"
+              exit 1
+            fi
+            
+            echo "Attempt $i/60: PR status is $STATUS, waiting..."
             sleep 10
           done
         env:
