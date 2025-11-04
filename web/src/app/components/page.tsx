@@ -294,6 +294,8 @@ const Components = () => {
               </h2>
             </div>
             <PostedCard
+              channelId={0}
+              postId={0}
               name="Brandon Johnson"
               rank="E-1"
               content="Are there any additional resources regarding the mentorship program? I would like to participate 

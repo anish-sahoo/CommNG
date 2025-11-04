@@ -1,11 +1,12 @@
 "use client";
+import type { QueryKey } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Paperclip } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DropdownMenuItemConfig, DropdownButtons } from "@/components/dropdown";
 import { icons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC } from "@/lib/trpc";
 
 type AttachmentDescriptor = {
   fileId: string;
@@ -14,6 +15,8 @@ type AttachmentDescriptor = {
 };
 
 type PostedCardProps = {
+  channelId: number;
+  postId: number;
   avatarUrl?: string;
   name: string;
   rank: string;
@@ -30,39 +33,46 @@ const Avatar = () => (
 );
 
 export const PostedCard = ({
+  channelId,
+  postId,
   name,
   rank,
   content,
   attachments,
 }: PostedCardProps) => {
-  const trpcClient = useTRPCClient();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const handleOpenAttachment = useCallback(
-    async (fileId: string) => {
-      setDownloadError(null);
-      setDownloadingId(fileId);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-      try {
-        const response = await trpcClient.files.getFile.query({ fileId });
-        if (!response?.data || typeof response.data !== "string") {
-          throw new Error("Unable to retrieve file.");
-        }
+  const deletePost = useMutation(trpc.comms.deletePost.mutationOptions());
 
-        window.open(response.data, "_blank", "noopener,noreferrer");
-      } catch (error) {
-        setDownloadError(
-          error instanceof Error
-            ? error.message
-            : "Unable to open this attachment."
-        );
-      } finally {
-        setDownloadingId(null);
+  const channelMessagesQueryKey = useMemo<QueryKey>(() => {
+    return trpc.comms.getChannelMessages.queryKey({
+      channelId: channelId,
+    }) as unknown as QueryKey;
+  }, [channelId, trpc]);
+
+  const handleDeletePost = useCallback(() => {
+    setDeleteError(null);
+
+    deletePost.mutate(
+      {
+        channelId: channelId,
+        messageId: postId,
+      },
+      {
+        onSuccess: async () => {
+          await queryClient.invalidateQueries({
+            queryKey: channelMessagesQueryKey,
+          });
+        },
+        onError: (error) => {
+          setDeleteError(error.message);
+        },
       }
-    },
-    [trpcClient]
-  );
+    );
+  }, [postId, channelId, deletePost, queryClient, channelMessagesQueryKey]);
 
   const attachmentItems = attachments ?? [];
 
@@ -74,9 +84,9 @@ export const PostedCard = ({
       separator: true,
     },
     {
-      icon: "trash",
-      label: "Delete",
-      onClick: () => console.log("Delete clicked"),
+      icon: "trash" as const,
+      label: deletePost.isPending ? "Deleting…" : "Delete",
+      onClick: handleDeletePost,
     },
   ];
 
@@ -101,32 +111,24 @@ export const PostedCard = ({
                 {attachmentItems.map((attachment) => (
                   <div
                     key={attachment.fileId}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-card/80 px-3 py-2"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-card/80 px-3 py-2 text-secondary text-sm"
                   >
-                    <div className="flex items-center gap-2 text-secondary text-sm">
-                      <Paperclip className="h-4 w-4 text-secondary/70" />
-                      <span className="truncate">{attachment.fileName}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleOpenAttachment(attachment.fileId)}
-                      disabled={downloadingId === attachment.fileId}
-                    >
-                      {downloadingId === attachment.fileId
-                        ? "Opening…"
-                        : "Open"}
-                    </Button>
+                    <Paperclip className="h-4 w-4 text-secondary/70" />
+                    <span className="truncate">{attachment.fileName}</span>
                   </div>
                 ))}
               </div>
-              {downloadError ? (
-                <p className="text-xs text-destructive">{downloadError}</p>
-              ) : null}
             </div>
           ) : null}
-          <DropdownButtons items={actionMenuItems} />
+
+          <div className="flex items-center justify-between">
+            <div>
+              {deleteError ? (
+                <p className="text-xs text-destructive">{deleteError}</p>
+              ) : null}
+            </div>
+            <DropdownButtons items={actionMenuItems} align="end" />
+          </div>
         </div>
       </div>
     </Card>
