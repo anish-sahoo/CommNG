@@ -67,12 +67,14 @@ const mentorQualityOptions: MultiSelectOption[] = [
 
 const dropdownMenuItems: DropdownMenuItemConfig[] = [
   {
+    id: "broadcast",
     icon: "addAlert",
     label: "Broadcast",
     onClick: () => console.log("Broadcast clicked"),
     separator: true,
   },
   {
+    id: "channel",
     icon: "message",
     label: "Channel",
     onClick: () => console.log("Channel clicked"),
@@ -81,12 +83,14 @@ const dropdownMenuItems: DropdownMenuItemConfig[] = [
 
 const actionMenuItems: DropdownMenuItemConfig[] = [
   {
+    id: "delete",
     icon: "trash",
     label: "Delete",
     onClick: () => console.log("Delete clicked"),
     separator: true,
   },
   {
+    id: "comment",
     icon: "message",
     label: "Comment",
     onClick: () => console.log("Comment clicked"),
