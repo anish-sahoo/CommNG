@@ -3,8 +3,19 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import { auth } from "../auth.js";
 
 export async function createContext(opts: CreateExpressContextOptions) {
+  // Convert Express IncomingHttpHeaders to Web API Headers
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(opts.req.headers)) {
+    if (value) {
+      const headerValue = Array.isArray(value) ? value[0] : value;
+      if (headerValue) {
+        headers.set(key, headerValue);
+      }
+    }
+  }
+
   const session = await auth.api.getSession({
-    headers: opts.req.headers,
+    headers,
   });
 
   return { auth: session };
