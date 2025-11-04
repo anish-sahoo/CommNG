@@ -42,9 +42,9 @@ export default function NewChannelPostPage({
 
   const parsedChannelId = parseChannelId(channelId);
 
-  const createPost = useMutation({
-    ...trpc.comms.createPost.mutationOptions(),
-  });
+  const createPost = useMutation(
+    trpc.comms.createPost.mutationOptions(),
+  );
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
