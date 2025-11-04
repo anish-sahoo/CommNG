@@ -3,49 +3,41 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy the whole monorepo structure (but still install deps only for web)
+COPY web/package*.json web/
+COPY server/package*.json server/
 
-# Install dependencies
+WORKDIR /app/web
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy all source files for both web and server
+COPY web ./ 
+COPY server ../server
 
-# Accept build arguments for Next.js public env vars
+# Build Next.js app
 ARG NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_PUBLIC_WEB_BASE_URL
 ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
-# Set them as env vars for the build
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_WEB_BASE_URL=$NEXT_PUBLIC_WEB_BASE_URL
 ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=$NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
-# Build Next.js application
 RUN npm run build
 
 # Production stage
 FROM node:24-alpine
-
-WORKDIR /app
-
-# Set environment to production
+WORKDIR /app/web
 ENV NODE_ENV=production
+ENV PORT=3001
 
-# Copy package files
-COPY package*.json ./
+COPY --from=builder /app/web/package*.json ./
+RUN npm ci --omit=dev
 
-# Install production dependencies only
-RUN npm ci --only=production
+COPY --from=builder /app/web/.next ./.next
+COPY --from=builder /app/web/public ./public
+COPY --from=builder /app/web/next.config.ts ./next.config.ts
+COPY --from=builder /app/server ../server
 
-# Copy built application from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
-
-# Expose the port the app runs on
 EXPOSE 3001
-
-# Start the application
 CMD ["npm", "start"]

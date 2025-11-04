@@ -31,7 +31,7 @@ export default function CommunicationsOverviewPage() {
   );
 
   const rawChannels = useMemo(() => {
-    if (data && data.length > 0) {
+    if (Array.isArray(data) && data.length > 0) {
       return data;
     }
     return [DEMO_CHANNEL];

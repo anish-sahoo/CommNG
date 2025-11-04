@@ -42,9 +42,26 @@ export default function NewChannelPostPage({
 
   const parsedChannelId = parseChannelId(channelId);
 
-  const createPost = useMutation(
-    trpc.comms.createPost.mutationOptions(),
-  );
+  // Explicitly type mutation variables to ensure correct inference in certain build environments
+  type CreatePostVars = {
+    channelId: number;
+    content: string;
+    attachmentFileIds?: string[];
+  };
+  type CreatePostMutationOptions = ReturnType<
+    typeof trpc.comms.createPost.mutationOptions
+  >;
+  type CreatePostError = Parameters<
+    NonNullable<CreatePostMutationOptions["onError"]>
+  >[0];
+  type CreatePostData = Parameters<
+    NonNullable<CreatePostMutationOptions["onSuccess"]>
+  >[0];
+  const createPost = useMutation<
+    CreatePostData,
+    CreatePostError,
+    CreatePostVars
+  >(trpc.comms.createPost.mutationOptions());
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
