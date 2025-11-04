@@ -411,6 +411,36 @@ resource "random_id" "bucket_suffix" {
 }
 
 # ------------------------------------------------------------
+# AWS Resource Group for project organization
+# ------------------------------------------------------------
+resource "aws_resourcegroups_group" "commng_dev" {
+  name        = "CommNG_Dev"
+  description = "Resource group for CommNG Dev environment - automatically includes all tagged resources"
+
+  resource_query {
+    query = jsonencode({
+      ResourceTypeFilters = ["AWS::AllSupported"]
+      TagFilters = [
+        {
+          Key    = "Project"
+          Values = ["comm_ng"]
+        },
+        {
+          Key    = "Environment"
+          Values = ["dev"]
+        }
+      ]
+    })
+  }
+
+  tags = {
+    Name        = "CommNG_Dev"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# ------------------------------------------------------------
 # ECR Repositories for Docker Images
 # ------------------------------------------------------------
 resource "aws_ecr_repository" "server" {
@@ -810,8 +840,12 @@ resource "aws_ecs_task_definition" "server" {
           value = "5432"
         },
         {
-          name  = "S3_BUCKET"
+          name  = "S3_BUCKET_NAME"
           value = aws_s3_bucket.comm_ng_files.bucket
+        },
+        {
+          name  = "USE_PRESIGNED_UPLOADS"
+          value = "true"
         },
         {
           name  = "AWS_REGION"
