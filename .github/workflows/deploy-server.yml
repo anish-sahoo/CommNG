@@ -38,7 +38,7 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           fetch-depth: 0
-          token: ${{ secrets.ADMIN_PAT }}
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Configure Git
         run: |
