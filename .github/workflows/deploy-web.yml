@@ -99,23 +99,40 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Wait for PR approval and enable auto-merge
+      - name: Wait for PR approval and merge
         if: steps.cpr.outputs.pull-request-number != ''
         run: |
           echo "Waiting for PR approval..."
           echo "PR URL: https://github.com/${{ github.repository }}/pull/${{ steps.cpr.outputs.pull-request-number }}"
           
           for i in {1..60}; do
-            # Check if PR is approved
-            REVIEWS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json reviews --jq '.reviews | length')
+            # Check if PR is approved and all checks have passed
+            PR_DATA=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json reviews,statusCheckRollup)
+            REVIEWS=$(echo "$PR_DATA" | jq '.reviews | length')
+            
             if [ "$REVIEWS" -gt 0 ]; then
               echo "PR has been approved!"
               
-              # Enable auto-merge to handle branch protection policies
-              echo "Enabling auto-merge..."
-              gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --merge
-              echo "Auto-merge enabled, waiting for checks and merge..."
-              break
+              # Check if all status checks have passed
+              CHECKS_STATE=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[] | select(.conclusion != null) | .conclusion' | grep -v "SUCCESS" | wc -l)
+              PENDING_CHECKS=$(echo "$PR_DATA" | jq -r '.statusCheckRollup[] | select(.status == "IN_PROGRESS" or .status == "PENDING") | .status' | wc -l)
+              
+              if [ "$PENDING_CHECKS" -gt 0 ]; then
+                echo "Waiting for status checks to complete..."
+                sleep 10
+                continue
+              fi
+              
+              if [ "$CHECKS_STATE" -eq 0 ]; then
+                echo "All checks passed, merging PR..."
+                gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --merge
+                echo "PR successfully merged!"
+                break
+              else
+                echo "Some checks failed, waiting..."
+                sleep 10
+                continue
+              fi
             fi
             
             if [ $i -eq 60 ]; then
@@ -124,29 +141,6 @@ jobs:
             fi
             
             echo "Attempt $i/60: Waiting for approval..."
-            sleep 10
-          done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for PR to merge
-        if: steps.cpr.outputs.pull-request-number != ''
-        run: |
-          echo "Waiting for PR to complete merge..."
-          
-          for i in {1..60}; do
-            STATUS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json state --jq '.state')
-            if [ "$STATUS" = "MERGED" ]; then
-              echo "PR successfully merged!"
-              break
-            fi
-            
-            if [ $i -eq 60 ]; then
-              echo "Timeout waiting for PR to merge after 10 minutes"
-              exit 1
-            fi
-            
-            echo "Attempt $i/60: PR status is $STATUS, waiting..."
             sleep 10
           done
         env:
