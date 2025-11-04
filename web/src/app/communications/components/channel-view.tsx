@@ -135,13 +135,15 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   );
 
   const channelListRaw =
-    channelListQuery.data && channelListQuery.data.length > 0
+    Array.isArray(channelListQuery.data) && channelListQuery.data.length > 0
       ? channelListQuery.data
       : [DEMO_CHANNEL];
 
   const channelList = channelListRaw;
 
-  const messages = messagesQuery.data ?? [];
+  const messages = Array.isArray(messagesQuery.data)
+    ? messagesQuery.data
+    : [];
 
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
@@ -170,11 +172,17 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       content: message.message ?? "",
       createdAt: message.createdAt,
       attachments: message.attachments ?? [],
-      reactions: (message.reactions ?? []).map((reaction) => ({
-        emoji: reaction.emoji,
-        count: reaction.count,
-        reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
-      })),
+      reactions: (message.reactions ?? []).map(
+        (reaction: {
+          emoji: string;
+          count: number;
+          reactedByCurrentUser?: boolean;
+        }) => ({
+          emoji: reaction.emoji,
+          count: reaction.count,
+          reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
+        }),
+      ),
     }));
   }, [messages]);
 

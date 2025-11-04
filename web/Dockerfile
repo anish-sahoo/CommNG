@@ -4,13 +4,16 @@ FROM node:24-alpine AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY web/package*.json ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy entire server directory (needed for tRPC type imports)
+COPY server /app/server
+
+# Copy web source code
+COPY web/ .
 
 # Accept build arguments for Next.js public env vars
 ARG NEXT_PUBLIC_API_BASE_URL
@@ -33,11 +36,11 @@ WORKDIR /app
 # Set environment to production
 ENV NODE_ENV=production
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from builder
+COPY --from=builder /app/package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/.next ./.next
