@@ -12,7 +12,8 @@
     "db:studio": "npx dotenv -e .env -- drizzle-kit studio --config=drizzle.config.ts",
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
-    "lintfix": "npx @biomejs/biome check --write"
+    "lintfix": "npx @biomejs/biome check --write",
+    "start": "node --import tsx/esm src/index.ts"
   },
   "author": "",
   "license": "ISC",
