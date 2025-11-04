@@ -9,12 +9,15 @@ const buildRedisUrl = () => {
   const password = process.env.REDIS_PASSWORD ?? "";
 
   // Log the environment variables for debugging
-  log.debug({
-    REDIS_HOST: host,
-    REDIS_PORT: port,
-    REDIS_USERNAME: username,
-    REDIS_PASSWORD: password ? "***" : "(not set)",
-  }, "Redis configuration from environment");
+  log.debug(
+    {
+      REDIS_HOST: host,
+      REDIS_PORT: port,
+      REDIS_USERNAME: username,
+      REDIS_PASSWORD: password ? "***" : "(not set)",
+    },
+    "Redis configuration from environment",
+  );
 
   // Construct URL with credentials
   if (password) {
@@ -33,15 +36,18 @@ export const redisClient = createClient({
 
 // Add detailed logging for all Redis client events
 redisClient.on("error", (err) => {
-  log.error({
-    code: err.code,
-    errno: err.errno,
-    syscall: err.syscall,
-    address: err.address,
-    port: err.port,
-    message: err.message,
-    stack: err.stack,
-  }, "Redis Client Error");
+  log.error(
+    {
+      code: err.code,
+      errno: err.errno,
+      syscall: err.syscall,
+      address: err.address,
+      port: err.port,
+      message: err.message,
+      stack: err.stack,
+    },
+    "Redis Client Error",
+  );
 });
 
 redisClient.on("connect", () => {
@@ -68,10 +74,13 @@ export const connectRedis = async () => {
       log.info("Redis Client connection established successfully");
       return true;
     } catch (error) {
-      log.error({
-        error,
-        message: error instanceof Error ? error.message : String(error),
-      }, "Redis Client: Failed to connect");
+      log.error(
+        {
+          error,
+          message: error instanceof Error ? error.message : String(error),
+        },
+        "Redis Client: Failed to connect",
+      );
       throw error;
     }
   } else {
@@ -86,10 +95,13 @@ export const disconnectRedis = async () => {
       await redisClient.quit();
       log.info("Redis Client disconnected successfully");
     } catch (error) {
-      log.error({
-        error,
-        message: error instanceof Error ? error.message : String(error),
-      }, "Redis Client: Error during disconnection");
+      log.error(
+        {
+          error,
+          message: error instanceof Error ? error.message : String(error),
+        },
+        "Redis Client: Error during disconnection",
+      );
       throw error;
     }
   } else {
