@@ -21,13 +21,20 @@ import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, ChannelShell, MessageList } from "./index";
 
+// Type for message reactions from the API
+type MessageReaction = {
+  emoji: string;
+  count: number;
+  reactedByCurrentUser?: boolean;
+};
+
 function cloneMessages(messages: ChannelMessage[]): ChannelMessage[] {
   return messages.map((message) => ({
     ...message,
     attachments: (message.attachments ?? []).map((attachment) => ({
       ...attachment,
     })),
-    reactions: (message.reactions ?? []).map((reaction) => ({
+    reactions: (message.reactions ?? []).map((reaction: MessageReaction) => ({
       ...reaction,
       reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
     })),
@@ -120,9 +127,30 @@ type ChannelViewProps = {
 export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { mutate: mutateReaction } = useMutation(
-    trpc.comms.toggleMessageReaction.mutationOptions(),
-  );
+  
+  // Explicitly type mutation variables to ensure correct inference
+  type ToggleReactionVars = {
+    channelId: number;
+    messageId: number;
+    emoji: string;
+    active: boolean;
+  };
+  type ToggleReactionMutationOptions = ReturnType<
+    typeof trpc.comms.toggleMessageReaction.mutationOptions
+  >;
+  type ToggleReactionError = Parameters<
+    NonNullable<ToggleReactionMutationOptions["onError"]>
+  >[0];
+  type ToggleReactionData = Parameters<
+    NonNullable<ToggleReactionMutationOptions["onSuccess"]>
+  >[0];
+  
+  const { mutate: mutateReaction } = useMutation<
+    ToggleReactionData,
+    ToggleReactionError,
+    ToggleReactionVars
+  >(trpc.comms.toggleMessageReaction.mutationOptions());
+  
   const parsedChannelId = parseChannelId(channelId);
 
   const channelListQuery = useQuery(trpc.comms.getAllChannels.queryOptions());
@@ -172,17 +200,11 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       content: message.message ?? "",
       createdAt: message.createdAt,
       attachments: message.attachments ?? [],
-      reactions: (message.reactions ?? []).map(
-        (reaction: {
-          emoji: string;
-          count: number;
-          reactedByCurrentUser?: boolean;
-        }) => ({
-          emoji: reaction.emoji,
-          count: reaction.count,
-          reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
-        }),
-      ),
+      reactions: (message.reactions ?? []).map((reaction: MessageReaction) => ({
+        emoji: reaction.emoji,
+        count: reaction.count,
+        reactedByCurrentUser: reaction.reactedByCurrentUser ?? false,
+      })),
     }));
   }, [messages]);
 
@@ -311,7 +333,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
                 message.id === data.messageId
                   ? {
                       ...message,
-                      reactions: data.reactions.map((reaction) => ({
+                      reactions: data.reactions.map((reaction: MessageReaction) => ({
                         emoji: reaction.emoji,
                         count: reaction.count,
                         reactedByCurrentUser:
