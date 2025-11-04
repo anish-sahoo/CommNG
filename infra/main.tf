@@ -900,12 +900,12 @@ resource "aws_ecs_task_definition" "server" {
 
       secrets = [
         {
-          name      = "REDIS_PASSWORD"
-          valueFrom = aws_secretsmanager_secret.cache_auth.arn
+          name      = "POSTGRES_PASSWORD"
+          valueFrom = "${aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn}:password::"
         },
         {
-          name      = "POSTGRES_PASSWORD"
-          valueFrom = aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
+          name      = "REDIS_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.cache_auth.arn
         },
         {
           name      = "BETTER_AUTH_SECRET"
