@@ -41,7 +41,6 @@ app.get("/health", (_req, res) => {
 
 await connectPostgres();
 await connectRedis();
-await policyEngine.populateCache(60 * 60 * 12, 5000);
 
 app.listen(port, () => {
   log.info(`tRPC server running at http://localhost:${port}/api/trpc`);
@@ -49,4 +48,9 @@ app.listen(port, () => {
   log.info(
     `Better-auth OpenAPI spec: http://localhost:${port}/api/auth/reference`,
   );
+});
+
+// Populate policy cache after server is ready to accept health checks
+policyEngine.populateCache(60 * 60 * 12, 5000).catch((error) => {
+  log.error({ error }, "Failed to populate policy engine cache");
 });
