@@ -70,7 +70,55 @@ jobs:
           cd ..
           git add web/package.json web/package-lock.json
           git commit -m "chore(web): bump version to $NEW_VERSION [skip ci]"
-          git push origin ${{ inputs.branch }}
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: version-bump/web-${{ steps.version.outputs.new_version }}
+          base: ${{ inputs.branch }}
+          title: "chore(web): bump version to ${{ steps.version.outputs.new_version }}"
+          body: |
+            ## Version Bump
+            
+            Automated version bump for web deployment.
+            
+            - **New Version**: ${{ steps.version.outputs.new_version }}
+            - **Environment**: ${{ inputs.environment }}
+            - **Base Branch**: ${{ inputs.branch }}
+          commit-message: "chore(web): bump version to ${{ steps.version.outputs.new_version }} [skip ci]"
+          delete-branch: true
+
+      - name: Enable Pull Request Auto-merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-approve Pull Request
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          gh pr review ${{ steps.cpr.outputs.pull-request-number }} --approve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for PR to merge
+        if: steps.cpr.outputs.pull-request-number != ''
+        run: |
+          echo "Waiting for PR to auto-merge..."
+          for i in {1..30}; do
+            STATUS=$(gh pr view ${{ steps.cpr.outputs.pull-request-number }} --json state --jq '.state')
+            if [ "$STATUS" = "MERGED" ]; then
+              echo "PR successfully merged!"
+              break
+            fi
+            echo "Attempt $i/30: PR status is $STATUS, waiting..."
+            sleep 10
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
