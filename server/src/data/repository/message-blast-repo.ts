@@ -63,7 +63,7 @@ export class MessageBlastRepository {
     });
 
     if (!created) {
-      throw new ConflictError("Failed to create message blast");
+      throw new ConflictError("Failed to create broadcast");
     }
 
     return this.parseMessageBlastRow(created);
@@ -88,7 +88,7 @@ export class MessageBlastRepository {
       .limit(1);
 
     if (!blast) {
-      throw new NotFoundError(`Message blast ${blastId} not found`);
+      throw new NotFoundError(`Broadcast ${blastId} not found`);
     }
 
     return this.parseMessageBlastRow(blast);
@@ -153,7 +153,7 @@ export class MessageBlastRepository {
       });
 
     if (!updated) {
-      throw new NotFoundError(`Message blast ${blastId} not found`);
+      throw new NotFoundError(`Broadcast ${blastId} not found`);
     }
 
     return this.parseMessageBlastRow(updated);
@@ -182,7 +182,7 @@ export class MessageBlastRepository {
       });
 
     if (!updated) {
-      throw new NotFoundError(`Message blast ${blastId} not found`);
+      throw new NotFoundError(`Broadcast ${blastId} not found`);
     }
 
     return this.parseMessageBlastRow(updated);
@@ -210,7 +210,7 @@ export class MessageBlastRepository {
       });
 
     if (!updated) {
-      throw new NotFoundError(`Message blast ${blastId} not found`);
+      throw new NotFoundError(`Broadcast ${blastId} not found`);
     }
 
     return this.parseMessageBlastRow(updated);
@@ -250,33 +250,42 @@ export class MessageBlastRepository {
   }
 
   private buildTargetAudienceCondition(query: ActiveMessageBlastsForUserQuery) {
-    if (!query.branch && !query.rank && !query.department) {
-      return sql`${messageBlasts.targetAudience} IS NULL`;
-    }
-    const jsonbConditions = [];
     if (!query.branch) {
       return sql`${messageBlasts.targetAudience} IS NULL`;
     }
-    if (query.rank) {
-      jsonbConditions.push(
-        sql`${messageBlasts.targetAudience}->${query.branch}->'ranks' ? ${query.rank}`,
-      );
+
+    const branchPath = sql`${messageBlasts.targetAudience}->${query.branch}`;
+
+    const rankCondition = query.rank
+      ? sql`${branchPath}->'ranks' ? ${query.rank}`
+      : null;
+    const departmentCondition = query.department
+      ? sql`${branchPath}->'departments' ? ${query.department}`
+      : null;
+
+    if (!rankCondition && !departmentCondition) {
+      return sql`(${messageBlasts.targetAudience} IS NULL OR ${branchPath} IS NOT NULL)`;
     }
-    if (query.department) {
-      jsonbConditions.push(
-        sql`${messageBlasts.targetAudience}->${query.branch}->'departments' ? ${query.department}`,
-      );
-    }
-    if (jsonbConditions.length === 0) {
-      return sql`${messageBlasts.targetAudience} IS NULL`;
-    }
-    return sql`(${messageBlasts.targetAudience} IS NULL OR ${sql.join(jsonbConditions, sql` AND `)})`;
+
+    const applicableConditions = [rankCondition, departmentCondition].filter(
+      Boolean,
+    ) as ReturnType<typeof sql>[];
+
+    return sql`(${messageBlasts.targetAudience} IS NULL OR ${sql.join(
+      applicableConditions,
+      sql` OR `,
+    )})`;
   }
 
   async getMessageBlastsForUser(
     query: ActiveMessageBlastsForUserQuery,
+    userId?: string,
   ): Promise<GetMessageBlastOutput[]> {
     const now = new Date();
+    const audienceCondition = this.buildTargetAudienceCondition(query);
+    const visibilityCondition = userId
+      ? sql`(${messageBlasts.senderId} = ${userId} OR ${audienceCondition})`
+      : audienceCondition;
     const rows = await db
       .select({
         blastId: messageBlasts.blastId,
@@ -295,7 +304,7 @@ export class MessageBlastRepository {
         and(
           eq(messageBlasts.status, "sent"),
           gt(messageBlasts.validUntil, now),
-          this.buildTargetAudienceCondition(query),
+          visibilityCondition,
         ),
       );
     return rows.map((row) => this.parseMessageBlastRow(row));

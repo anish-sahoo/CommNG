@@ -194,6 +194,11 @@ resource "random_password" "cache_auth" {
   override_special = "!@#%^*+-_=~"
 }
 
+resource "random_password" "better_auth_secret" {
+  length  = 32
+  special = true
+}
+
 resource "aws_secretsmanager_secret" "cache_auth" {
   name        = "dev/comm-ng/cache-auth"
   description = "Cache AUTH token for dev environment"
@@ -237,6 +242,25 @@ resource "aws_secretsmanager_secret" "vapid_keys" {
 #   "privateKey": "your-vapid-private-key",
 #   "contactEmail": "mailto:admin@example.com"
 # }
+
+# BETTER_AUTH Secret
+resource "aws_secretsmanager_secret" "better_auth_secret" {
+  name        = "dev/comm-ng/better-auth-secret"
+  description = "BETTER_AUTH_SECRET for authentication"
+
+  tags = {
+    Name        = "dev-comm-ng-better-auth-secret"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "better_auth_secret_current" {
+  secret_id     = aws_secretsmanager_secret.better_auth_secret.id
+  secret_string = random_password.better_auth_secret.result
+}
+
+# Note: Secret value must be manually added as a plain string
 
 resource "aws_elasticache_user" "valkey_default" {
   user_id       = "comm-ng-dev"
@@ -733,7 +757,8 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
         Resource = [
           aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn,
           aws_secretsmanager_secret.cache_auth.arn,
-          aws_secretsmanager_secret.vapid_keys.arn
+          aws_secretsmanager_secret.vapid_keys.arn,
+          aws_secretsmanager_secret.better_auth_secret.arn
         ]
       }
     ]
@@ -832,12 +857,28 @@ resource "aws_ecs_task_definition" "server" {
           value = "6379"
         },
         {
-          name  = "DATABASE_HOST"
+          name  = "REDIS_USERNAME"
+          value = "default"
+        },
+        {
+          name  = "POSTGRES_HOST"
           value = split(":", aws_db_instance.dev_db_comm_ng.endpoint)[0]
         },
         {
-          name  = "DATABASE_PORT"
+          name  = "POSTGRES_PORT"
           value = "5432"
+        },
+        {
+          name  = "POSTGRES_DB"
+          value = aws_db_instance.dev_db_comm_ng.db_name
+        },
+        {
+          name  = "POSTGRES_SSL"
+          value = "true"
+        },
+        {
+          name  = "POSTGRES_USER"
+          value = aws_db_instance.dev_db_comm_ng.username
         },
         {
           name  = "S3_BUCKET_NAME"
@@ -850,17 +891,25 @@ resource "aws_ecs_task_definition" "server" {
         {
           name  = "AWS_REGION"
           value = "us-east-1"
+        },
+        {
+          name  = "BACKEND_URL"
+          value = "https://${aws_lb.main.dns_name}"
         }
       ]
 
       secrets = [
         {
-          name      = "DATABASE_URL"
-          valueFrom = aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
+          name      = "POSTGRES_PASSWORD"
+          valueFrom = "${aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn}:password::"
         },
         {
-          name      = "REDIS_AUTH"
+          name      = "REDIS_PASSWORD"
           valueFrom = aws_secretsmanager_secret.cache_auth.arn
+        },
+        {
+          name      = "BETTER_AUTH_SECRET"
+          valueFrom = aws_secretsmanager_secret.better_auth_secret.arn
         },
         {
           name      = "VAPID_PUBLIC_KEY"
