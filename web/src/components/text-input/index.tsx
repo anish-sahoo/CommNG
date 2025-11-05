@@ -59,7 +59,7 @@ export const TextInput = ({
   };
 
   const charCount = value?.length ?? 0;
-  const showCount = showCharCount || maxLength;
+  const showCount = showCharCount ?? maxLength !== undefined;
 
   const counterStyles = {
     color: counterColor,
