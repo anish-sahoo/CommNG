@@ -29,103 +29,106 @@ const buildRedisUrl = () => {
   return `redis://${host}:${port}`;
 };
 
-const redisUrl = buildRedisUrl();
-// Mask password in logged URL for security
-const maskedRedisUrl = redisUrl.replace(/:([^@]+)@/, ":***@");
-log.info(`Attempting to connect to Redis at: ${maskedRedisUrl}`);
-export const redisClient = createClient({
-  url: redisUrl,
-});
+// Create client only when needed, not at module load time
+let redisClient: ReturnType<typeof createClient> | null = null;
 
-// Add detailed logging for all Redis client events
-redisClient.on("error", (err) => {
-  log.error(
-    {
-      code: err.code,
-      errno: err.errno,
-      syscall: err.syscall,
-      address: err.address,
-      port: err.port,
-      message: err.message,
-      stack: err.stack,
-    },
-    "Redis Client Error",
-  );
-});
+const getRedisClient = () => {
+  if (!redisClient) {
+    const redisUrl = buildRedisUrl();
+    // Mask password in logged URL for security
+    const maskedRedisUrl = redisUrl.replace(/:([^@]+)@/, ":***@");
+    log.info(`Creating Redis client for: ${maskedRedisUrl}`);
 
-redisClient.on("connect", () => {
-  log.info("Redis Client: Connected");
-});
+    redisClient = createClient({
+      url: redisUrl,
+    });
 
-redisClient.on("ready", () => {
-  log.info("Redis Client: Ready");
-});
-
-redisClient.on("reconnecting", () => {
-  log.warn("Redis Client: Reconnecting...");
-});
-
-redisClient.on("warning", (warning) => {
-  log.warn({ warning }, "Redis Client Warning");
-});
-
-export const connectRedis = async () => {
-  if (!redisClient.isOpen) {
-    try {
-      log.info("Redis Client: Attempting connection...");
-      await redisClient.connect();
-      // Wait briefly for the optional "ready" event, but do not block startup indefinitely
-      if (!redisClient.isReady) {
-        await new Promise((resolve) => {
-          const timeout = setTimeout(() => {
-            log.warn(
-              "Redis Client: Ready event not received within timeout; continuing with connected state",
-            );
-            resolve(null);
-          }, 3000);
-
-          redisClient.once("ready", () => {
-            clearTimeout(timeout);
-            resolve(null);
-          });
-        });
-      }
-
-      log.info("Redis Client connection established successfully");
-      return true;
-    } catch (error) {
+    // Add detailed logging for all Redis client events
+    redisClient.on("error", (err) => {
       log.error(
         {
-          error,
-          message: error instanceof Error ? error.message : String(error),
+          code: err.code,
+          errno: err.errno,
+          syscall: err.syscall,
+          address: err.address,
+          port: err.port,
+          message: err.message,
+          stack: err.stack,
         },
-        "Redis Client: Failed to connect",
+        "Redis Client Error",
       );
-      throw error;
-    }
-  } else {
-    log.debug("Redis Client: Already connected, skipping");
+    });
+
+    redisClient.on("connect", () => {
+      log.info("Redis Client: Connected");
+    });
+
+    redisClient.on("ready", () => {
+      log.info("Redis Client: Ready");
+    });
+
+    redisClient.on("reconnecting", () => {
+      log.warn("Redis Client: Reconnecting...");
+    });
+
+    redisClient.on("warning", (warning) => {
+      log.warn({ warning }, "Redis Client Warning");
+    });
+  }
+  return redisClient;
+};
+
+export const connectRedis = async () => {
+  const client = getRedisClient();
+
+  if (client.isOpen) {
+    log.debug("Redis Client: Already connected");
     return true;
+  }
+
+  try {
+    log.info("Redis Client: Attempting connection...");
+    await client.connect();
+    log.info("Redis Client connection established successfully");
+    return true;
+  } catch (error) {
+    log.error(
+      {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+      },
+      "Redis Client: Failed to connect",
+    );
+    throw error;
   }
 };
 
 export const disconnectRedis = async () => {
-  if (redisClient.isOpen) {
-    try {
-      log.info("Redis Client: Attempting disconnection...");
-      await redisClient.quit();
-      log.info("Redis Client disconnected successfully");
-    } catch (error) {
-      log.error(
-        {
-          error,
-          message: error instanceof Error ? error.message : String(error),
-        },
-        "Redis Client: Error during disconnection",
-      );
-      throw error;
-    }
-  } else {
-    log.debug("Redis Client: Already disconnected, skipping");
+  if (!redisClient || !redisClient.isOpen) {
+    log.debug("Redis Client: Already disconnected or not initialized");
+    return;
   }
+
+  try {
+    log.info("Redis Client: Attempting disconnection...");
+    await redisClient.quit();
+    log.info("Redis Client disconnected successfully");
+  } catch (error) {
+    log.error(
+      {
+        error,
+        message: error instanceof Error ? error.message : String(error),
+      },
+      "Redis Client: Error during disconnection",
+    );
+    throw error;
+  }
+};
+
+// Export the client getter for direct access
+export const getRedisClientInstance = () => {
+  if (!redisClient) {
+    throw new Error("Redis client not initialized. Call connectRedis() first.");
+  }
+  return redisClient;
 };
