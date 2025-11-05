@@ -74,12 +74,23 @@ export const connectRedis = async () => {
     try {
       log.info("Redis Client: Attempting connection...");
       await redisClient.connect();
-      // Wait for the "ready" event to ensure connection is fully established
+      // Wait briefly for the optional "ready" event, but do not block startup indefinitely
       if (!redisClient.isReady) {
         await new Promise((resolve) => {
-          redisClient.once("ready", resolve);
+          const timeout = setTimeout(() => {
+            log.warn(
+              "Redis Client: Ready event not received within timeout; continuing with connected state",
+            );
+            resolve(null);
+          }, 3000);
+
+          redisClient.once("ready", () => {
+            clearTimeout(timeout);
+            resolve(null);
+          });
         });
       }
+
       log.info("Redis Client connection established successfully");
       return true;
     } catch (error) {
