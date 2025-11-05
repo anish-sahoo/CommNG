@@ -157,8 +157,11 @@ export const PostedCard = ({
 
   return (
     <>
-      <Card className="w-full p-4">
-        <div className="flex items-center gap-4 px-6 py-4">
+      <Card className="w-full p-4 relative">
+        <div className="absolute top-4 right-4 z-10">
+          <DropdownButtons items={actionMenuItems} align="end" />
+        </div>
+        <div className="flex items-center gap-4 px-6 py-4 pr-12">
           <Avatar />
           <div className="flex flex-col gap-2 px-4 py-0 w-full">
             <div className="text-secondary text-subheader font-semibold">
@@ -187,14 +190,9 @@ export const PostedCard = ({
               </div>
             ) : null}
 
-            <div className="flex items-center justify-between">
-              <div>
-                {deleteError ? (
-                  <p className="text-xs text-destructive">{deleteError}</p>
-                ) : null}
-              </div>
-              <DropdownButtons items={actionMenuItems} align="end" />
-            </div>
+            {deleteError ? (
+              <p className="text-xs text-destructive">{deleteError}</p>
+            ) : null}
           </div>
         </div>
       </Card>
