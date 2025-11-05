@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   BellPlus,
   Check,
   ChevronDown,
@@ -31,6 +32,7 @@ export const icons = {
   edit: PenSquare,
   add: Plus,
   addAlert: BellPlus,
+  bell: Bell,
   settings: Settings,
   personAdd: UserPlus,
   arrowLeft: ChevronLeft,

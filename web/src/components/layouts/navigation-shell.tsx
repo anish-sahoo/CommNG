@@ -1,9 +1,13 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { icons } from "@/components/icons";
+import { BroadcastModal } from "@/components/modal";
 import Navigation from "@/components/navigation";
+import { authClient } from "@/lib/auth-client";
+import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
 type NavigationShellProps = {
@@ -18,6 +22,96 @@ const NavigationShell = ({
   showCommsNav = true,
 }: NavigationShellProps) => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [acknowledgedBlastIds, setAcknowledgedBlastIds] = useState<number[]>(
+    [],
+  );
+  const [acksHydrated, setAcksHydrated] = useState(false);
+  const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const { data: sessionData } = authClient.useSession();
+
+  const trpc = useTRPC();
+  const { data: activeBroadcasts } = useQuery(
+    trpc.messageBlasts.getActiveMessageBlastsForUser.queryOptions(),
+  );
+
+  const userId = sessionData?.user?.id;
+  const storageKey = userId ? `commng:broadcast-acks:${userId}` : null;
+  const displayableBroadcasts = useMemo(() => {
+    if (!activeBroadcasts || activeBroadcasts.length === 0) {
+      return [];
+    }
+    if (!userId) {
+      return activeBroadcasts;
+    }
+    return activeBroadcasts.filter((blast) => blast.senderId !== userId);
+  }, [activeBroadcasts, userId]);
+
+  const nextBroadcast = useMemo(() => {
+    if (!displayableBroadcasts.length) {
+      return null;
+    }
+    return (
+      displayableBroadcasts.find(
+        (blast) => !acknowledgedBlastIds.includes(blast.blastId),
+      ) ?? null
+    );
+  }, [displayableBroadcasts, acknowledgedBlastIds]);
+
+  useEffect(() => {
+    if (!storageKey) {
+      setAcknowledgedBlastIds([]);
+      setAcksHydrated(true);
+      return;
+    }
+
+    try {
+      const storedValue = window.localStorage.getItem(storageKey);
+      if (storedValue) {
+        const parsed = JSON.parse(storedValue);
+        if (Array.isArray(parsed)) {
+          const normalized = parsed
+            .map((value) => Number(value))
+            .filter((value) => Number.isFinite(value) && value > 0);
+          setAcknowledgedBlastIds(normalized);
+        } else {
+          setAcknowledgedBlastIds([]);
+        }
+      } else {
+        setAcknowledgedBlastIds([]);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to read acknowledged broadcasts from storage",
+        error,
+      );
+      setAcknowledgedBlastIds([]);
+    } finally {
+      setAcksHydrated(true);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageKey || !acksHydrated) {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify(acknowledgedBlastIds),
+      );
+    } catch (error) {
+      console.error("Failed to persist acknowledged broadcasts", error);
+    }
+  }, [acknowledgedBlastIds, acksHydrated, storageKey]);
+
+  useEffect(() => {
+    if (nextBroadcast) {
+      setBroadcastModalOpen(true);
+    } else {
+      setBroadcastModalOpen(false);
+    }
+  }, [nextBroadcast]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -38,6 +132,19 @@ const NavigationShell = ({
   const desktopOffsetClass = showCommsNav ? "lg:ml-[21rem]" : "lg:ml-24";
   const desktopPaddingClass = showCommsNav ? "lg:pl-10" : "lg:pl-8";
 
+  const handleAcknowledge = () => {
+    if (!nextBroadcast) {
+      return;
+    }
+
+    setAcknowledgedBlastIds((previous) =>
+      previous.includes(nextBroadcast.blastId)
+        ? previous
+        : [...previous, nextBroadcast.blastId],
+    );
+    setBroadcastModalOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation
@@ -52,7 +159,7 @@ const NavigationShell = ({
           desktopPaddingClass,
         )}
       >
-        <div className="mb-4 flex justify-start lg:hidden">
+        <div className="mb-4 flex items-center justify-start lg:hidden">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
@@ -64,6 +171,15 @@ const NavigationShell = ({
         </div>
         <div className="flex-1 overflow-x-hidden">{children}</div>
       </div>
+      {nextBroadcast ? (
+        <BroadcastModal
+          open={broadcastModalOpen}
+          onOpenChange={setBroadcastModalOpen}
+          title={nextBroadcast.title}
+          message={nextBroadcast.content}
+          onAcknowledge={handleAcknowledge}
+        />
+      ) : null}
     </div>
   );
 };

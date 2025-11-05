@@ -24,19 +24,17 @@ export class MessageBlastService {
       input.targetAudience,
       input.validUntil,
     );
+    await this.messageBlastRepository.markAsSent(result.blastId);
+
     notificationService
       .sendTargetedNotifications(input.targetAudience || null, {
         title: input.title,
         body: input.content,
       })
-      .then(
-        async () =>
-          await this.messageBlastRepository.markAsSent(result.blastId),
-      )
       .catch(async (err) => {
         log.error(
           { blastId: result.blastId, err },
-          "Failed to send notifications for message blast",
+          "Failed to send notifications for broadcast",
         );
         await this.messageBlastRepository.markAsFailed(result.blastId);
       });
@@ -47,10 +45,17 @@ export class MessageBlastService {
     if (!userData) {
       return [];
     }
-    return await this.messageBlastRepository.getMessageBlastsForUser({
-      branch: userData.branch ?? undefined,
-      rank: userData.rank ?? undefined,
-      department: userData.department ?? undefined,
-    });
+    return await this.messageBlastRepository.getMessageBlastsForUser(
+      {
+        branch: userData.branch ?? undefined,
+        rank: userData.rank ?? undefined,
+        department: userData.department ?? undefined,
+      },
+      userId,
+    );
+  }
+
+  async deleteMessageBlast(blastId: number) {
+    await this.messageBlastRepository.deleteMessageBlast(blastId);
   }
 }
