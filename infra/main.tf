@@ -894,7 +894,8 @@ resource "aws_ecs_task_definition" "server" {
         },
         {
           name  = "BACKEND_URL"
-          value = "https://${aws_lb.main.dns_name}"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
+          value = "http://${aws_lb.main.dns_name}"
         }
       ]
 
@@ -935,7 +936,7 @@ resource "aws_ecs_task_definition" "server" {
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
         interval    = 30
         timeout     = 10
         retries     = 10
@@ -984,10 +985,12 @@ resource "aws_ecs_task_definition" "web" {
         },
         {
           name  = "NEXT_PUBLIC_API_BASE_URL"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
           value = "http://${aws_lb.main.dns_name}"
         },
         {
           name  = "NEXT_PUBLIC_WEB_BASE_URL"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
           value = "http://${aws_lb.main.dns_name}"
         }
       ]
