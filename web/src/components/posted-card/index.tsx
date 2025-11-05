@@ -56,6 +56,7 @@ export const PostedCard = ({
   }, [channelId, trpc]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editContent, setEditContent] = useState(content);
   const [editError, setEditError] = useState<string | null>(null);
   const editPost = useMutation(trpc.comms.editPost.mutationOptions());
@@ -80,10 +81,10 @@ export const PostedCard = ({
           onError: (error) => {
             setEditError(error.message);
           },
-        },
+        }
       );
     },
-    [channelId, postId, editPost, queryClient, channelMessagesQueryKey],
+    [channelId, postId, editPost, queryClient, channelMessagesQueryKey]
   );
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -102,11 +103,12 @@ export const PostedCard = ({
           await queryClient.invalidateQueries({
             queryKey: channelMessagesQueryKey,
           });
+          setIsDeleteModalOpen(false);
         },
         onError: (error) => {
           setDeleteError(error.message);
         },
-      },
+      }
     );
   }, [postId, channelId, deletePost, queryClient, channelMessagesQueryKey]);
 
@@ -129,8 +131,11 @@ export const PostedCard = ({
     {
       id: "delete-post",
       icon: "trash" as const,
-      label: deletePost.isPending ? "Deleting…" : "Delete",
-      onClick: handleDeletePost,
+      label: "Delete",
+      onClick: () => {
+        setDeleteError(null);
+        setIsDeleteModalOpen(true);
+      },
     },
   ];
 
@@ -143,6 +148,11 @@ export const PostedCard = ({
     setEditContent(content);
     setEditError(null);
     setIsEditModalOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteError(null);
+    setIsDeleteModalOpen(false);
   };
 
   return (
@@ -248,6 +258,48 @@ export const PostedCard = ({
               {characterCount}/{maxLength}
             </span>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={isDeleteModalOpen}
+        onOpenChange={(newOpen) => {
+          if (!newOpen) {
+            handleCancelDelete();
+          } else {
+            setIsDeleteModalOpen(newOpen);
+          }
+        }}
+        title="Delete Post"
+        footer={
+          <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={deletePost.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeletePost}
+              disabled={deletePost.isPending}
+            >
+              {deletePost.isPending ? "Deleting…" : "Delete"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-secondary">
+            Are you sure you want to delete this post? This action cannot be
+            undone.
+          </p>
+          {deleteError ? (
+            <p className="text-xs text-destructive">{deleteError}</p>
+          ) : null}
         </div>
       </Modal>
     </>
