@@ -69,9 +69,12 @@ export const Reaction = ({
       type="button"
       className={baseClasses.join(" ")}
       onClick={handleClick}
+      aria-label={`React with ${emoji}`}
       aria-pressed={active}
     >
-      <span className="emoji">{emoji}</span>
+      <span aria-hidden="true" className="emoji">
+        {emoji}
+      </span>
       {count > 0 && <span>{count}</span>}
     </button>
   );

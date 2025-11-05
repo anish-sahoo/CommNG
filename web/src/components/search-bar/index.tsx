@@ -14,6 +14,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   ...props
 }) => {
   const Search = icons.search;
+  const { className: inputClassName, style, ...restProps } = props;
+  const { "aria-label": ariaLabelFromProps, ...inputProps } =
+    restProps as typeof restProps & { "aria-label"?: string };
+  const ariaLabel = ariaLabelFromProps ?? placeholder;
 
   return (
     <div className="relative">
@@ -29,10 +33,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
         )}
       </span>
       <Input
-        {...props}
+        {...inputProps}
         placeholder={placeholder}
-        className={props.className || "" || "w-[233px] h-[41px]"}
-        style={{ paddingLeft: "35px" }}
+        aria-label={ariaLabel}
+        className={inputClassName || "" || "w-[233px] h-[41px]"}
+        style={{ paddingLeft: "35px", ...style }}
       />
     </div>
   );
