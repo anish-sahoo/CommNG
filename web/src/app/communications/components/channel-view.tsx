@@ -440,6 +440,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       }
     >
       <MessageList
+        channelId={parsedChannelId}
         messages={messagesToDisplay}
         onReactionToggle={handleReactionToggle}
       />

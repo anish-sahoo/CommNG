@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import ChannelCard from "@/components/channel-card";
 import ChipSelect from "@/components/chip-select";
-import { DropdownButtons } from "@/components/dropdown";
+import {
+  DropdownButtons,
+  type DropdownMenuItemConfig,
+} from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import CollapsibleCard from "@/components/expanding-card";
 import { icons } from "@/components/icons";
@@ -24,6 +27,7 @@ import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import SearchBar from "@/components/search-bar";
 import { ReportsTable } from "@/components/table-view";
 import { TextInput } from "@/components/text-input";
+import { Button } from "@/components/ui/button";
 import {
   Dropzone,
   DropzoneContent,
@@ -58,6 +62,38 @@ const mentorQualityOptions: MultiSelectOption[] = [
   {
     value: "open-minded",
     label: "Open-minded and approachable",
+  },
+];
+
+const dropdownMenuItems: DropdownMenuItemConfig[] = [
+  {
+    id: "broadcast",
+    icon: "addAlert",
+    label: "Broadcast",
+    onClick: () => console.log("Broadcast clicked"),
+    separator: true,
+  },
+  {
+    id: "channel",
+    icon: "message",
+    label: "Channel",
+    onClick: () => console.log("Channel clicked"),
+  },
+];
+
+const actionMenuItems: DropdownMenuItemConfig[] = [
+  {
+    id: "delete",
+    icon: "trash",
+    label: "Delete",
+    onClick: () => console.log("Delete clicked"),
+    separator: true,
+  },
+  {
+    id: "comment",
+    icon: "message",
+    label: "Comment",
+    onClick: () => console.log("Comment clicked"),
   },
 ];
 
@@ -262,6 +298,8 @@ const Components = () => {
               </h2>
             </div>
             <PostedCard
+              channelId={0}
+              postId={0}
               name="Brandon Johnson"
               rank="E-1"
               content="Are there any additional resources regarding the mentorship program? I would like to participate 
@@ -322,7 +360,19 @@ const Components = () => {
                 Dropdown Menu
               </h2>
             </div>
-            <DropdownButtons />
+            <div className="flex gap-6">
+              <DropdownButtons
+                items={dropdownMenuItems}
+                align="start"
+                triggerContent={
+                  <Button variant="outline" className="gap-2">
+                    <icons.add className="h-5 w-5" />
+                    New
+                  </Button>
+                }
+              />
+              <DropdownButtons items={actionMenuItems} />
+            </div>
           </section>
 
           <section className="space-y-6">
