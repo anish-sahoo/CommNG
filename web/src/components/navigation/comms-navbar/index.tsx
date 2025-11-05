@@ -68,7 +68,8 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
     trpc.comms.getAllChannels.queryOptions(),
   );
 
-  const channelData = data && data.length > 0 ? data : [DEMO_CHANNEL];
+  const channelData =
+    Array.isArray(data) && data.length > 0 ? data : [DEMO_CHANNEL];
 
   const channels: Channel[] = [
     {

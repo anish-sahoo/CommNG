@@ -12,6 +12,10 @@ export function Cache<T extends unknown[]>(
     _propertyKey,
     descriptor: PropertyDescriptor,
   ): PropertyDescriptor => {
+    if (!descriptor || typeof descriptor.value !== "function") {
+      return descriptor;
+    }
+
     const original = descriptor.value as (...args: T) => Promise<unknown>;
 
     descriptor.value = async function (...args: T) {

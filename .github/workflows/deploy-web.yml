@@ -1,0 +1,159 @@
+name: Deploy Web to ECS
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy from'
+        required: true
+        default: 'main'
+        type: string
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: comm-ng-web
+  ECS_SERVICE: dev-comm-ng-web-service
+  ECS_CLUSTER: dev-comm-ng-cluster
+  ECS_TASK_DEFINITION: dev-comm-ng-web
+  CONTAINER_NAME: web
+
+jobs:
+  deploy:
+    name: Deploy Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+      - name: Prepare release version
+        id: release-version
+        run: |
+          cd web
+          
+          # Get current version (should be X.Y.Z-SNAPSHOT)
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Remove -SNAPSHOT suffix for release
+          RELEASE_VERSION=${CURRENT_VERSION%-SNAPSHOT}
+          echo "version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $RELEASE_VERSION"
+          
+          # Temporarily set version to release version (don't commit yet)
+          npm version $RELEASE_VERSION --no-git-tag-version
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          VERSION_TAG: ${{ steps.release-version.outputs.version }}
+        run: |
+          # Build from repository root to include server types
+          docker build -f web/Dockerfile -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$VERSION_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+            --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Configure Git for version bump
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump to next SNAPSHOT version
+        id: new-version
+        run: |
+          cd web
+          
+          # Start from the release version we just deployed
+          RELEASE_VERSION="${{ steps.release-version.outputs.version }}"
+          echo "Released version: $RELEASE_VERSION"
+          
+          # Determine version bump type based on branch
+          if [ "${{ inputs.branch }}" = "main" ]; then
+            echo "Bumping minor version (main branch)"
+            npm version minor --no-git-tag-version
+          else
+            echo "Bumping patch version (non-main branch)"
+            npm version patch --no-git-tag-version
+          fi
+          
+          # Get the bumped version
+          NEXT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Add -SNAPSHOT suffix
+          SNAPSHOT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+          npm version $SNAPSHOT_VERSION --no-git-tag-version
+          
+          echo "version=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+          echo "New SNAPSHOT version: $SNAPSHOT_VERSION"
+          
+          cd ..
+          git add web/package.json web/package-lock.json
+          git commit -m "chore(web): bump version to $SNAPSHOT_VERSION [skip ci]"
+          git push origin ${{ inputs.branch }}
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ env.ECS_SERVICE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: ${{ env.ECS_CLUSTER }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ steps.build-image.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Released Version**: ${{ steps.release-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Next Version**: ${{ steps.new-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ inputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

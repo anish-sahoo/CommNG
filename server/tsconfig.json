@@ -23,6 +23,7 @@
     /* If your code doesn't run in the DOM: */
     "lib": ["es2022"],
 
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }
