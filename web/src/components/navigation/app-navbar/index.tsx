@@ -66,7 +66,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
     <nav
       className={cn(
         "fixed inset-y-0 left-0 z-40 flex w-24 flex-col items-center bg-primary px-3 py-6 shadow-lg shadow-black/20",
-        className
+        className,
       )}
     >
       <div className="flex h-16 w-16 items-center justify-center">
@@ -98,7 +98,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
             "flex h-12 w-12 mb-2 items-center justify-center rounded-full border-2 transition-colors duration-200",
             isHelpActive
               ? "border-accent bg-accent text-primary"
-              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background"
+              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
           )}
         >
           <HelpIcon className="h-6 w-6" />
@@ -111,7 +111,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
             "flex h-12 w-12 items-center justify-center rounded-full border-2 transition-colors duration-200",
             isProfileActive
               ? "border-accent bg-accent text-primary"
-              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background"
+              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
           )}
         >
           <ProfileIcon className="h-6 w-6" strokeWidth={2} />
