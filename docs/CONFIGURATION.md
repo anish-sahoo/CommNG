@@ -198,6 +198,27 @@ Look for:
 
 ## Common Issues
 
+### Issue: Health check stuck at "initializing" (Redis)
+
+**Symptoms**: Logs show "Redis Client: Connected" but never "Redis Client: Ready" and `/api/health` keeps reporting `postgres: true, redis: false`.
+
+**Cause**: AWS ElastiCache Serverless (Valkey/Redis) requires TLS in-transit. If the client connects without TLS (`redis://`), the socket connects but never becomes ready.
+
+**Solution**:
+- The server auto-enables TLS for hosts ending with `cache.amazonaws.com` and when `REDIS_TLS=true`.
+- Ensure these env vars are set in production:
+
+```bash
+REDIS_HOST=<elasticache-endpoint>      # e.g., dev-comm-ng-...cache.amazonaws.com
+REDIS_PORT=6379
+REDIS_USERNAME=default                 # default unless you created more ACL users
+REDIS_PASSWORD=<from Secrets Manager>  # cache AUTH token
+# (optional) force TLS explicitly
+REDIS_TLS=true
+```
+
+Locally (Docker/localhost), you typically don't want TLS, so omit `REDIS_TLS` and keep `REDIS_HOST=localhost`.
+
 ### Issue: tRPC calls fail with 404
 
 **Cause**: ALB routing rule not matching

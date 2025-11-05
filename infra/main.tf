@@ -594,11 +594,11 @@ resource "aws_lb_target_group" "server" {
     healthy_threshold   = 2
     interval            = 30
     matcher             = "200"
-    path                = "/health"
+    path                = "/api/health"
     port                = "traffic-port"
     protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
+    timeout             = 10
+    unhealthy_threshold = 5
   }
 
   deregistration_delay = 30
@@ -625,8 +625,8 @@ resource "aws_lb_target_group" "web" {
     path                = "/"
     port                = "traffic-port"
     protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
+    timeout             = 10
+    unhealthy_threshold = 5
   }
 
   deregistration_delay = 30
@@ -894,7 +894,8 @@ resource "aws_ecs_task_definition" "server" {
         },
         {
           name  = "BACKEND_URL"
-          value = "https://${aws_lb.main.dns_name}"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
+          value = "http://${aws_lb.main.dns_name}"
         }
       ]
 
@@ -935,11 +936,11 @@ resource "aws_ecs_task_definition" "server" {
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+        command     = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
         interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
+        timeout     = 10
+        retries     = 10
+        startPeriod = 180
       }
     }
   ])
@@ -984,10 +985,12 @@ resource "aws_ecs_task_definition" "web" {
         },
         {
           name  = "NEXT_PUBLIC_API_BASE_URL"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
           value = "http://${aws_lb.main.dns_name}"
         },
         {
           name  = "NEXT_PUBLIC_WEB_BASE_URL"
+          # TODO: Change to https:// when adding TLS/SSL certificate to ALB
           value = "http://${aws_lb.main.dns_name}"
         }
       ]
