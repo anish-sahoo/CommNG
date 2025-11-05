@@ -159,7 +159,11 @@ export const PostedCard = ({
     <>
       <Card className="w-full p-4 relative">
         <div className="absolute top-4 right-4 z-10">
-          <DropdownButtons items={actionMenuItems} align="end" />
+          <DropdownButtons
+            items={actionMenuItems}
+            align="end"
+            triggerAriaLabel="Post actions"
+          />
         </div>
         <div className="flex items-center gap-4 px-6 py-4 pr-12">
           <Avatar />
