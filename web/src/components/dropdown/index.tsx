@@ -1,4 +1,6 @@
 "use client";
+import type { Route } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,8 @@ export interface DropdownMenuItemConfig {
   id: string;
   icon?: keyof typeof icons;
   label: string;
-  onClick: () => void;
+  href?: Route | string;
+  onClick?: () => void;
   separator?: boolean; // Add separator after this item
 }
 
@@ -41,7 +44,7 @@ export function DropdownButtons({
       variant="outline"
       className="h-9 w-9 p-0 rounded-full flex items-center justify-center"
     >
-      <Ellipsis className="h-5 w-5" />
+      <Ellipsis className="h-5 w-5 text-accent" />
     </Button>
   );
 
@@ -56,13 +59,31 @@ export function DropdownButtons({
 
           return (
             <div key={item.id}>
-              <DropdownMenuItem
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={item.onClick}
-              >
-                {IconComponent && <IconComponent className="h-4 w-4" />}
-                <span>{item.label}</span>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                {item.href ? (
+                  <Link
+                    href={item.href as Route}
+                    className="flex items-center gap-2 text-secondary hover:text-primary"
+                  >
+                    {IconComponent && (
+                      <IconComponent className="h-4 w-4 text-accent" />
+                    )}
+                    <span>{item.label}</span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    className="flex items-center gap-2 text-secondary hover:text-primary focus:outline-none"
+                  >
+                    {IconComponent && (
+                      <IconComponent className="h-4 w-4 text-accent" />
+                    )}
+                    {item.label}
+                  </button>
+                )}
               </DropdownMenuItem>
+
               {item.separator && <DropdownMenuSeparator />}
             </div>
           );
