@@ -27,6 +27,7 @@ interface ReusableDropdownProps {
   triggerClassName?: string;
   align?: "start" | "end" | "center";
   sideOffset?: number;
+  triggerAriaLabel?: string;
 }
 
 export function DropdownButtons({
@@ -35,6 +36,7 @@ export function DropdownButtons({
   triggerClassName,
   align = "end",
   sideOffset = 6,
+  triggerAriaLabel = "Open options menu",
 }: ReusableDropdownProps) {
   const Ellipsis = icons.ellipsis;
 
@@ -43,6 +45,7 @@ export function DropdownButtons({
     <Button
       variant="outline"
       className="h-9 w-9 p-0 rounded-full flex items-center justify-center"
+      aria-label={triggerAriaLabel}
     >
       <Ellipsis className="h-5 w-5 text-accent" />
     </Button>

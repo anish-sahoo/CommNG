@@ -41,7 +41,8 @@ export default function CollapsibleCard({
     <Card className="w-full p-0">
       <Collapsible open={Expandable} onOpenChange={setExpandable}>
         <CollapsibleTrigger asChild>
-          <div
+          <button
+            type="button"
             className={`flex items-center justify-between cursor-pointer rounded transition-colors ${
               Expandable
                 ? "bg-primary-dark text-white p-4 rounded-xl"
@@ -70,7 +71,7 @@ export default function CollapsibleCard({
                 Expandable ? "rotate-90" : "rotate-0"
               }`}
             />
-          </div>
+          </button>
         </CollapsibleTrigger>
 
         <CollapsibleContent>

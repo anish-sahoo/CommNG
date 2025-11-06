@@ -128,6 +128,8 @@ export default function CommunicationsOverviewPage() {
           <SearchBar
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search channels"
+            aria-label="Search communication channels"
           />
           <Button
             asChild

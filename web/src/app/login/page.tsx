@@ -135,25 +135,39 @@ export default function Page() {
             </div>
 
             <div className="flex flex-col gap-5">
-              <TextInput
-                id="email"
-                name="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(value) => {
-                  setEmail(value);
-                  if (stage === "email") {
-                    setErrorMessage(null);
-                  }
-                }}
-                disabled={stage === "password"}
-                className="w-full"
-              />
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="login-email"
+                  className="text-sm font-semibold text-secondary"
+                >
+                  Email address
+                </label>
+                <TextInput
+                  id="login-email"
+                  name="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(value) => {
+                    setEmail(value);
+                    if (stage === "email") {
+                      setErrorMessage(null);
+                    }
+                  }}
+                  disabled={stage === "password"}
+                  className="w-full"
+                />
+              </div>
 
               {stage === "password" ? (
                 <div>
+                  <label
+                    htmlFor="login-password"
+                    className="mb-2 block text-sm font-semibold text-secondary"
+                  >
+                    Password
+                  </label>
                   <TextInput
-                    id="password"
+                    id="login-password"
                     name="password"
                     type="password"
                     placeholder="Password"

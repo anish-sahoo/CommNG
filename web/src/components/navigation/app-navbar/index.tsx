@@ -58,7 +58,9 @@ type AppNavBarProps = {
 export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
   const pathname = usePathname();
   const ProfileIcon = icons.user;
+  const HelpIcon = icons.help;
   const isProfileActive = pathname.startsWith("/profile");
+  const isHelpActive = pathname.startsWith("/help-page");
 
   return (
     <nav
@@ -88,7 +90,19 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
         ))}
       </ul>
 
-      <div className="mt-auto flex h-16 w-full items-end justify-center pb-3">
+      <div className="mt-auto flex flex-col w-full items-center justify-center pb-3">
+        <Link
+          href="/help-page"
+          aria-label="Help"
+          className={cn(
+            "flex h-12 w-12 mb-2 items-center justify-center rounded-full border-2 transition-colors duration-200",
+            isHelpActive
+              ? "border-accent bg-accent text-primary"
+              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+          )}
+        >
+          <HelpIcon className="h-6 w-6" />
+        </Link>
         <Link
           href="/profile"
           aria-label="Profile"

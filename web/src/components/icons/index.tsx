@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleQuestionMark,
   EllipsisVertical,
   Lock,
   Megaphone,
@@ -14,6 +15,7 @@ import {
   MessageSquareText,
   MessageSquareWarning,
   MessagesSquare,
+  MoveRight,
   PenSquare,
   Plus,
   Search,
@@ -37,6 +39,7 @@ export const icons = {
   personAdd: UserPlus,
   arrowLeft: ChevronLeft,
   arrowRight: ChevronRight,
+  moveRight: MoveRight,
   announce: Megaphone,
   forum: MessagesSquare,
   menu: Menu,
@@ -54,6 +57,7 @@ export const icons = {
   mentorship: Users,
   reports: MessageSquareWarning,
   user: User,
+  help: CircleQuestionMark,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

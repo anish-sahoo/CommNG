@@ -30,17 +30,18 @@ type TextInputProps = {
   | { multiline?: false; type?: React.HTMLInputTypeAttribute }
 );
 
-export const TextInput = ({
-  className,
-  maxLength,
-  showCharCount,
-  onChange,
-  value,
-  placeholder,
-  counterColor,
-  disabled,
-  ...rest
-}: TextInputProps) => {
+export const TextInput = (props: TextInputProps) => {
+  const {
+    className,
+    maxLength,
+    showCharCount,
+    onChange,
+    value,
+    placeholder,
+    counterColor,
+    disabled,
+    ...rest
+  } = props;
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -61,20 +62,30 @@ export const TextInput = ({
   const charCount = value?.length ?? 0;
   const showCount = showCharCount ?? maxLength !== undefined;
 
-  const counterStyles = {
+  const counterStyles: React.CSSProperties = {
     color: counterColor,
   };
 
-  if (rest.multiline) {
+  if ("multiline" in rest && rest.multiline) {
+    const {
+      rows,
+      multiline: _multiline,
+      ...textareaProps
+    } = rest as {
+      multiline: true;
+      rows?: number;
+    } & React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+
     return (
       <div className="relative w-full">
         <Textarea
+          {...textareaProps}
           value={value}
           onChange={handleChange}
           placeholder={placeholder}
           maxLength={maxLength}
           disabled={disabled}
-          rows={rest.rows ?? 3}
+          rows={rows ?? 3}
           className={cn(
             "resize-none pb-7",
             showCount && "pb-7 pr-16",
@@ -95,28 +106,38 @@ export const TextInput = ({
     );
   }
 
+  const {
+    multiline: _multiline,
+    type,
+    ...inputProps
+  } = rest as {
+    multiline?: false;
+    type?: React.HTMLInputTypeAttribute;
+  } & React.InputHTMLAttributes<HTMLInputElement>;
+
   return (
-    <>
+    <div className="relative w-full">
       <Input
+        {...inputProps}
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
         maxLength={maxLength}
         disabled={disabled}
-        type={rest.type}
+        type={type}
         className={cn(showCount && "pr-20", className)}
       />
 
       {showCount && (
         <div
-          className="absolute top-1/2 -translate-y-1/2 right-3 text-xs pointer-events-none"
+          className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs"
           style={counterStyles}
         >
           {charCount}
           {maxLength ? `/${maxLength}` : ""}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

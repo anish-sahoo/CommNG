@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SelectableButton } from "@/components/buttons";
 import ChannelCard from "@/components/channel-card";
 import ChipSelect from "@/components/chip-select";
+import { DragDropCards } from "@/components/drag-cards";
 import {
   DropdownButtons,
   type DropdownMenuItemConfig,
@@ -191,6 +192,26 @@ const Components = () => {
 
   const [files, setFiles] = useState<File[] | undefined>();
 
+  const [dragCards, setDragCards] = useState([
+    {
+      id: "1",
+      data: "Support my mentee's career advancement and professional goal-setting within the National Guard",
+    },
+    { id: "2", data: "Help my mentee navigate educational opportunities" },
+    {
+      id: "3",
+      data: "Build a strong sense of community within the National Guard",
+    },
+    {
+      id: "4",
+      data: "Strengthen my professional network within the National Guard",
+    },
+    {
+      id: "5",
+      data: "Connect with Guardsmen who have different perspectives and experiences",
+    },
+  ]);
+
   return (
     <>
       <Navigation
@@ -265,6 +286,23 @@ const Components = () => {
             <LinkedCard
               href="https://example.com"
               content="How to Mentor Effectively: 5 Tips for Success"
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Draggable Cards
+              </h2>
+            </div>
+            <DragDropCards
+              cards={dragCards}
+              onReorder={setDragCards}
+              renderCard={(text) => (
+                <p className="text-subheader font-semibold text-secondary">
+                  {text}
+                </p>
+              )}
             />
           </section>
 

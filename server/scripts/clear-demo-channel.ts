@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import { messages } from "../data/db/schema.js";
-import { db, shutdownPostgres } from "../data/db/sql.js";
+import { messages } from "../src/data/db/schema.js";
+import { db, shutdownPostgres } from "../src/data/db/sql.js";
 
 /**
  * Script to clear demo channel until we implement deleting posts
  * cd/server
- * run: `npx dotenv -e .env -- tsx src/scripts/clear-demo-channel.ts`
+ * run: `npx dotenv -e .env -- tsx scripts/clear-demo-channel.ts`
  */
 
 async function clearDemoChannel() {

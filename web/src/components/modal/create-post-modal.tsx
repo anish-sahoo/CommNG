@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal, type ModalProps } from "./index";
@@ -25,6 +25,8 @@ export function CreatePostModal({
 }: CreatePostModalProps) {
   const [content, setContent] = useState(initialContent);
   const characterCount = content.length;
+  const textareaId = useId();
+  const counterId = `${textareaId}-counter`;
 
   const handlePost = async () => {
     if (content.trim().length === 0 || isPosting) return;
@@ -74,16 +76,22 @@ export function CreatePostModal({
       }
     >
       <div className="space-y-4">
+        <label htmlFor={textareaId} className="sr-only">
+          Post content
+        </label>
         <Textarea
+          id={textareaId}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="What's on your mind?"
           className="min-h-32 resize-none"
           maxLength={maxLength}
           disabled={isPosting}
+          aria-describedby={counterId}
         />
         <div className="flex justify-end">
           <span
+            id={counterId}
             className={`text-sm ${
               characterCount > maxLength
                 ? "text-destructive"
