@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import ChannelCard from "@/components/channel-card";
+import {
+  DropdownButtons,
+  type DropdownMenuItemConfig,
+} from "@/components/dropdown";
 import { type IconName, icons } from "@/components/icons";
 import SearchBar from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
@@ -69,9 +73,57 @@ export default function CommunicationsOverviewPage() {
     );
   }, [rawChannels, search]);
 
+  const editMenuItems: DropdownMenuItemConfig[] = [
+    {
+      id: "edit-channels",
+      icon: "trash",
+      label: "Delete",
+    },
+  ];
+
+  const newMenuItems: DropdownMenuItemConfig[] = [
+    {
+      id: "new-broadcast",
+      icon: "announce",
+      label: "Broadcast",
+      href: "/communications/broadcasts/new",
+    },
+    {
+      id: "new-channel",
+      icon: "forum",
+      label: "Channel",
+      href: "/communications/channels/new",
+    },
+  ];
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-12">
-      <header className="flex flex-wrap items-center justify-center gap-3 pt-2 sm:justify-end">
+      <header className="flex items-center justify-between gap-3 pt-2">
+        <div className="flex items-center gap-3">
+          <DropdownButtons
+            items={editMenuItems}
+            align="start"
+            sideOffset={6}
+            triggerContent={
+              <Button variant="outline" className="gap-2">
+                <icons.edit className="h-5 w-5 text-accent" />
+                Edit
+              </Button>
+            }
+          />
+
+          <DropdownButtons
+            items={newMenuItems}
+            align="start"
+            sideOffset={6}
+            triggerContent={
+              <Button variant="outline" className="gap-2">
+                <icons.add className="h-5 w-5 text-accent" />
+                New
+              </Button>
+            }
+          />
+        </div>
         <div className="flex items-center gap-3">
           <SearchBar
             value={search}
