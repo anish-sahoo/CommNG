@@ -125,6 +125,10 @@ export class CommsService {
     return this.commsRepo.deleteMessage(message_id, channel_id);
   }
 
+  async getChannelSettings(channel_id: number) {
+    return this.commsRepo.getChannelDataByID(channel_id);
+  }
+
   async updateChannelSettings(
     channel_id: number,
     metadata: ChannelUpdateMetadata,
