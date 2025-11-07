@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { type IconName, icons } from "@/components/icons";
@@ -7,7 +8,7 @@ interface ChannelCardProps {
   title: string;
   description: string;
   iconName: IconName;
-  href: string;
+  href: Route | string;
 }
 
 const ChannelCard: React.FC<ChannelCardProps> = ({
@@ -20,8 +21,8 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
   const Icon = icons[iconName];
 
   return (
-    <div className="group h-64 w-64 overflow-hidden rounded-2xl border border-neutral/50 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
-      <div className="flex h-3/5 items-center justify-center bg-neutral">
+    <div className="group h-64 w-64 rounded-2xl border border-neutral/50 bg-white shadow-[0_16px_28px_0_rgba(34,33,33,0.12)] transition-[box-shadow,transform] duration-200 hover:shadow-[0_22px_38px_0_rgba(34,33,33,0.16)]">
+      <div className="flex h-3/5 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral">
         {imageSrc ? (
           <Image
             src={imageSrc}
@@ -36,7 +37,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       </div>
 
       <Link
-        href={href}
+        href={href as Route}
         className="flex h-2/5 cursor-pointer flex-col justify-center rounded-b-2xl bg-primary p-5 transition-colors duration-200 group-hover:bg-primary-dark"
       >
         <div className="mb-1 flex items-center gap-2">

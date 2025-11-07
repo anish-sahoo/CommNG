@@ -1,10 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import ChannelCard from "@/components/channel-card";
 import { type IconName, icons } from "@/components/icons";
 import SearchBar from "@/components/search-bar";
+import { Button } from "@/components/ui/button";
 import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 
@@ -25,13 +27,33 @@ function resolveIconName(icon?: string): IconName {
 export default function CommunicationsOverviewPage() {
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
+  const BellIcon = icons.bell;
 
   const { data, isLoading } = useQuery(
     trpc.comms.getAllChannels.queryOptions(),
   );
+  const { data: activeBroadcasts } = useQuery(
+    trpc.messageBlasts.getActiveMessageBlastsForUser.queryOptions(),
+  );
+
+  const hasActiveBroadcast = useMemo(() => {
+    if (!activeBroadcasts || activeBroadcasts.length === 0) {
+      return false;
+    }
+
+    const now = Date.now();
+
+    return activeBroadcasts.some((blast) => {
+      if (!blast.validUntil) {
+        return true;
+      }
+      const expiresAt = new Date(blast.validUntil).getTime();
+      return Number.isFinite(expiresAt) && expiresAt > now;
+    });
+  }, [activeBroadcasts]);
 
   const rawChannels = useMemo(() => {
-    if (data && data.length > 0) {
+    if (Array.isArray(data) && data.length > 0) {
       return data;
     }
     return [DEMO_CHANNEL];
@@ -49,11 +71,31 @@ export default function CommunicationsOverviewPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-12">
-      <header className="flex pt-2 justify-center lg:justify-end">
-        <SearchBar
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
+      <header className="flex flex-wrap items-center justify-center gap-3 pt-2 sm:justify-end">
+        <div className="flex items-center gap-3">
+          <SearchBar
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search channels"
+            aria-label="Search communication channels"
+          />
+          <Button
+            asChild
+            variant="ghost"
+            size="icon"
+            className="relative rounded-full border border-border bg-card text-secondary hover:text-primary"
+          >
+            <Link
+              href="/communications/broadcasts"
+              aria-label="Open broadcasts"
+            >
+              <BellIcon className="h-5 w-5 text-secondary" />
+              {hasActiveBroadcast ? (
+                <span className="absolute right-2 top-2 inline-flex h-2 w-2 rounded-full bg-error" />
+              ) : null}
+            </Link>
+          </Button>
+        </div>
       </header>
 
       {isLoading ? (

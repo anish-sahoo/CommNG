@@ -1,5 +1,5 @@
 import pLimit from "p-limit";
-import { redisClient } from "../data/db/redis.js";
+import { getRedisClientInstance } from "../data/db/redis.js";
 import { AuthRepository } from "../data/repository/auth-repo.js";
 import { BadRequestError } from "../types/errors.js";
 import log from "../utils/logger.js";
@@ -45,7 +45,7 @@ export class PolicyEngine {
       return false;
     }
 
-    const redisResult = await redisClient.sIsMember(
+    const redisResult = await getRedisClientInstance().sIsMember(
       `role:${roleKey}:users`,
       `${userId}`,
     );
@@ -111,7 +111,7 @@ export class PolicyEngine {
             const userIds =
               await this.authRepository.getUserIdsForRole(roleKey);
             const cacheKey = `role:${roleKey}:users`;
-            const pipeline = redisClient.multi();
+            const pipeline = getRedisClientInstance().multi();
 
             if (userIds.length > 0) {
               pipeline.sAdd(cacheKey, userIds.map(String));

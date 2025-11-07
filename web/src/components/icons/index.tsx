@@ -1,10 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   BellPlus,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleQuestionMark,
   EllipsisVertical,
   GripVertical,
   Lock,
@@ -14,6 +16,7 @@ import {
   MessageSquareText,
   MessageSquareWarning,
   MessagesSquare,
+  MoveRight,
   PenSquare,
   Plus,
   Search,
@@ -32,10 +35,12 @@ export const icons = {
   edit: PenSquare,
   add: Plus,
   addAlert: BellPlus,
+  bell: Bell,
   settings: Settings,
   personAdd: UserPlus,
   arrowLeft: ChevronLeft,
   arrowRight: ChevronRight,
+  moveRight: MoveRight,
   announce: Megaphone,
   forum: MessagesSquare,
   menu: Menu,
@@ -54,6 +59,7 @@ export const icons = {
   reports: MessageSquareWarning,
   user: User,
   drag: GripVertical,
+  help: CircleQuestionMark,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

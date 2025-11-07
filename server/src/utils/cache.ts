@@ -1,4 +1,4 @@
-import { redisClient } from "../data/db/redis.js";
+import { getRedisClientInstance } from "../data/db/redis.js";
 import log from "../utils/logger.js";
 
 export function Cache<T extends unknown[]>(
@@ -12,6 +12,10 @@ export function Cache<T extends unknown[]>(
     _propertyKey,
     descriptor: PropertyDescriptor,
   ): PropertyDescriptor => {
+    if (!descriptor || typeof descriptor.value !== "function") {
+      return descriptor;
+    }
+
     const original = descriptor.value as (...args: T) => Promise<unknown>;
 
     descriptor.value = async function (...args: T) {
@@ -20,7 +24,7 @@ export function Cache<T extends unknown[]>(
       }
 
       const key = keyBuilder(...args);
-      const cached = await redisClient.GET(key);
+      const cached = await getRedisClientInstance().GET(key);
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
@@ -37,9 +41,9 @@ export function Cache<T extends unknown[]>(
       const result = await original.apply(this, args);
 
       if (result != null) {
-        await redisClient.SET(key, JSON.stringify(result));
+        await getRedisClientInstance().SET(key, JSON.stringify(result));
         if (ttlSeconds > 0) {
-          await redisClient.EXPIRE(key, ttlSeconds);
+          await getRedisClientInstance().EXPIRE(key, ttlSeconds);
         }
       }
 

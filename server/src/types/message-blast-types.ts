@@ -39,7 +39,7 @@ export const createMessageBlastInputSchema = z.object({
   title: z.string().min(1),
   content: z.string().min(1),
   targetAudience: targetAudienceSchema.optional(),
-  validUntil: z.date().optional(),
+  validUntil: z.coerce.date().optional(),
   status: z.enum(["draft", "sent", "failed"]).optional().default("draft"),
 });
 
@@ -48,7 +48,7 @@ export const updateMessageBlastInputSchema = z.object({
   title: z.string().min(1).optional(),
   content: z.string().min(1).optional(),
   targetAudience: targetAudienceSchema.optional(),
-  validUntil: z.date().optional(),
+  validUntil: z.coerce.date().optional(),
   status: z.enum(["draft", "sent", "failed"]).optional(),
 });
 
@@ -60,6 +60,10 @@ export const getMessageBlastsBySenderInputSchema = z.object({
   senderId: z.uuid(),
 });
 
+export const deleteMessageBlastInputSchema = z.object({
+  blastId: z.number().int().positive(),
+});
+
 export type CreateMessageBlastInput = z.infer<
   typeof createMessageBlastInputSchema
 >;
@@ -69,6 +73,9 @@ export type UpdateMessageBlastInput = z.infer<
 export type GetMessageBlastInput = z.infer<typeof getMessageBlastInputSchema>;
 export type GetMessageBlastsBySenderInput = z.infer<
   typeof getMessageBlastsBySenderInputSchema
+>;
+export type DeleteMessageBlastInput = z.infer<
+  typeof deleteMessageBlastInputSchema
 >;
 export type TargetAudience = z.infer<typeof targetAudienceSchema>;
 

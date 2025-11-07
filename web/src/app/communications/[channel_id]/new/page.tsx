@@ -4,7 +4,7 @@ import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useCallback, useMemo, useState } from "react";
+import { use, useCallback, useId, useMemo, useState } from "react";
 import { icons } from "@/components/icons";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
@@ -42,10 +42,30 @@ export default function NewChannelPostPage({
 
   const parsedChannelId = parseChannelId(channelId);
 
-  const createPost = useMutation(trpc.comms.createPost.mutationOptions());
+  // Explicitly type mutation variables to ensure correct inference in certain build environments
+  type CreatePostVars = {
+    channelId: number;
+    content: string;
+    attachmentFileIds?: string[];
+  };
+  type CreatePostMutationOptions = ReturnType<
+    typeof trpc.comms.createPost.mutationOptions
+  >;
+  type CreatePostError = Parameters<
+    NonNullable<CreatePostMutationOptions["onError"]>
+  >[0];
+  type CreatePostData = Parameters<
+    NonNullable<CreatePostMutationOptions["onSuccess"]>
+  >[0];
+  const createPost = useMutation<
+    CreatePostData,
+    CreatePostError,
+    CreatePostVars
+  >(trpc.comms.createPost.mutationOptions());
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const contentFieldId = useId();
 
   type AttachmentItem = {
     id: string;
@@ -310,7 +330,11 @@ export default function NewChannelPostPage({
     >
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <div className="space-y-4 p-3">
+          <label htmlFor={contentFieldId} className="sr-only">
+            Post content
+          </label>
           <TextInput
+            id={contentFieldId}
             value={multiLineText}
             onChange={(value) => setMultiLineText(value)}
             placeholder="Share an update with your channel..."
