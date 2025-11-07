@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useState } from "react";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,24 +25,59 @@ interface Props {
   error?: string | null;
 }
 
+type PhotoState = null | {
+  id: string;
+  file: File;
+  status: "uploading" | "uploaded" | "error";
+  fileId?: string;
+  storedName?: string;
+  error?: string;
+};
+
 export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
   const trpcClient = useTRPCClient();
 
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
 
-  const [photo, setPhoto] = useState<{
-    id: string;
-    file: File;
-    status: "uploading" | "uploaded" | "error";
-    fileId?: string;
-    storedName?: string;
-    error?: string;
-  } | null>(null);
+  const [photo, setPhoto] = useState<PhotoState>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  const titleId = useId();
+  const blurbId = useId();
+
+  const hasUploadingPhoto = photo?.status === "uploading";
+  const hasErroredPhoto = photo?.status === "error";
+
+  const formatFileSize = (bytes: number) => {
+    if (!Number.isFinite(bytes)) return "0 B";
+    const units = ["B", "KB", "MB", "GB", "TB"];
+    let size = bytes;
+    let i = 0;
+    while (size >= 1024 && i < units.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+  };
+
+  const formatStatus = useMemo(() => {
+    if (!photo) return "";
+    switch (photo.status) {
+      case "uploading":
+        return "Uploading…";
+      case "uploaded":
+        return "Ready to attach";
+      case "error":
+        return "Upload failed";
+      default:
+        return "";
+    }
+  }, [photo]);
 
   const uploadChannelPhoto = useCallback(
     async (id: string, file: File) => {
-      setPhoto({ id, file, status: "uploading" });
+      setPhoto({ id, file, status: "uploading", error: undefined });
       try {
         const presign = await trpcClient.files.createPresignedUpload.mutate({
           fileName: file.name,
@@ -55,7 +90,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
           headers: { "Content-Type": file.type || "application/octet-stream" },
           body: file,
         });
-        if (!res.ok) throw new Error("Upload failed.");
+        if (!res.ok) throw new Error("File upload failed. Please try again.");
 
         await trpcClient.files.confirmUpload.mutate({
           fileId: presign.fileId,
@@ -76,7 +111,10 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
           id,
           file,
           status: "error",
-          error: e instanceof Error ? e.message : "Upload error.",
+          error:
+            e instanceof Error
+              ? e.message
+              : "Something went wrong uploading this image.",
         });
       }
     },
@@ -85,21 +123,34 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
 
   const handleDrop = useCallback(
     (accepted: File[]) => {
+      setPhotoError(null);
       if (!accepted.length) return;
       const file = accepted[0];
+
+      if (!file.type?.startsWith("image/")) {
+        setPhotoError("Please upload an image file.");
+        return;
+      }
+
       const id =
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random()}`;
+
       void uploadChannelPhoto(id, file);
     },
     [uploadChannelPhoto],
   );
 
-  const handleRemovePhoto = () => setPhoto(null);
+  const handleRetryPhoto = useCallback(() => {
+    if (!photo?.file) return;
+    const id = photo.id ?? crypto.randomUUID?.() ?? `${Date.now()}`;
+    void uploadChannelPhoto(id, photo.file);
+  }, [photo, uploadChannelPhoto]);
 
-  const hasUploadingPhoto = photo?.status === "uploading";
-  const hasErroredPhoto = photo?.status === "error";
+  const handleRemovePhoto = useCallback(() => {
+    setPhoto(null);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,19 +158,11 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
       title,
       blurb,
       imageSrc: undefined,
-      imageFileId: photo?.fileId,
+      imageFileId: photo?.status === "uploaded" ? photo.fileId : undefined,
       hasUploadingPhoto,
       hasErroredPhoto,
     });
   };
-
-  const formatStatus = useMemo(() => {
-    if (!photo) return "";
-    if (photo.status === "uploading") return "Uploading…";
-    if (photo.status === "uploaded") return "Ready";
-    if (photo.status === "error") return "Upload failed";
-    return "";
-  }, [photo]);
 
   return (
     <form
@@ -128,15 +171,21 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
     >
       <div className="space-y-6">
         <div className="space-y-1.5">
-          <label htmlFor="title" className="text-subheader text-secondary">
+          <label
+            htmlFor={titleId}
+            id="channel-title"
+            className="text-subheader text-secondary"
+          >
             Title
           </label>
           <TextInput
+            id={titleId}
             value={title}
             onChange={setTitle}
             placeholder="Title..."
             maxLength={50}
-            showCharCount={false as unknown as undefined}
+            showCharCount={false}
+            disabled={submitting}
           />
           <div className="mt-0.5 text-right text-xs text-secondary/60">
             {title.length}/{50}
@@ -145,13 +194,14 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
 
         <div className="flex flex-col gap-2">
           <label
-            htmlFor="channel-desc"
+            htmlFor={blurbId}
+            id="channel-blurb"
             className="text-sm font-medium text-secondary"
           >
             Description
           </label>
           <TextInput
-            id="channel-desc"
+            id={blurbId}
             value={blurb}
             onChange={setBlurb}
             placeholder="Description..."
@@ -159,7 +209,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
             rows={8}
             maxLength={1200}
             disabled={submitting}
-            showCharCount={false as unknown as undefined}
+            showCharCount={false}
           />
           <div className="self-end text-xs text-secondary/60">
             {blurb.length}/1200
@@ -167,21 +217,26 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
         </div>
 
         <div className="space-y-3">
-          <label
-            htmlFor="channel-photo"
-            className="text-subheader text-secondary"
-          >
-            Channel Photo
-          </label>
+          <p id="channel-photo-label" className="text-subheader text-secondary">
+            Channel Photo <span className="text-secondary/50">(optional)</span>
+          </p>
+
           <Dropzone
-            onDrop={handleDrop}
-            src={photo ? [photo.file] : []}
+            aria-labelledby="channel-photo-label"
+            accept={{ "image/*": [] }}
             maxFiles={1}
+            onDrop={handleDrop}
+            onError={(err) => setPhotoError(err.message ?? "Upload error.")}
+            src={photo ? [photo.file] : []}
             disabled={submitting || hasUploadingPhoto}
           >
             <DropzoneEmptyState />
             <DropzoneContent />
           </Dropzone>
+
+          {photoError && (
+            <p className="text-sm text-destructive">{photoError}</p>
+          )}
 
           {photo && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
@@ -190,7 +245,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
                   {photo.file.name}
                 </span>
                 <span className="text-xs text-secondary/70">
-                  {formatStatus}
+                  {formatFileSize(photo.file.size)} • {formatStatus}
                 </span>
                 {photo.status === "error" && photo.error ? (
                   <span className="text-xs text-destructive">
@@ -199,6 +254,16 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
                 ) : null}
               </div>
               <div className="flex items-center gap-2">
+                {photo.status === "error" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetryPhoto}
+                  >
+                    Retry
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"

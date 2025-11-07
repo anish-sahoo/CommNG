@@ -42,14 +42,15 @@ export default function NewChannelPage() {
       setError("Title is required.");
       return;
     }
+
     if (values.hasUploadingPhoto) {
       setError("Please wait for the upload to finish.");
       return;
     }
-    if (values.hasErroredPhoto) {
-      setError("Please fix or remove the failed photo upload.");
-      return;
-    }
+
+    const imageMeta = values.imageFileId
+      ? { imageFileId: values.imageFileId }
+      : { imageSrc: "/default_channel_image.png" };
 
     try {
       await createChannel.mutateAsync({
@@ -57,8 +58,7 @@ export default function NewChannelPage() {
         metadata: {
           description,
           icon: "announce",
-          imageSrc: values.imageSrc || undefined,
-          imageFileId: values.imageFileId || undefined,
+          ...imageMeta,
         },
       });
 
