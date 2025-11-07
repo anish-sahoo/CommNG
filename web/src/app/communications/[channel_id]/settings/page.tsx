@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { use, useId, useState, useEffect } from 'react';
-import { icons } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+import { use, useId, useState } from "react";
 import DropdownSelect from "@/components/dropdown-select";
+import { icons } from "@/components/icons";
 import { TextInput } from "@/components/text-input";
-import { ChannelShell } from "../../components/channel-shell";
+import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/lib/trpc";
+import { ChannelShell } from "../../components/channel-shell";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -97,7 +97,10 @@ export default function ChannelSettingsPage({
 
         {/* Channel Members */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-8 px-4">
-          <label className="text-base font-semibold text-secondary sm:w-48 shrink-0">
+          <label
+            htmlFor={"channel-members"}
+            className="text-base font-semibold text-secondary sm:w-48 shrink-0"
+          >
             Channel Members
           </label>
           <div className="flex-1">
@@ -105,7 +108,9 @@ export default function ChannelSettingsPage({
               href={`/communications/${channelId}/members`}
               className="inline-flex items-center justify-between gap-3 rounded-lg border-2 border-border bg-background px-4 h-10 hover:bg-muted transition-colors w-full sm:w-auto sm:min-w-64"
             >
-              <span className="text-secondary font-semibold !text-base">Open Member List</span>
+              <span className="text-secondary font-semibold !text-base">
+                Open Member List
+              </span>
               <ArrowRightIcon className="h-5 w-5 text-accent" />
             </Link>
           </div>
