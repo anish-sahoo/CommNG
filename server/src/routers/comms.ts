@@ -9,7 +9,7 @@ import {
   deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
-  getChannelMembersSchema,
+  //getChannelMembersSchema,
   getChannelMessagesSchema,
   postPostSchema,
   toggleReactionSchema,
@@ -194,6 +194,16 @@ const createChannel = protectedProcedure
     }),
   );
 
+// get channel settings
+/*const getChannelSettings = protectedProcedure
+  .input(updateChannelSchema)
+  .query(({ input }) =>
+    withErrorHandling("getChannelSettings", async () => {
+      log.debug({ channelId: input.channelId }, "getChannelSettings");
+      return await commsRepo.getChannelSettings(input.channelId);
+    }),
+  );*/
+
 // update channel settings
 const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
@@ -216,7 +226,7 @@ const updateChannelSettings = protectedProcedure
 
 // Channel members endpoint
 const getChannelMembers = protectedProcedure
-  .input(getChannelMembersSchema)
+  .input(updateChannelSchema)
   .query(({ input }) =>
     withErrorHandling("getChannelMembers", async () => {
       log.debug({ channelId: input.channelId }, "getChannelMembers");
@@ -279,6 +289,7 @@ export const commsRouter = router({
   deletePost,
   createChannel,
   updateChannelSettings,
+  getChannelSettings,
   getChannelMembers,
   createSubscription,
   deleteSubscription,
