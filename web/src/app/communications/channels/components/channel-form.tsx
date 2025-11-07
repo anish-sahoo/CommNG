@@ -136,7 +136,6 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random()}`;
-
       void uploadChannelPhoto(id, file);
     },
     [uploadChannelPhoto],
@@ -172,7 +171,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
       <div className="space-y-6">
         <div className="space-y-1.5">
           <label
-            htmlFor={titleId}
+            htmlFor="title"
             id="channel-title"
             className="text-subheader text-secondary"
           >
@@ -195,7 +194,6 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
         <div className="flex flex-col gap-2">
           <label
             htmlFor={blurbId}
-            id="channel-blurb"
             className="text-sm font-medium text-secondary"
           >
             Description

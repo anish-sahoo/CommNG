@@ -73,14 +73,6 @@ export default function CommunicationsOverviewPage() {
     );
   }, [rawChannels, search]);
 
-  const editMenuItems: DropdownMenuItemConfig[] = [
-    {
-      id: "edit-channels",
-      icon: "trash",
-      label: "Delete",
-    },
-  ];
-
   const newMenuItems: DropdownMenuItemConfig[] = [
     {
       id: "new-broadcast",
@@ -100,18 +92,6 @@ export default function CommunicationsOverviewPage() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-12">
       <header className="flex items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-3">
-          <DropdownButtons
-            items={editMenuItems}
-            align="start"
-            sideOffset={6}
-            triggerContent={
-              <Button variant="outline" className="gap-2">
-                <icons.edit className="h-5 w-5 text-accent" />
-                Edit
-              </Button>
-            }
-          />
-
           <DropdownButtons
             items={newMenuItems}
             align="start"
