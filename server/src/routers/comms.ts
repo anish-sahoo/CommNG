@@ -289,7 +289,7 @@ export const commsRouter = router({
   deletePost,
   createChannel,
   updateChannelSettings,
-  getChannelSettings,
+  // getChannelSettings,
   getChannelMembers,
   createSubscription,
   deleteSubscription,

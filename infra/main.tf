@@ -1211,3 +1211,147 @@ resource "aws_appautoscaling_policy" "web_requests" {
   }
 }
 
+# ------------------------------------------------------------
+# Auto-Restart ECS on Secret Rotation
+# ------------------------------------------------------------
+
+# Lambda IAM Role
+resource "aws_iam_role" "ecs_restart_lambda" {
+  name = "dev-comm-ng-ecs-restart-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "dev-comm-ng-ecs-restart-lambda-role"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# Lambda CloudWatch Logs Policy
+resource "aws_iam_role_policy_attachment" "ecs_restart_lambda_logs" {
+  role       = aws_iam_role.ecs_restart_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Lambda ECS Update Policy
+resource "aws_iam_role_policy" "ecs_restart_lambda_ecs" {
+  name = "ecs-update-service-policy"
+  role = aws_iam_role.ecs_restart_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices"
+        ]
+        Resource = [
+          aws_ecs_service.server.id,
+          aws_ecs_service.web.id
+        ]
+      }
+    ]
+  })
+}
+
+# Package Lambda function code
+data "archive_file" "ecs_restart_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/ecs_restart_on_secret_rotation"
+  output_path = "${path.module}/lambda/ecs_restart_on_secret_rotation.zip"
+}
+
+# Lambda Function
+resource "aws_lambda_function" "ecs_restart_on_secret_rotation" {
+  filename         = data.archive_file.ecs_restart_lambda.output_path
+  function_name    = "dev-comm-ng-ecs-restart-on-secret-rotation"
+  role            = aws_iam_role.ecs_restart_lambda.arn
+  handler         = "index.handler"
+  source_code_hash = data.archive_file.ecs_restart_lambda.output_base64sha256
+  runtime         = "nodejs20.x"
+  timeout         = 60
+
+  environment {
+    variables = {
+      ECS_CLUSTER_NAME   = aws_ecs_cluster.main.name
+      ECS_SERVICE_NAMES  = "${aws_ecs_service.server.name},${aws_ecs_service.web.name}"
+    }
+  }
+
+  tags = {
+    Name        = "dev-comm-ng-ecs-restart-on-secret-rotation"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "ecs_restart_lambda" {
+  name              = "/aws/lambda/${aws_lambda_function.ecs_restart_on_secret_rotation.function_name}"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "dev-comm-ng-ecs-restart-lambda-logs"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# EventBridge Rule for Secrets Manager Rotation
+resource "aws_cloudwatch_event_rule" "secret_rotation" {
+  name        = "dev-comm-ng-secret-rotation-trigger"
+  description = "Trigger ECS restart when Secrets Manager rotates secrets"
+
+  event_pattern = jsonencode({
+    source      = ["aws.secretsmanager"]
+    detail-type = ["AWS API Call via CloudTrail"]
+    detail = {
+      eventName = ["RotationSucceeded"]
+      requestParameters = {
+        secretId = [
+          aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn,
+          aws_secretsmanager_secret.cache_auth.arn,
+          aws_secretsmanager_secret.vapid_keys.arn,
+          aws_secretsmanager_secret.better_auth_secret.arn
+        ]
+      }
+    }
+  })
+
+  tags = {
+    Name        = "dev-comm-ng-secret-rotation-trigger"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# EventBridge Target - Lambda
+resource "aws_cloudwatch_event_target" "ecs_restart_lambda" {
+  rule      = aws_cloudwatch_event_rule.secret_rotation.name
+  target_id = "ECSRestartLambda"
+  arn       = aws_lambda_function.ecs_restart_on_secret_rotation.arn
+}
+
+# Lambda Permission for EventBridge
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.ecs_restart_on_secret_rotation.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.secret_rotation.arn
+}
+
