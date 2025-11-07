@@ -4,6 +4,7 @@ import { withErrorHandling } from "../trpc/error_handler.js";
 import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   checkEmailExistsInputSchema,
+  createUserProfileInputSchema,
   getUserDataInputSchema,
 } from "../types/user-types.js";
 
@@ -31,7 +32,22 @@ const checkEmailExists = procedure
     });
   });
 
+const createUserProfile = protectedProcedure
+  .input(createUserProfileInputSchema)
+  .meta({
+    requiresAuth: true,
+    description:
+      "Create user profile data (name, phone, rank, department, branch, profile picture). Users can only create their own profile.",
+  })
+  .mutation(async ({ ctx, input }) => {
+    return withErrorHandling("createUserProfile", async () => {
+      const userId = ctx.auth.user.id;
+      return await userService.createUserProfile(userId, input);
+    });
+  });
+
 export const userRouter = router({
   getUserData,
   checkEmailExists,
+  createUserProfile,
 });
