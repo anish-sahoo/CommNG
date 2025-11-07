@@ -87,7 +87,7 @@ export default function MentorshipApplyMentorPage() {
 
   return (
     //background gradient
-    <div className="overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100">
+    <div className="overflow-hidden bg-gradient-to-br">
 
       {/* decorative background circles */}
       <div className="pointer-events-none absolute -left-40 top-24 h-[420px] w-[420px] rounded-full bg-yellow-600 opacity-40 blur-[120px]" />
