@@ -176,3 +176,27 @@
     text-rendering: optimizeLegibility;
   }
 }
+
+@layer components {
+  .profile-card__hero-overlay {
+    background: linear-gradient(
+      135deg,
+      var(--profile-card-branch-base) 0%,
+      var(--profile-card-branch-dark) 100%
+    );
+  }
+
+  .profile-card__interest-badge {
+    background-color: var(--profile-card-branch-pastel);
+    color: var(--profile-card-branch-text);
+  }
+
+  .profile-card__about-header {
+    background-color: var(--profile-card-branch-base);
+    color: #ffffff;
+  }
+
+  .profile-card__section-border {
+    border-color: var(--profile-card-branch-border);
+  }
+}
