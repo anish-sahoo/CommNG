@@ -113,7 +113,7 @@ const profileGalleryExamples: ProfileCardProps[] = [
       {
         label: "Signal",
         onClick: () => {
-          console.log("Signal coming soon");
+          console.log("Signal copy paste soon");
         },
       },
       {
@@ -149,9 +149,9 @@ const profileGalleryExamples: ProfileCardProps[] = [
       "Serving with the 102nd Intelligence Wing has given me the opportunity to mentor STEM-focused cadets and promote resilient cyber practices.",
     contactActions: [
       {
-        label: "Teams",
+        label: "Signal",
         onClick: () => {
-          console.log("Launch Teams");
+          console.log("Signal copy paste soon");
         },
       },
       {
