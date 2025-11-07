@@ -633,4 +633,22 @@ export class CommsRepository {
       throw new InternalServerError("Error updating channel settings");
     }
   }
+
+  async getChannelSettings(channelId: number) {
+    const [channel] = await db
+      .select({
+        channelId: channels.channelId,
+        name: channels.name,
+        description: channels.description,
+        metadata: channels.metadata,
+      })
+      .from(channels)
+      .where(eq(channels.channelId, channelId))
+      .limit(1);
+      
+    if (!channel) {
+      throw new NotFoundError("Channel not found");
+    }
+    return channel;
+  }
 }
