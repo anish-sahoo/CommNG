@@ -20,6 +20,12 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
 }) => {
   const Icon = icons[iconName];
 
+  const truncatedTitle =
+    title.length > 22 ? `${title.slice(0, 22).trim()}…` : title;
+
+  const truncatedDescription =
+    description.length > 52 ? `${description.slice(0, 52).trim()}…` : description;
+
   return (
     <div className="group h-64 w-64 rounded-2xl border border-neutral/50 bg-white shadow-[0_16px_28px_0_rgba(34,33,33,0.12)] transition-[box-shadow,transform] duration-200 hover:shadow-[0_22px_38px_0_rgba(34,33,33,0.16)]">
       <div className="flex h-3/5 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral">
@@ -42,11 +48,19 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       >
         <div className="mb-1 flex items-center gap-2">
           {Icon && <Icon className="h-5 w-5 text-accent" />}
-          <h3 className="text-subheader font-semibold text-background">
-            {title}
+          <h3
+            className="text-subheader font-semibold text-background"
+            title={title} 
+          >
+            {truncatedTitle}
           </h3>
         </div>
-        <p className="text-body text-background/80">{description}</p>
+        <p
+          className="text-body text-background/80"
+          title={description} 
+        >
+          {truncatedDescription}
+        </p>
       </Link>
     </div>
   );

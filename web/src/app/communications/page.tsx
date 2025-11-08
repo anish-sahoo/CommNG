@@ -4,10 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import ChannelCard from "@/components/channel-card";
-import {
-  DropdownButtons,
-  type DropdownMenuItemConfig,
-} from "@/components/dropdown";
 import { type IconName, icons } from "@/components/icons";
 import SearchBar from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
@@ -32,6 +28,8 @@ export default function CommunicationsOverviewPage() {
   const trpc = useTRPC();
   const [search, setSearch] = useState("");
   const BellIcon = icons.bell;
+  const AddIcon = icons.add;
+  const AnnounceIcon = icons.announce;
 
   const { data, isLoading } = useQuery(
     trpc.comms.getAllChannels.queryOptions(),
@@ -73,37 +71,31 @@ export default function CommunicationsOverviewPage() {
     );
   }, [rawChannels, search]);
 
-  const newMenuItems: DropdownMenuItemConfig[] = [
-    {
-      id: "new-broadcast",
-      icon: "announce",
-      label: "Broadcast",
-      href: "/communications/broadcasts/new",
-    },
-    {
-      id: "new-channel",
-      icon: "forum",
-      label: "Channel",
-      href: "/communications/channels/new",
-    },
-  ];
-
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 sm:px-12">
       <header className="flex items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-3">
-          <DropdownButtons
-            items={newMenuItems}
-            align="start"
-            sideOffset={6}
-            triggerContent={
-              <Button variant="outline" className="gap-2">
-                <icons.add className="h-5 w-5 text-accent" />
-                New
-              </Button>
-            }
-          />
+          <Button asChild variant="outline" className="gap-2">
+            <Link
+              href="/communications/channels/new"
+              aria-label="Create a new channel"
+            >
+              <AddIcon className="h-5 w-5 text-accent" />
+              Channel
+            </Link>
+          </Button>
+
+          <Button asChild variant="outline" className="gap-2">
+            <Link
+              href="/communications/broadcasts/new"
+              aria-label="Create a new broadcast"
+            >
+              <AddIcon className="h-5 w-5 text-accent" />
+              Broadcast
+            </Link>
+          </Button>
         </div>
+
         <div className="flex items-center gap-3">
           <SearchBar
             value={search}

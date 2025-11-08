@@ -175,7 +175,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
             id="channel-title"
             className="text-subheader text-secondary"
           >
-            Title
+            Title*
           </label>
           <TextInput
             id={titleId}
@@ -231,6 +231,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
             <DropzoneEmptyState />
             <DropzoneContent />
           </Dropzone>
+          
 
           {photoError && (
             <p className="text-sm text-destructive">{photoError}</p>
@@ -279,7 +280,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
             Recommended: 1200×800, JPG or PNG.
           </p>
         </div>
-
+        <p className="text-xs text-primary/60">*Required information</p>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </div>
 
