@@ -228,7 +228,7 @@ export default function CommunicationsOverviewPage() {
           No channels match “{search.trim()}”.
         </section>
       ) : (
-        <section className="flex flex-wrap gap-6">
+        <section className="flex flex-wrap justify-center gap-6">
           {channels.map((channel) => {
             const metadata = (channel.metadata ?? {}) as ChannelMetadata;
             const description =
