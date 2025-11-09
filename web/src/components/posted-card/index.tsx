@@ -97,10 +97,10 @@ export const PostedCard = ({
           onError: (error) => {
             setEditError(error.message);
           },
-        }
+        },
       );
     },
-    [channelId, postId, editPost, queryClient, channelMessagesQueryKey]
+    [channelId, postId, editPost, queryClient, channelMessagesQueryKey],
   );
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -124,7 +124,7 @@ export const PostedCard = ({
         onError: (error) => {
           setDeleteError(error.message);
         },
-      }
+      },
     );
   }, [postId, channelId, deletePost, queryClient, channelMessagesQueryKey]);
 
