@@ -29,7 +29,7 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       : description;
 
   return (
-    <div className="group h-64 w-64 rounded-2xl border border-neutral/50 bg-white shadow-[0_16px_28px_0_rgba(34,33,33,0.12)] transition-[box-shadow,transform] duration-200 hover:shadow-[0_22px_38px_0_rgba(34,33,33,0.16)]">
+    <div className="group h-64 w-64 rounded-2xl border border-neutral/50">
       <div className="flex h-3/5 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral">
         {imageSrc ? (
           <Image
