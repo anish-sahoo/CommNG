@@ -9,6 +9,8 @@ import {
 } from "@/components/dropdown";
 import { icons } from "@/components/icons";
 import { Modal } from "@/components/modal";
+import Reaction from "@/components/reaction-bubble";
+import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +22,12 @@ type AttachmentDescriptor = {
   contentType?: string | null;
 };
 
+type MessageReaction = {
+  emoji: string;
+  count: number;
+  reactedByCurrentUser?: boolean;
+};
+
 type PostedCardProps = {
   channelId: number;
   postId: number;
@@ -28,6 +36,12 @@ type PostedCardProps = {
   rank: string;
   content: string;
   attachments?: AttachmentDescriptor[];
+  reactions?: MessageReaction[];
+  onReactionToggle?: (params: {
+    messageId: number;
+    emoji: string;
+    active: boolean;
+  }) => void;
 };
 
 const UserIcon = icons.user;
@@ -45,6 +59,8 @@ export const PostedCard = ({
   rank,
   content,
   attachments,
+  reactions = [],
+  onReactionToggle,
 }: PostedCardProps) => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -81,10 +97,10 @@ export const PostedCard = ({
           onError: (error) => {
             setEditError(error.message);
           },
-        },
+        }
       );
     },
-    [channelId, postId, editPost, queryClient, channelMessagesQueryKey],
+    [channelId, postId, editPost, queryClient, channelMessagesQueryKey]
   );
 
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -108,7 +124,7 @@ export const PostedCard = ({
         onError: (error) => {
           setDeleteError(error.message);
         },
-      },
+      }
     );
   }, [postId, channelId, deletePost, queryClient, channelMessagesQueryKey]);
 
@@ -175,6 +191,7 @@ export const PostedCard = ({
               </div>
             </div>
             <div className="text-secondary text-sm font-normal">{content}</div>
+
             {attachmentItems.length ? (
               <div className="flex flex-col gap-2">
                 <div className="text-xs font-semibold uppercase tracking-wide text-secondary/60">
@@ -193,6 +210,49 @@ export const PostedCard = ({
                 </div>
               </div>
             ) : null}
+
+            {reactions.length ? (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {reactions.map((reaction, index) => (
+                  <Reaction
+                    key={`${postId}-${reaction.emoji}-${index}`}
+                    emoji={reaction.emoji}
+                    count={reaction.count}
+                    initiallyActive={reaction.reactedByCurrentUser ?? false}
+                    onToggle={(active) =>
+                      onReactionToggle?.({
+                        messageId: postId,
+                        emoji: reaction.emoji,
+                        active,
+                      })
+                    }
+                  />
+                ))}
+                <AddReaction
+                  disabled={!onReactionToggle}
+                  onSelect={(emoji) =>
+                    onReactionToggle?.({
+                      messageId: postId,
+                      emoji,
+                      active: true,
+                    })
+                  }
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mt-2">
+                <AddReaction
+                  disabled={!onReactionToggle}
+                  onSelect={(emoji) =>
+                    onReactionToggle?.({
+                      messageId: postId,
+                      emoji,
+                      active: true,
+                    })
+                  }
+                />
+              </div>
+            )}
 
             {deleteError ? (
               <p className="text-xs text-destructive">{deleteError}</p>
