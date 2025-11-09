@@ -6,7 +6,8 @@ import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
-//import { useTRPC } from "@/lib/trpc";
+import {LeaveChannelModal} from "@/components/modal/leave-channel-modal"; 
+import { useTRPC } from "@/lib/trpc";
 import { ChannelShell } from "../../components/channel-shell";
 
 type ChannelSettingsPageProps = {
@@ -18,7 +19,7 @@ type ChannelSettingsPageProps = {
 export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
-  //const trpc = useTRPC();
+  const trpc = useTRPC();
   const ArrowLeftIcon = icons.arrowLeft;
   const ArrowRightIcon = icons.arrowRight;
   const LockIcon = icons.lock;
@@ -32,6 +33,7 @@ export default function ChannelSettingsPage({
   const descFieldId = useId();
   const notifFieldId = useId();
 
+  
   return (
     <ChannelShell
       title={
@@ -59,15 +61,22 @@ export default function ChannelSettingsPage({
             Channel Name
           </label>
           <div className="w-72 relative">
-            <div className="flex items-center gap-2 rounded-lg border-2 border-border bg-muted px-4 h-10">
-              <span className="text-xl text-accent font-semibold">#</span>
-              <TextInput
-                id={nameFieldId}
-                value={channelName}
-                onChange={setChannelName}
-                className="flex-1 bg-transparent border-none p-0 font-semibold !text-base"
-              />
-              <LockIcon className="h-5 w-5 text-accent" />
+            <div className = "rounded-lg border-2 border-border">
+              <div 
+                className="flex items-center gap-2 rounded-md px-4 h-10"
+                style={{
+                  background: 'linear-gradient(to right, var(--primary) 15%, var(--muted) 15%)'
+                }}
+              >
+                <span className="text-xl text-accent font-semibold mr-5.5">#</span>
+                <TextInput
+                  id={nameFieldId}
+                  value={channelName}
+                  onChange={setChannelName}
+                  className="flex-1 bg-transparent border-none p-0 font-semibold !text-base"
+                />
+                <LockIcon className="h-6 w-6 text-accent" />
+              </div>
             </div>
           </div>
         </div>
@@ -146,7 +155,7 @@ export default function ChannelSettingsPage({
           type="button"
           variant="outline"
           size="lg"
-          className="text-neutral font-semibold bg-transparent hover:border-primary"
+          className="text-neutral text-base font-semibold bg-transparent hover:border-primary"
         >
           Leave Channel
         </Button>
