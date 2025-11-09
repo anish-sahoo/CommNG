@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { use, useId, useState } from "react";
+import { use, useEffect, useId, useState } from "react";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
-import { useTRPC } from "@/lib/trpc";
-import { useRouter } from "next/navigation"; 
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { useRouter } from "next/navigation";
 import { ChannelShell } from "../../components/channel-shell";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -17,21 +18,31 @@ type ChannelSettingsPageProps = {
   }>;
 };
 
+function parseChannelId(channelId: string): number | null {
+  const numericId = Number(channelId);
+  if (Number.isNaN(numericId) || numericId <= 0) {
+    return null;
+  }
+  return numericId;
+}
+
 export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const router = useRouter();
   const ArrowLeftIcon = icons.arrowLeft;
   const ArrowRightIcon = icons.arrowRight;
   const LockIcon = icons.lock;
   const { channel_id: channelId } = use(params);
+  const parsedChannelId = parseChannelId(channelId);
 
   const [channelName, setChannelName] = useState("");
   const [channelDescription, setChannelDescription] = useState("");
   const [notificationSetting, setNotificationSetting] = useState("muted");
   const [modalOpen, setModalOpen] = useState(false);
-
+  const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
 
   const nameFieldId = useId();
   const descFieldId = useId();
@@ -45,8 +56,53 @@ export default function ChannelSettingsPage({
     setModalOpen(false);
   };
 
+  // Fetch all user subscriptions
+  const { data: subscriptions, isLoading } = useQuery({
+    queryKey: ['userSubscriptions'],
+    queryFn: async () => {
+      return await trpcClient.comms.getUserSubscriptions.query();
+    },
+  });
+
+  // Find subscription ID for this channel
+  useEffect(() => {
+    if (subscriptions && parsedChannelId) {
+      console.log('All subscriptions:', subscriptions);
+
+      // Find the subscription that matches this channel
+      const channelSubscription = subscriptions.find(
+        (sub) => sub.channelId === parsedChannelId
+      );
+
+      console.log('Found subscription for this channel:', channelSubscription);
+
+      if (channelSubscription) {
+        setSubscriptionId(channelSubscription.subscriptionId);
+        console.log('Subscription ID:', channelSubscription.subscriptionId);
+      } else {
+        console.log('No subscription found for channel ID:', parsedChannelId);
+      }
+    }
+  }, [subscriptions, parsedChannelId]);
+
+  const leaveChannel = useMutation(
+    trpc.comms.deleteSubscription.mutationOptions(),
+  );
+
   const handleLeave = async () => {
-    router.push("/communications");
+    /*if (!subscriptionId) {
+      console.error("No subscription ID available");
+      return;
+    }*/
+
+    try {
+      await leaveChannel.mutateAsync({ subscriptionId: subscriptionId! });
+      router.push("/communications");
+    }
+    catch (error) {
+      console.error("Failed to leave channel:", error);
+      alert("Failed to leave channel. Please try again.");
+    }
   };
 
 
@@ -180,13 +236,13 @@ export default function ChannelSettingsPage({
 
       <LeaveChannelModal
         open={modalOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              handleModalClose();
-            } else {
-              setModalOpen(true);
-            }
-          }}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleModalClose();
+          } else {
+            setModalOpen(true);
+          }
+        }}
         onLeave={async () => {
           handleLeave();
         }}
