@@ -41,7 +41,7 @@ export function TitleShell({
   };
 
   const normalizedBackHref =
-    typeof backHref === "string" ? (backHref as LinkHref) : backHref ?? null;
+    typeof backHref === "string" ? (backHref as LinkHref) : (backHref ?? null);
 
   const headerTitle = normalizedBackHref ? (
     <div className="flex items-center gap-3 sm:gap-4">

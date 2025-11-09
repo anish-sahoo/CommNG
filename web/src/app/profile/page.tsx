@@ -1,8 +1,8 @@
 "use client";
 
 import { toast } from "sonner";
-import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { TitleShell } from "@/components/layouts/title-shell";
+import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
 
 export default function ProfilePage() {

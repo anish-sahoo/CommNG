@@ -3,10 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
-import { TitleShell } from "@/components/layouts/title-shell";
 
 export default function ProfileSettingsPage() {
   const router = useRouter();

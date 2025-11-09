@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { TitleShell } from "@/components/layouts/title-shell";
 
 export default function HelpPage() {
   const MenuIcon = icons.menu;

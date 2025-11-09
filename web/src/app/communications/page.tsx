@@ -154,7 +154,10 @@ export default function CommunicationsOverviewPage() {
                 size="icon"
                 className="relative shrink-0 rounded-full border border-border bg-card text-secondary hover:text-primary"
               >
-                <Link href="/communications/broadcasts" aria-label="Open broadcasts">
+                <Link
+                  href="/communications/broadcasts"
+                  aria-label="Open broadcasts"
+                >
                   <BellIcon className="h-5 w-5 text-secondary" />
                   {hasActiveBroadcast ? (
                     <span className="absolute right-2 top-2 inline-flex h-2 w-2 rounded-full bg-error" />
@@ -202,7 +205,10 @@ export default function CommunicationsOverviewPage() {
               size="icon"
               className="relative rounded-full border border-border bg-card text-secondary hover:text-primary"
             >
-              <Link href="/communications/broadcasts" aria-label="Open broadcasts">
+              <Link
+                href="/communications/broadcasts"
+                aria-label="Open broadcasts"
+              >
                 <BellIcon className="h-5 w-5 text-secondary" />
                 {hasActiveBroadcast ? (
                   <span className="absolute right-2 top-2 inline-flex h-2 w-2 rounded-full bg-error" />
