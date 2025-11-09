@@ -59,14 +59,13 @@ export function DropdownButtons({
       <DropdownMenuContent align={align} sideOffset={sideOffset}>
         {items.map((item) => {
           const IconComponent = item.icon ? icons[item.icon] : null;
-
           return (
             <div key={item.id}>
               <DropdownMenuItem asChild className="cursor-pointer">
                 {item.href ? (
                   <Link
                     href={item.href as Route}
-                    className="flex items-center gap-2 text-secondary hover:text-primary"
+                    className="flex w-full items-center gap-2 text-secondary hover:text-primary"
                   >
                     {IconComponent && (
                       <IconComponent className="h-4 w-4 text-accent" />
@@ -77,7 +76,7 @@ export function DropdownButtons({
                   <button
                     type="button"
                     onClick={item.onClick}
-                    className="flex items-center gap-2 text-secondary hover:text-primary focus:outline-none"
+                    className="flex w-full items-center gap-2 text-secondary hover:text-primary focus:outline-none"
                   >
                     {IconComponent && (
                       <IconComponent className="h-4 w-4 text-accent" />
@@ -86,7 +85,6 @@ export function DropdownButtons({
                   </button>
                 )}
               </DropdownMenuItem>
-
               {item.separator && <DropdownMenuSeparator />}
             </div>
           );
