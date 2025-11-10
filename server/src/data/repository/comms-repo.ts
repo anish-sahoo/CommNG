@@ -326,6 +326,7 @@ export class CommsRepository {
       })
       .returning();
 
+    console.log("Created subscription:", subscription);
     return subscription;
   }
 

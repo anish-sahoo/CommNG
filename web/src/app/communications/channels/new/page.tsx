@@ -26,6 +26,7 @@ export default function NewChannelPage() {
   const [error, setError] = useState<string | null>(null);
 
   const createChannel = useMutation(trpc.comms.createChannel.mutationOptions());
+  const addSubscription = useMutation(trpc.comms.createSubscription.mutationOptions());
 
   const channelsQueryKey = useMemo<QueryKey>(
     () => trpc.comms.getAllChannels.queryKey(),
@@ -91,6 +92,12 @@ export default function NewChannelPage() {
 
       setError("Failed to create channel.");
     }
+
+    await addSubscription.mutateAsync({
+      channelId: createChannel.data?.channelId,
+      permission: "both",
+      notificationsEnabled: true,
+    });
   };
 
   return (
