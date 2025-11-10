@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { QueryResult } from "pg";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
 import { fileMetadataSchema } from "../../types/file-types.js";

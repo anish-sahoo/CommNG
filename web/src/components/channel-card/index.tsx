@@ -26,13 +26,14 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
 }) => {
   const Icon = icons[iconName];
   const trpcClient = useTRPCClient();
-  
+
   // Initialize with imageFileId if it's already a URL (pre-fetched)
-  const initialImageUrl = 
-    imageFileId && (imageFileId.startsWith("/") || imageFileId.startsWith("http"))
+  const initialImageUrl =
+    imageFileId &&
+    (imageFileId.startsWith("/") || imageFileId.startsWith("http"))
       ? imageFileId
       : null;
-  
+
   const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
 
   useEffect(() => {

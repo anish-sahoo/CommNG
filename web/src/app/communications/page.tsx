@@ -62,9 +62,7 @@ export default function CommunicationsOverviewPage() {
       })
       .filter(
         (fileId): fileId is string =>
-          !!fileId &&
-          !fileId.startsWith("/") &&
-          !fileId.startsWith("http"),
+          !!fileId && !fileId.startsWith("/") && !fileId.startsWith("http"),
       );
 
     if (fileIdsToFetch.length === 0) return;
