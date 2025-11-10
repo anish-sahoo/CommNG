@@ -2,15 +2,18 @@
 
 import { icons } from "@/components/icons";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type SearchBarProps = React.InputHTMLAttributes<HTMLInputElement> & {
   placeholder?: string;
   icon?: React.ReactNode;
+  containerClassName?: string;
 };
 
 const SearchBar: React.FC<SearchBarProps> = ({
   placeholder = "Search",
   icon,
+  containerClassName,
   ...props
 }) => {
   const Search = icons.search;
@@ -20,7 +23,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const ariaLabel = ariaLabelFromProps ?? placeholder;
 
   return (
-    <div className="relative">
+    <div className={cn("relative", containerClassName)}>
       <span
         className="absolute top-1/2 transform -translate-y-1/2"
         style={{ left: "10px" }}
@@ -36,7 +39,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         {...inputProps}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className={inputClassName || "" || "w-[233px] h-[41px]"}
+        className={cn("h-[41px] w-[233px]", inputClassName)}
         style={{ paddingLeft: "35px", ...style }}
       />
     </div>

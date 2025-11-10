@@ -17,15 +17,18 @@ type Channel<T extends string = string> = {
 const ChannelLink = ({
   channel,
   isActive,
+  onNavigate,
 }: {
   channel: Channel;
   isActive: boolean;
+  onNavigate?: () => void;
 }) => {
   return (
     <li>
       <Link
         href={channel.href}
         aria-current={isActive ? "page" : undefined}
+        onClick={onNavigate}
         className={cn(
           "group relative flex items-center gap-3 px-6 py-3 transition-colors duration-200",
           isActive
@@ -59,9 +62,13 @@ const ChannelLink = ({
 
 type CommsNavBarProps = {
   className?: string;
+  onNavigate?: () => void;
 };
 
-export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
+export const CommsNavBar = ({
+  className,
+  onNavigate,
+}: CommsNavBarProps = {}) => {
   const pathname = usePathname();
   const trpc = useTRPC();
   const { data, isLoading } = useQuery(
@@ -108,6 +115,7 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
               key={channel.id}
               channel={channel}
               isActive={isActive}
+              onNavigate={onNavigate}
             />
           );
         })}

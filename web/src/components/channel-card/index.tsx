@@ -29,35 +29,42 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       : description;
 
   return (
-    <div className="group h-64 w-64 rounded-2xl border border-neutral/50">
-      <div className="flex h-3/5 items-center justify-center overflow-hidden rounded-t-2xl bg-neutral">
+    <div className="group flex w-full min-h-[15rem] flex-col overflow-hidden rounded-2xl border border-neutral/50 bg-card shadow-sm sm:min-h-[16rem]">
+      <div className="relative h-32 w-full overflow-hidden bg-neutral sm:h-36">
         {imageSrc ? (
           <Image
             src={imageSrc}
             alt={title}
-            className="h-full w-full object-cover"
-            width={300}
-            height={200}
+            fill
+            sizes="(min-width: 640px) 19rem, 100vw"
+            className="object-cover"
           />
         ) : (
-          <span className="text-body text-secondary/50">Image Placeholder</span>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-body text-secondary/50">
+              Image Placeholder
+            </span>
+          </div>
         )}
       </div>
 
       <Link
         href={href as Route}
-        className="flex h-2/5 cursor-pointer flex-col justify-center rounded-b-2xl bg-primary p-5 transition-colors duration-200 group-hover:bg-primary-dark"
+        className="flex flex-1 cursor-pointer flex-col gap-1 bg-primary px-5 py-4 transition-colors duration-200 group-hover:bg-primary-dark"
       >
-        <div className="mb-1 flex items-center gap-2">
+        <div className="flex items-center gap-2 leading-tight">
           {Icon && <Icon className="h-5 w-5 text-accent" />}
           <h3
-            className="text-subheader font-semibold text-background"
+            className="text-subheader text-lg font-semibold text-background"
             title={title}
           >
             {truncatedTitle}
           </h3>
         </div>
-        <p className="text-body text-background/80" title={description}>
+        <p
+          className="text-body text-background/80 leading-snug line-clamp-2"
+          title={description}
+        >
           {truncatedDescription}
         </p>
       </Link>

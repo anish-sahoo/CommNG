@@ -62,6 +62,7 @@ const Navigation = ({
             "transform -translate-x-full transition-transform duration-300 ease-out",
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
+          onNavigate={onMobileClose}
         />
 
         {showCommsNav ? (
@@ -70,6 +71,7 @@ const Navigation = ({
               "transform -translate-x-full transition-transform duration-300 ease-out delay-75",
               mobileOpen ? "translate-x-0" : "-translate-x-full",
             )}
+            onNavigate={onMobileClose}
           />
         ) : null}
       </div>
