@@ -55,29 +55,31 @@ export const DropdownSelect = ({
       </SelectTrigger>
 
       {/* Use a portal to always render on top of everything */}
-      {mounted && <SelectPortal container={document.body}>
-        <SelectContent
-          position="popper"
-          side="bottom"
-          align="start"
-          avoidCollisions={false}
-          className="z-[9999] rounded-b-xl rounded-t-none w-[var(--radix-select-trigger-width)] border-1 border-primary bg-white"
-        >
-          <SelectGroup>
-            {options.map((option, index) => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                className={`text-subheader font-semibold text-primary py-3 rounded-none ${
-                  index > 0 ? "border-t-1 border-neutral" : ""
-                }`}
-              >
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </SelectPortal>}
+      {mounted && (
+        <SelectPortal container={document.body}>
+          <SelectContent
+            position="popper"
+            side="bottom"
+            align="start"
+            avoidCollisions={false}
+            className="z-[9999] rounded-b-xl rounded-t-none w-[var(--radix-select-trigger-width)] border-1 border-primary bg-white"
+          >
+            <SelectGroup>
+              {options.map((option, index) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className={`text-subheader font-semibold text-primary py-3 rounded-none ${
+                    index > 0 ? "border-t-1 border-neutral" : ""
+                  }`}
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </SelectPortal>
+      )}
     </Select>
   );
 };
