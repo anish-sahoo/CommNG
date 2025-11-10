@@ -271,6 +271,14 @@ export class CommsRepository {
   }
 
   async deleteMessage(message_id: number, channel_id: number) {
+    // First, get the attachments before deleting the message
+    const attachments = await db
+      .select({
+        fileId: messageAttachments.fileId,
+      })
+      .from(messageAttachments)
+      .where(eq(messageAttachments.messageId, message_id));
+
     const [deleted] = await db
       .delete(messages)
       .where(
@@ -291,7 +299,10 @@ export class CommsRepository {
       throw new NotFoundError("Message not found");
     }
 
-    return deleted;
+    return {
+      ...deleted,
+      attachmentFileIds: attachments.map((a) => a.fileId),
+    };
   }
   // Channel subscription methods - for notification preferences only
   async createSubscription(

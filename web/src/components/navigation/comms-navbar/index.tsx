@@ -1,10 +1,12 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { DEMO_CHANNEL } from "@/lib/demo-channel";
-import { useTRPC } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
 type Channel<T extends string = string> = {
@@ -12,6 +14,7 @@ type Channel<T extends string = string> = {
   label: string;
   href: Route<`/communications/${T}`>;
   type: "all" | "channel";
+  imageFileId?: string;
 };
 
 const ChannelLink = ({
@@ -23,6 +26,39 @@ const ChannelLink = ({
   isActive: boolean;
   onNavigate?: () => void;
 }) => {
+  const trpcClient = useTRPCClient();
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!channel.imageFileId) {
+      return;
+    }
+
+    // If it's a direct path/URL, use it directly
+    if (
+      channel.imageFileId.startsWith("/") ||
+      channel.imageFileId.startsWith("http")
+    ) {
+      setImageUrl(channel.imageFileId);
+      return;
+    }
+
+    // Otherwise, fetch from the files API
+    const fetchImage = async () => {
+      try {
+        const fileData = await trpcClient.files.getFile.query({
+          fileId: channel.imageFileId!,
+        });
+        setImageUrl(fileData.data);
+      } catch (error) {
+        console.error("Failed to fetch channel image:", error);
+        setImageUrl("/default_channel_image.png");
+      }
+    };
+
+    void fetchImage();
+  }, [channel.imageFileId, trpcClient]);
+
   return (
     <li>
       <Link
@@ -85,12 +121,24 @@ export const CommsNavBar = ({
       href: "/communications",
       type: "all",
     },
-    ...(channelData.map((channel) => ({
-      id: channel.channelId.toString(),
-      label: channel.name,
-      href: `/communications/${channel.channelId}` as const,
-      type: "channel" as const,
-    })) ?? []),
+    ...(channelData.map((channel) => {
+      const metadata = channel.metadata as
+        | {
+            imageFileId?: string;
+            description?: string;
+            icon?: string;
+          }
+        | null
+        | undefined;
+
+      return {
+        id: channel.channelId.toString(),
+        label: channel.name,
+        href: `/communications/${channel.channelId}` as const,
+        type: "channel" as const,
+        imageFileId: metadata?.imageFileId,
+      };
+    }) ?? []),
   ];
 
   return (

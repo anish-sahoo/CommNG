@@ -45,17 +45,13 @@ export default function NewChannelPage() {
       return;
     }
 
-    const imageMeta = values.imageFileId
-      ? { imageFileId: values.imageFileId }
-      : { imageSrc: "/default_channel_image.png" };
-
     try {
       await createChannel.mutateAsync({
         name,
         metadata: {
           description,
           icon: "announce",
-          ...imageMeta,
+          imageFileId: values.imageFileId || "/default_channel_image.png",
         },
       });
 

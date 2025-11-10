@@ -22,7 +22,7 @@ type ChannelMetadata = {
   description?: string;
   summary?: string;
   icon?: string;
-  imageSrc?: string;
+  imageFileId?: string;
 };
 
 function resolveIconName(icon?: string): IconName {
@@ -260,13 +260,15 @@ export default function CommunicationsOverviewPage() {
         </section>
       ) : (
         <section className={gridClassName}>
-          {channels.map((channel) => {
+          {channels.map((channel, index) => {
             const metadata = (channel.metadata ?? {}) as ChannelMetadata;
             const description =
               metadata.summary ??
               metadata.description ??
               "Demo communications channel";
             const iconName = resolveIconName(metadata.icon);
+            // Prioritize loading the first 3 images for better LCP
+            const isPriority = index < 3;
 
             return (
               <div
@@ -278,11 +280,12 @@ export default function CommunicationsOverviewPage() {
                   title={channel.name}
                   description={description}
                   iconName={iconName}
-                  imageSrc={
-                    typeof metadata.imageSrc === "string"
-                      ? metadata.imageSrc
+                  imageFileId={
+                    typeof metadata.imageFileId === "string"
+                      ? metadata.imageFileId
                       : undefined
                   }
+                  priority={isPriority}
                 />
               </div>
             );

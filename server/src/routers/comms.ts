@@ -19,6 +19,7 @@ import {
 } from "../types/comms-types.js";
 import { ForbiddenError, InternalServerError, UnauthorizedError } from "../types/errors.js";
 import log from "../utils/logger.js";
+import { fileService } from "./files.js";
 
 const commsRepo = new CommsRepository();
 const commsService = new CommsService(commsRepo);
@@ -178,6 +179,7 @@ const deletePost = protectedProcedure
       userId,
       input.channelId,
       input.messageId,
+      fileService,
     );
 
     return deletedPost;

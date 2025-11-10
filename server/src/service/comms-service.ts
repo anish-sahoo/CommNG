@@ -10,6 +10,7 @@ import {
   ForbiddenError,
   InternalServerError,
 } from "../types/errors.js";
+import log from "../utils/logger.js";
 import { policyEngine } from "./policy-engine.js";
 
 export class CommsService {
@@ -92,7 +93,12 @@ export class CommsService {
     );
   }
 
-  async deleteMessage(user_id: string, channel_id: number, message_id: number) {
+  async deleteMessage(
+    user_id: string,
+    channel_id: number,
+    message_id: number,
+    fileService?: { deleteFile: (fileId: string) => Promise<void> },
+  ) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
     }
@@ -122,7 +128,24 @@ export class CommsService {
       }
     }
 
-    return this.commsRepo.deleteMessage(message_id, channel_id);
+    const result = await this.commsRepo.deleteMessage(message_id, channel_id);
+
+    // Delete associated files from storage and database
+    if (fileService && result.attachmentFileIds) {
+      for (const fileId of result.attachmentFileIds) {
+        try {
+          await fileService.deleteFile(fileId);
+        } catch (error) {
+          log.error(
+            { fileId, error },
+            "Failed to delete file associated with message",
+          );
+          // Continue with other deletions even if one fails
+        }
+      }
+    }
+
+    return result;
   }
 
   async getChannelSettings(channel_id: number) {

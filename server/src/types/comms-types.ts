@@ -34,7 +34,6 @@ export const createChannelSchema = z.object({
       description: z.string().optional(),
       type: z.boolean().optional(),
       icon: z.string().default("announce"),
-      imageSrc: z.string().optional(),
       imageFileId: z.string().optional(),
     })
     .loose()
@@ -49,7 +48,6 @@ export const channelUpdateMetadata = z.object({
   description: z.string().optional(),
   postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
   imageFileId: z.string().optional(),
-  imageSrc: z.string().optional(),
 });
 
 export const updateChannelSchema = z.object({
