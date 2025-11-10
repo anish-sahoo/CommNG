@@ -143,6 +143,10 @@ jobs:
           cd ..
           git add server/package.json server/package-lock.json
           git commit -m "chore(server): bump version to $SNAPSHOT_VERSION [skip ci]"
+          
+          # Fetch latest changes and rebase to avoid push rejection
+          git fetch origin
+          git rebase origin/${{ inputs.branch }}
           git push origin ${{ inputs.branch }}
 
       - name: Deployment summary
