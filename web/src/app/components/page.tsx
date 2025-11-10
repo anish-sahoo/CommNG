@@ -191,7 +191,7 @@ const Components = () => {
 
   const [files, setFiles] = useState<File[] | undefined>();
 
-  const [singleSelectValue, setSingleSelectValue] = useState<string>("");
+  const [selected, setSelected] = useState<string>("");
 
   const dragOptions = [
     { label: "First Item", value: "1" },
@@ -199,25 +199,6 @@ const Components = () => {
     { label: "Third Item", value: "3" },
   ];
   const [order, setOrder] = useState(dragOptions.map((o) => o.value));
-  const [_dragCards, _setDragCards] = useState([
-    {
-      id: "1",
-      data: "Support my mentee's career advancement and professional goal-setting within the National Guard",
-    },
-    { id: "2", data: "Help my mentee navigate educational opportunities" },
-    {
-      id: "3",
-      data: "Build a strong sense of community within the National Guard",
-    },
-    {
-      id: "4",
-      data: "Strengthen my professional network within the National Guard",
-    },
-    {
-      id: "5",
-      data: "Connect with Guardsmen who have different perspectives and experiences",
-    },
-  ]);
 
   return (
     <>
@@ -532,17 +513,33 @@ const Components = () => {
               <h2 className="text-subheader font-semibold text-secondary">
                 Single-select Circular Buttons
               </h2>
-              <p className="text-sm text-secondary/70">Select one quality</p>
               <SingleSelectButtonGroup
                 options={[
-                  { label: "A", value: "true" },
-                  { label: "B", value: "false" },
-                  { label: "C", value: "maybe" },
+                  { label: "Beef", value: "beef" },
+                  {
+                    label: "Chicken",
+                    value: "chicken",
+                    dropdownOptions: [
+                      { label: "Spicy", value: "spicy" },
+                      { label: "Mild", value: "mild" },
+                    ],
+                  },
+                  {
+                    label: "Vegetarian",
+                    value: "vegetarian",
+                    dropdownOptions: [
+                      { label: "Gluten-Free", value: "gluten-free" },
+                      { label: "Other", value: "other" },
+                    ],
+                  },
                 ]}
-                value={singleSelectValue}
-                onChange={setSingleSelectValue}
+                value={selected}
+                onChange={setSelected}
+                onDropdownChange={(parent, child) => console.log(parent, child)}
               />
-              <p>Current selection: {singleSelectValue}</p>
+              <p className="text-sm text-secondary/70" aria-live="polite">
+                Selected: {selected ?? "None selected"}
+              </p>
             </div>
           </section>
 
