@@ -326,6 +326,7 @@ export class CommsRepository {
       })
       .returning();
 
+    console.log("Created subscription:", subscription);
     return subscription;
   }
 
@@ -408,6 +409,8 @@ export class CommsRepository {
       .selectDistinct({
         channelId: channels.channelId,
         name: channels.name,
+        description: channels.description,
+        postPermissionLevel: channels.postPermissionLevel,
         metadata: channels.metadata,
       })
       .from(channels)

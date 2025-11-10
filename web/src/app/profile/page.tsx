@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { TitleShell } from "@/components/layouts/title-shell";
 import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
+import { ChannelShell } from "../communications/components";
 
 export default function ProfilePage() {
   const { data: sessionData } = authClient.useSession();

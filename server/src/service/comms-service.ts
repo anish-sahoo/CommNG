@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { channels } from "../data/db/schema.js";
+import { channels, channelSubscriptions } from "../data/db/schema.js";
 import type {
   CommsRepository,
   Transaction,
@@ -11,6 +11,7 @@ import {
   InternalServerError,
 } from "../types/errors.js";
 import { policyEngine } from "./policy-engine.js";
+import { subscribe } from "diagnostics_channel";
 
 export class CommsService {
   private commsRepo: CommsRepository;
@@ -160,6 +161,15 @@ export class CommsService {
           .update(channels)
           .set({ description: metadata.description })
           .where(eq(channels.channelId, channel_id)),
+      );
+    }
+
+    if (metadata.notificationsEnabled !== undefined) {
+      updates.push((tx) =>
+        tx
+          .update(channelSubscriptions)
+          .set({ notificationsEnabled: metadata.notificationsEnabled })
+          .where(eq(channelSubscriptions.channelId, channel_id)),
       );
     }
     const result = await this.commsRepo.updateChannelSettings(updates);

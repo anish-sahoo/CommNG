@@ -45,11 +45,13 @@ export const channelUpdateMetadata = z.object({
     .max(100, "Channel name too long"),
   description: z.string().optional(),
   postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
+  notificationsEnabled: z.boolean().optional(),
 });
 
 export const updateChannelSchema = z.object({
   channelId: z.coerce.number().int().positive(),
   metadata: channelUpdateMetadata,
+  notificationsEnabled: z.boolean().optional(),
 });
 
 // Channel members schema

@@ -194,16 +194,6 @@ const createChannel = protectedProcedure
     }),
   );
 
-// get channel settings
-/*const getChannelSettings = protectedProcedure
-  .input(updateChannelSchema)
-  .query(({ input }) =>
-    withErrorHandling("getChannelSettings", async () => {
-      log.debug({ channelId: input.channelId }, "getChannelSettings");
-      return await commsRepo.getChannelSettings(input.channelId);
-    }),
-  );*/
-
 // update channel settings
 const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
