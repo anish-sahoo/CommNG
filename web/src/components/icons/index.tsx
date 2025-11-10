@@ -8,6 +8,7 @@ import {
   ChevronRight,
   CircleQuestionMark,
   EllipsisVertical,
+  GripVertical,
   Lock,
   Megaphone,
   Menu,
@@ -58,6 +59,7 @@ export const icons = {
   mentorship: Users,
   reports: MessageSquareWarning,
   user: User,
+  drag: GripVertical,
   help: CircleQuestionMark,
 } satisfies Record<string, LucideIcon>;
 
