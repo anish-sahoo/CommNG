@@ -441,33 +441,35 @@ export class CommsRepository {
   }
 
   async getAccessibleChannels(userId: string) {
-    const accessibleChannels = await db
-      .selectDistinct({
-        channelId: channels.channelId,
-        name: channels.name,
-        metadata: channels.metadata,
-      })
-      .from(channels)
-      .leftJoin(userRoles, eq(userRoles.userId, userId))
-      .leftJoin(
-        roles,
-        and(
-          eq(userRoles.roleId, roles.roleId),
-          eq(roles.channelId, channels.channelId),
-          eq(roles.namespace, "channel"),
-        ),
-      )
-      .where(
-        or(
-          // Channel is public
-          sql`coalesce(${channels.metadata}->>'type', 'public') = 'public'`,
-          // User has a role in the channel
-          isNotNull(roles.roleId),
-        ),
-      )
-      .orderBy(channels.name);
+    const accessibleChannels = await db.execute<{
+      channelId: number;
+      name: string;
+      metadata: Record<string, unknown> | null;
+      permission: "admin" | "post" | "read" | null;
+    }>(sql`
+      SELECT DISTINCT ON (c.channel_id)
+        c.channel_id AS "channelId",
+        c.name,
+        c.metadata,
+        CASE
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) >= 3 THEN 'admin'::text
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 2 THEN 'post'::text
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 1 THEN 'read'::text
+          ELSE NULL
+        END as permission
+      FROM ${channels} c
+      LEFT JOIN ${userRoles} ur ON ur.user_id = ${userId}
+      LEFT JOIN ${roles} r ON r.role_id = ur.role_id
+        AND r.channel_id = c.channel_id
+        AND r.namespace = 'channel'
+      WHERE
+        COALESCE(c.metadata->>'type', 'public') = 'public'
+        OR r.role_id IS NOT NULL
+      GROUP BY c.channel_id, c.name, c.metadata
+      ORDER BY c.channel_id, c.name
+    `);
 
-    return accessibleChannels;
+    return accessibleChannels.rows;
   }
 
   // Get channel messages method
