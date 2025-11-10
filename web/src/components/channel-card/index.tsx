@@ -1,24 +1,67 @@
+"use client";
+
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { type IconName, icons } from "@/components/icons";
+import { useTRPCClient } from "@/lib/trpc";
 
 interface ChannelCardProps {
-  imageSrc?: string;
+  imageFileId?: string;
   title: string;
   description: string;
   iconName: IconName;
   href: Route | string;
+  priority?: boolean;
 }
 
 const ChannelCard: React.FC<ChannelCardProps> = ({
-  imageSrc,
+  imageFileId,
   title,
   description,
   iconName,
   href,
+  priority = false,
 }) => {
   const Icon = icons[iconName];
+  const trpcClient = useTRPCClient();
+
+  // Initialize with imageFileId if it's already a URL (pre-fetched)
+  const initialImageUrl =
+    imageFileId &&
+    (imageFileId.startsWith("/") || imageFileId.startsWith("http"))
+      ? imageFileId
+      : null;
+
+  const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
+
+  useEffect(() => {
+    if (!imageFileId) {
+      return;
+    }
+
+    // If it's a direct path/URL (including pre-fetched URLs), use it directly
+    if (imageFileId.startsWith("/") || imageFileId.startsWith("http")) {
+      setImageUrl(imageFileId);
+      return;
+    }
+
+    // Otherwise, fetch from the files API (fallback for when not pre-fetched)
+    const fetchImage = async () => {
+      try {
+        const fileData = await trpcClient.files.getFile.query({
+          fileId: imageFileId,
+        });
+        setImageUrl(fileData.data);
+      } catch (error) {
+        console.error("Failed to fetch channel image:", error);
+        setImageUrl(null);
+      }
+    };
+
+    void fetchImage();
+  }, [imageFileId, trpcClient]);
 
   const truncatedTitle =
     title.length > 22 ? `${title.slice(0, 22).trim()}…` : title;
@@ -28,16 +71,21 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
       ? `${description.slice(0, 52).trim()}…`
       : description;
 
+  // Check if image is from S3 (external URL with signed parameters)
+  const isS3Image = imageUrl?.includes("amazonaws.com") ?? false;
+
   return (
     <div className="group flex w-full min-h-[15rem] flex-col overflow-hidden rounded-2xl border border-neutral/50 bg-card shadow-sm sm:min-h-[16rem]">
       <div className="relative h-32 w-full overflow-hidden bg-neutral sm:h-36">
-        {imageSrc ? (
+        {imageUrl ? (
           <Image
-            src={imageSrc}
+            src={imageUrl}
             alt={title}
             fill
             sizes="(min-width: 640px) 19rem, 100vw"
             className="object-cover"
+            priority={priority}
+            unoptimized={isS3Image}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">

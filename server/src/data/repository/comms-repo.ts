@@ -1,10 +1,6 @@
-import { and, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { QueryResult } from "pg";
-import {
-  ConflictError,
-  InternalServerError,
-  NotFoundError,
-} from "../../types/errors.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import { fileMetadataSchema } from "../../types/file-types.js";
 import log from "../../utils/logger.js";
 import {
@@ -271,6 +267,14 @@ export class CommsRepository {
   }
 
   async deleteMessage(message_id: number, channel_id: number) {
+    // First, get the attachments before deleting the message
+    const attachments = await db
+      .select({
+        fileId: messageAttachments.fileId,
+      })
+      .from(messageAttachments)
+      .where(eq(messageAttachments.messageId, message_id));
+
     const [deleted] = await db
       .delete(messages)
       .where(
@@ -291,13 +295,15 @@ export class CommsRepository {
       throw new NotFoundError("Message not found");
     }
 
-    return deleted;
+    return {
+      ...deleted,
+      attachmentFileIds: attachments.map((a) => a.fileId),
+    };
   }
-  // Channel subscription methods
+  // Channel subscription methods - for notification preferences only
   async createSubscription(
     userId: string,
     channelId: number,
-    permission: "read" | "write" | "both",
     notificationsEnabled: boolean = true,
   ) {
     // Check if subscription already exists
@@ -321,12 +327,44 @@ export class CommsRepository {
       .values({
         userId,
         channelId,
-        permission,
         notificationsEnabled,
       })
       .returning();
 
     return subscription;
+  }
+
+  async ensureChannelSubscription(userId: string, channelId: number) {
+    try {
+      // Check if subscription already exists
+      const existing = await db
+        .select()
+        .from(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .limit(1);
+
+      if (existing.length === 0) {
+        // Create subscription with notifications enabled by default
+        await db.insert(channelSubscriptions).values({
+          userId,
+          channelId,
+          notificationsEnabled: true,
+        });
+        log.debug({ userId, channelId }, "Auto-created channel subscription");
+      }
+      return true;
+    } catch (e) {
+      log.error(
+        e,
+        `Error ensuring subscription for user ${userId} in channel ${channelId}`,
+      );
+      return false;
+    }
   }
 
   async deleteSubscription(subscriptionId: number, userId: string) {
@@ -354,7 +392,6 @@ export class CommsRepository {
       .select({
         subscriptionId: channelSubscriptions.subscriptionId,
         channelId: channelSubscriptions.channelId,
-        permission: channelSubscriptions.permission,
         notificationsEnabled: channelSubscriptions.notificationsEnabled,
         channelName: channels.name,
       })
@@ -404,39 +441,35 @@ export class CommsRepository {
   }
 
   async getAccessibleChannels(userId: string) {
-    const accessibleChannels = await db
-      .selectDistinct({
-        channelId: channels.channelId,
-        name: channels.name,
-        metadata: channels.metadata,
-      })
-      .from(channels)
-      .leftJoin(
-        channelSubscriptions,
-        and(
-          eq(channelSubscriptions.channelId, channels.channelId),
-          eq(channelSubscriptions.userId, userId),
-        ),
-      )
-      .leftJoin(userRoles, eq(userRoles.userId, userId))
-      .leftJoin(
-        roles,
-        and(
-          eq(userRoles.roleId, roles.roleId),
-          eq(roles.channelId, channels.channelId),
-          eq(roles.namespace, "channel"),
-        ),
-      )
-      .where(
-        or(
-          sql`coalesce(${channels.metadata}->>'type', 'public') = 'public'`,
-          isNotNull(channelSubscriptions.subscriptionId),
-          isNotNull(roles.roleId),
-        ),
-      )
-      .orderBy(channels.name);
+    const accessibleChannels = await db.execute<{
+      channelId: number;
+      name: string;
+      metadata: Record<string, unknown> | null;
+      permission: "admin" | "post" | "read" | null;
+    }>(sql`
+      SELECT DISTINCT ON (c.channel_id)
+        c.channel_id AS "channelId",
+        c.name,
+        c.metadata,
+        CASE
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) >= 3 THEN 'admin'::text
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 2 THEN 'post'::text
+          WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 1 THEN 'read'::text
+          ELSE NULL
+        END as permission
+      FROM ${channels} c
+      LEFT JOIN ${userRoles} ur ON ur.user_id = ${userId}
+      LEFT JOIN ${roles} r ON r.role_id = ur.role_id
+        AND r.channel_id = c.channel_id
+        AND r.namespace = 'channel'
+      WHERE
+        COALESCE(c.metadata->>'type', 'public') = 'public'
+        OR r.role_id IS NOT NULL
+      GROUP BY c.channel_id, c.name, c.metadata
+      ORDER BY c.channel_id, c.name
+    `);
 
-    return accessibleChannels;
+    return accessibleChannels.rows;
   }
 
   // Get channel messages method
@@ -623,15 +656,70 @@ export class CommsRepository {
   ): Promise<boolean> {
     try {
       await db.transaction(async (tx) => {
-        for (const updateFn of listOfUpdates) {
-          await updateFn(tx);
+        for (const update of listOfUpdates) {
+          await update(tx);
         }
       });
       return true;
     } catch (err) {
       log.error(err, "Error updating channel settings");
-      throw new InternalServerError("Error updating channel settings");
+      return false;
     }
+  }
+
+  async deleteChannel(channelId: number) {
+    const [deleted] = await db
+      .delete(channels)
+      .where(eq(channels.channelId, channelId))
+      .returning();
+
+    if (!deleted) {
+      throw new NotFoundError("Channel not found");
+    }
+
+    return deleted;
+  }
+
+  async removeUserFromChannel(userId: string, channelId: number) {
+    return await db.transaction(async (tx) => {
+      // Get user's roles in this channel
+      const userChannelRoles = await tx
+        .select({ roleId: roles.roleId })
+        .from(roles)
+        .innerJoin(userRoles, eq(userRoles.roleId, roles.roleId))
+        .where(
+          and(
+            eq(roles.channelId, channelId),
+            eq(roles.namespace, "channel"),
+            eq(userRoles.userId, userId),
+          ),
+        );
+
+      // Remove all role assignments for this user in this channel
+      if (userChannelRoles.length > 0) {
+        const roleIds = userChannelRoles.map((r) => r.roleId);
+        await tx
+          .delete(userRoles)
+          .where(
+            and(
+              eq(userRoles.userId, userId),
+              inArray(userRoles.roleId, roleIds),
+            ),
+          );
+      }
+
+      // Remove subscription
+      await tx
+        .delete(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        );
+
+      return { success: true };
+    });
   }
 
   /*async getChannelSettings(channelId: number) {

@@ -31,8 +31,9 @@ export const createChannelSchema = z.object({
   metadata: z
     .object({
       description: z.string().optional(),
-      isPrivate: z.boolean().optional(),
-      tags: z.array(z.string()).optional(),
+      type: z.boolean().optional(),
+      icon: z.string().default("announce"),
+      imageFileId: z.string().optional(),
     })
     .loose()
     .optional(),
@@ -45,6 +46,7 @@ export const channelUpdateMetadata = z.object({
     .max(100, "Channel name too long"),
   description: z.string().optional(),
   postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
+  imageFileId: z.string().optional(),
 });
 
 export const updateChannelSchema = z.object({
@@ -72,7 +74,6 @@ export const toggleReactionSchema = z.object({
 // Channel subscription schemas
 export const createSubscriptionSchema = z.object({
   channelId: z.coerce.number().int().positive(),
-  permission: z.enum(["read", "write", "both"]),
   notificationsEnabled: z.boolean().default(true),
 });
 
@@ -80,8 +81,23 @@ export const deleteSubscriptionSchema = z.object({
   subscriptionId: z.coerce.number().int().positive(),
 });
 
+export const deleteChannelSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+});
+
+export const leaveChannelSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+});
+
+export const joinChannelSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+});
+
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
+export type DeleteChannelInput = z.infer<typeof deleteChannelSchema>;
+export type LeaveChannelInput = z.infer<typeof leaveChannelSchema>;
+export type JoinChannelInput = z.infer<typeof joinChannelSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;
 export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>;
 export type GetChannelMessagesInput = z.infer<typeof getChannelMessagesSchema>;

@@ -13,7 +13,6 @@ import { useTRPCClient } from "@/lib/trpc";
 export type CreateChannelValues = {
   title: string;
   blurb: string;
-  imageSrc?: string;
   imageFileId?: string;
   hasUploadingPhoto?: boolean;
   hasErroredPhoto?: boolean;
@@ -156,7 +155,6 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
     onSubmit({
       title,
       blurb,
-      imageSrc: undefined,
       imageFileId: photo?.status === "uploaded" ? photo.fileId : undefined,
       hasUploadingPhoto,
       hasErroredPhoto,

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "@/components/channel-card";
 import { type IconName, icons } from "@/components/icons";
 import { MobileNavTrigger } from "@/components/layouts/navigation-shell";
@@ -15,14 +15,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DEMO_CHANNEL } from "@/lib/demo-channel";
-import { useTRPC } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
 type ChannelMetadata = {
   description?: string;
   summary?: string;
   icon?: string;
-  imageSrc?: string;
+  imageFileId?: string;
 };
 
 function resolveIconName(icon?: string): IconName {
@@ -34,6 +34,7 @@ function resolveIconName(icon?: string): IconName {
 
 export default function CommunicationsOverviewPage() {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const [search, setSearch] = useState("");
   const BellIcon = icons.bell;
   const AddIcon = icons.add;
@@ -44,6 +45,48 @@ export default function CommunicationsOverviewPage() {
   const { data: activeBroadcasts } = useQuery(
     trpc.messageBlasts.getActiveMessageBlastsForUser.queryOptions(),
   );
+
+  // Pre-fetch all channel images in parallel
+  const [imageUrls, setImageUrls] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!data || !Array.isArray(data)) return;
+
+    const fileIdsToFetch = data
+      .map((channel) => {
+        const metadata = channel.metadata as
+          | { imageFileId?: string }
+          | null
+          | undefined;
+        return metadata?.imageFileId;
+      })
+      .filter(
+        (fileId): fileId is string =>
+          !!fileId && !fileId.startsWith("/") && !fileId.startsWith("http"),
+      );
+
+    if (fileIdsToFetch.length === 0) return;
+
+    // Fetch all images in parallel
+    const fetchAllImages = async () => {
+      const results = await Promise.allSettled(
+        fileIdsToFetch.map(async (fileId) => {
+          const fileData = await trpcClient.files.getFile.query({ fileId });
+          return { fileId, url: fileData.data };
+        }),
+      );
+
+      const newImageUrls = new Map<string, string>();
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          newImageUrls.set(result.value.fileId, result.value.url);
+        }
+      }
+      setImageUrls(newImageUrls);
+    };
+
+    void fetchAllImages();
+  }, [data, trpcClient]);
 
   const hasActiveBroadcast = useMemo(() => {
     if (!activeBroadcasts || activeBroadcasts.length === 0) {
@@ -260,13 +303,23 @@ export default function CommunicationsOverviewPage() {
         </section>
       ) : (
         <section className={gridClassName}>
-          {channels.map((channel) => {
+          {channels.map((channel, index) => {
             const metadata = (channel.metadata ?? {}) as ChannelMetadata;
             const description =
               metadata.summary ??
               metadata.description ??
               "Demo communications channel";
             const iconName = resolveIconName(metadata.icon);
+            // Prioritize loading the first 3 images for better LCP
+            const isPriority = index < 3;
+
+            // Get pre-fetched image URL or use original if it's a direct path
+            const imageFileId = metadata.imageFileId
+              ? metadata.imageFileId.startsWith("/") ||
+                metadata.imageFileId.startsWith("http")
+                ? metadata.imageFileId
+                : imageUrls.get(metadata.imageFileId)
+              : undefined;
 
             return (
               <div
@@ -278,11 +331,8 @@ export default function CommunicationsOverviewPage() {
                   title={channel.name}
                   description={description}
                   iconName={iconName}
-                  imageSrc={
-                    typeof metadata.imageSrc === "string"
-                      ? metadata.imageSrc
-                      : undefined
-                  }
+                  imageFileId={imageFileId}
+                  priority={isPriority}
                 />
               </div>
             );

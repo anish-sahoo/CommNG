@@ -172,6 +172,15 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const messages = Array.isArray(messagesQuery.data) ? messagesQuery.data : [];
 
+  // Check if user is not a member (permission is null)
+  const currentChannel = channelList.find(
+    (channel) => channel.channelId === parsedChannelId,
+  );
+  const isNotMember =
+    currentChannel && "permission" in currentChannel
+      ? currentChannel.permission === null
+      : false;
+
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
   const channelName = useMemo(() => {
@@ -239,6 +248,22 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       channelId: parsedChannelId,
     }) as unknown as QueryKey;
   }, [parsedChannelId, trpc]);
+
+  const { mutate: joinChannel, isPending: isJoining } = useMutation(
+    trpc.comms.joinChannel.mutationOptions({
+      onSuccess: () => {
+        // Refetch channel list and messages after joining
+        queryClient.invalidateQueries({
+          queryKey: trpc.comms.getAllChannels.queryKey(),
+        });
+        if (channelMessagesQueryKey) {
+          queryClient.invalidateQueries({
+            queryKey: channelMessagesQueryKey,
+          });
+        }
+      },
+    }),
+  );
 
   const messagesToDisplay = messagesState;
 
@@ -362,6 +387,40 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-6 text-destructive">
         Invalid channel identifier provided.
       </div>
+    );
+  }
+
+  // Show "not a member" message if user doesn't have permission
+  if (isNotMember) {
+    return (
+      <TitleShell
+        title={channelName}
+        backHref="/communications"
+        backAriaLabel="Back to all channels"
+      >
+        <div className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border bg-muted/30 p-8 text-center">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-semibold text-foreground">
+              You are not a member of this channel
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Please join this channel to view messages and participate in
+              discussions.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              if (parsedChannelId) {
+                joinChannel({ channelId: parsedChannelId });
+              }
+            }}
+            disabled={isJoining}
+            className="min-w-[200px]"
+          >
+            {isJoining ? "Joining..." : "Join Channel"}
+          </Button>
+        </div>
+      </TitleShell>
     );
   }
 

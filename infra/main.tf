@@ -421,9 +421,14 @@ resource "aws_s3_bucket_cors_configuration" "comm_ng_files_cors" {
     id = "allow-presigned-uploads"
 
     allowed_headers = ["*"]
-    allowed_methods = ["GET", "PUT", "POST"]
-    allowed_origins = ["http://localhost:3001", "http://localhost:3000"]
-    expose_headers  = ["ETag"]
+    allowed_methods = ["GET", "PUT", "POST", "HEAD"]
+    allowed_origins = [
+      "http://localhost:3001",
+      "http://localhost:3000",
+      "http://${aws_lb.main.dns_name}",
+      "https://${aws_lb.main.dns_name}"
+    ]
+    expose_headers  = ["ETag", "x-amz-version-id"]
     max_age_seconds = 3000
   }
 }

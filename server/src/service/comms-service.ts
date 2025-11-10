@@ -10,6 +10,7 @@ import {
   ForbiddenError,
   InternalServerError,
 } from "../types/errors.js";
+import log from "../utils/logger.js";
 import { policyEngine } from "./policy-engine.js";
 
 export class CommsService {
@@ -92,7 +93,12 @@ export class CommsService {
     );
   }
 
-  async deleteMessage(user_id: string, channel_id: number, message_id: number) {
+  async deleteMessage(
+    user_id: string,
+    channel_id: number,
+    message_id: number,
+    fileService?: { deleteFile: (fileId: string) => Promise<void> },
+  ) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
     }
@@ -122,7 +128,24 @@ export class CommsService {
       }
     }
 
-    return this.commsRepo.deleteMessage(message_id, channel_id);
+    const result = await this.commsRepo.deleteMessage(message_id, channel_id);
+
+    // Delete associated files from storage and database
+    if (fileService && result.attachmentFileIds) {
+      for (const fileId of result.attachmentFileIds) {
+        try {
+          await fileService.deleteFile(fileId);
+        } catch (error) {
+          log.error(
+            { fileId, error },
+            "Failed to delete file associated with message",
+          );
+          // Continue with other deletions even if one fails
+        }
+      }
+    }
+
+    return result;
   }
 
   async getChannelSettings(channel_id: number) {
@@ -169,5 +192,90 @@ export class CommsService {
     throw new InternalServerError(
       "Something went wrong updating channel settings",
     );
+  }
+
+  async deleteChannel(user_id: string, channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:admin`,
+    );
+    if (!isAdmin) {
+      throw new ForbiddenError(
+        "Only channel administrators can delete this channel",
+      );
+    }
+    await this.getChannelById(channel_id);
+    return this.commsRepo.deleteChannel(channel_id);
+  }
+
+  async leaveChannel(user_id: string, channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    await this.getChannelById(channel_id);
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:admin`,
+    );
+
+    if (isAdmin) {
+      throw new ForbiddenError(
+        "Channel administrators cannot leave the channel. Please delete the channel or transfer admin rights first.",
+      );
+    }
+    return this.commsRepo.removeUserFromChannel(user_id, channel_id);
+  }
+
+  async joinChannel(user_id: string, channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+
+    // Check if channel exists
+    await this.getChannelById(channel_id);
+
+    // Get channel data to check if it's public
+    const channelData = await this.commsRepo.getChannelDataByID(channel_id);
+
+    // Check if channel is public (default is public if not specified)
+    const channelType =
+      channelData?.metadata &&
+      typeof channelData.metadata === "object" &&
+      "type" in channelData.metadata
+        ? channelData.metadata.type
+        : "public";
+
+    if (channelType !== "public") {
+      throw new ForbiddenError("Cannot join a private channel");
+    }
+
+    // Check if user already has a role in this channel
+    const hasRole = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:read`,
+    );
+
+    if (hasRole) {
+      throw new BadRequestError("You are already a member of this channel");
+    }
+
+    // Create read role and assign it to the user
+    const roleKey = `channel:${channel_id}:read`;
+    await policyEngine.createRoleAndAssign(
+      user_id,
+      user_id,
+      roleKey,
+      "read",
+      "channel",
+      channel_id,
+    );
+
+    // Auto-subscribe the user with notifications enabled
+    await this.commsRepo.ensureChannelSubscription(user_id, channel_id);
+
+    return { success: true, channelId: channel_id };
   }
 }
