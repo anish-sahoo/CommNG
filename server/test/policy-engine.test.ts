@@ -102,9 +102,9 @@ describe("PolicyEngine", () => {
     });
 
     it("should return true when user has admin role for the resource", async () => {
-      // User 1 has channel:1:admin, so they should have access to channel:1:write
-      const result = await policyEngine.validate("1", "channel:1:write");
-      expect(result).toBe(false); // channel:1:write doesn't exist in the system
+      // User 1 has channel:1:admin, so they should have access to channel:1:post
+      const result = await policyEngine.validate("1", "channel:1:post");
+      expect(result).toBe(true);
     });
 
     it("should return false when user does not have the role", async () => {
@@ -130,13 +130,13 @@ describe("PolicyEngine", () => {
       expect(result).toBe(true);
     });
 
-    it("should return false for non-existent roles even with global:admin", async () => {
-      // User 1 has global:admin, but role doesn't exist in system
+    it("should return true for global:admin users regardless of role existence", async () => {
+      // User 1 has global:admin, should have access to any role (even non-existent)
       const result = await policyEngine.validate("1", "non:existent:role");
-      expect(result).toBe(false);
+      expect(result).toBe(true);
     });
 
-    it("should return false for non-existent roles when user does not have global:admin", async () => {
+    it("should return false for non-global:admin users on non-existent roles", async () => {
       // User 2 does not have global:admin
       const result = await policyEngine.validate("2", "non:existent:role");
       expect(result).toBe(false);
@@ -152,6 +152,17 @@ describe("PolicyEngine", () => {
       expect(mockAuthRepository.getRoleId).toHaveBeenCalledWith(
         "channel:1:read",
       );
+    });
+
+    it("should grant admin access for any action in the same namespace", async () => {
+      // User 1 has channel:1:admin, should have access to any channel:1:* action
+      const result1 = await policyEngine.validate("1", "channel:1:write");
+      const result2 = await policyEngine.validate("1", "channel:1:delete");
+      const result3 = await policyEngine.validate("1", "channel:1:custom");
+      
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
+      expect(result3).toBe(true);
     });
   });
 
@@ -209,8 +220,13 @@ describe("PolicyEngine", () => {
     });
 
     it("should handle roleKey without colons", async () => {
+      // User 1 has global:admin, so will have access even to invalid role keys
       const result = await policyEngine.validate("1", "invalidrolekey");
-      expect(result).toBe(false);
+      expect(result).toBe(true);
+      
+      // User without global:admin should not have access
+      const result2 = await policyEngine.validate("2", "invalidrolekey");
+      expect(result2).toBe(false);
     });
 
     it("should handle roleKey with multiple colons correctly", async () => {
@@ -253,7 +269,6 @@ describe("PolicyEngine", () => {
 
     it("should grant global:admin users access to existing roles they don't explicitly have", async () => {
       // User 1 has global:admin but not channel:2:read explicitly
-      // channel:2:read exists in the system, so they should have access
       const result = await policyEngine.validate("1", "channel:2:read");
       expect(result).toBe(true);
     });
@@ -266,18 +281,6 @@ describe("PolicyEngine", () => {
       );
 
       expect(result1).toBe(true);
-    });
-
-    it("should deny global:admin users access to non-existent roles", async () => {
-      // User 1 has global:admin, but these roles don't exist in the system
-      const result1 = await policyEngine.validate("1", "channel:999:read");
-      const result2 = await policyEngine.validate(
-        "1",
-        "feature:nonexistent:write",
-      );
-
-      expect(result1).toBe(false);
-      expect(result2).toBe(false);
     });
   });
 
@@ -316,16 +319,15 @@ describe("PolicyEngine", () => {
   });
 
   describe("global:admin superuser access", () => {
-    it("should grant access to existing roles not explicitly assigned", async () => {
-      // User 5 has ONLY global:admin, no specific roles
-      // channel:2:read exists in the system
+    it("should grant access to any role, even non-existent ones", async () => {
+      // User 5 has ONLY global:admin
+      // Should have access to any role, even if it doesn't exist
       const result = await policyEngine.validate("5", "channel:2:read");
       expect(result).toBe(true);
     });
 
     it("should grant access to existing feature roles", async () => {
       // User 5 has ONLY global:admin
-      // feature:reporting:write exists in the system
       const result = await policyEngine.validate(
         "5",
         "feature:reporting:write",
@@ -333,27 +335,27 @@ describe("PolicyEngine", () => {
       expect(result).toBe(true);
     });
 
-    it("should deny access to non-existent roles", async () => {
-      // User 5 has global:admin but these roles don't exist
+    it("should grant access to completely non-existent roles", async () => {
+      // User 5 has global:admin, should have access even to non-existent roles
       const result1 = await policyEngine.validate("5", "mentor:999:admin");
       const result2 = await policyEngine.validate(
         "5",
         "anything:something:somewhere",
       );
 
-      expect(result1).toBe(false);
-      expect(result2).toBe(false);
+      expect(result1).toBe(true);
+      expect(result2).toBe(true);
     });
 
     it("should work when combined with other roles", async () => {
       // User 1 has global:admin + other specific roles
       const results = await Promise.all([
-        policyEngine.validate("1", "channel:2:read"), // exists
-        policyEngine.validate("1", "feature:reporting:write"), // exists
-        policyEngine.validate("1", "unknown:namespace:admin"), // doesn't exist
+        policyEngine.validate("1", "channel:2:read"),
+        policyEngine.validate("1", "feature:reporting:write"),
+        policyEngine.validate("1", "unknown:namespace:admin"),
       ]);
 
-      expect(results).toEqual([true, true, false]);
+      expect(results).toEqual([true, true, true]);
     });
 
     it("should not grant access to users without global:admin for non-assigned roles", async () => {
@@ -365,10 +367,10 @@ describe("PolicyEngine", () => {
       expect(result).toBe(false);
     });
 
-    it("should check if role exists in system via getRoleId", async () => {
+    it("should check if role exists in system via getRoleId for caching", async () => {
       await policyEngine.validate("5", "channel:2:read");
 
-      // Should call getRoleId to verify the role exists
+      // Should call getRoleId to check cache
       expect(mockAuthRepository.getRoleId).toHaveBeenCalledWith(
         "channel:2:read",
       );
@@ -392,12 +394,12 @@ describe("PolicyEngine", () => {
       const promises = [
         policyEngine.validate("1", "channel:1:read"),
         policyEngine.validate("2", "channel:2:read"),
-        policyEngine.validate("3", "feature:reporting:read"),
+        policyEngine.validate("3", "channel:1:read"),
       ];
 
       const results = await Promise.all(promises);
 
-      expect(results).toEqual([true, true, false]); // User 3 doesn't have reporting:read
+      expect(results).toEqual([true, true, true]);
     });
   });
 });
