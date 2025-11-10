@@ -37,30 +37,45 @@ export class PolicyEngine {
    * @returns `true` or `false`
    */
   async validate(userId: string, roleKey: string) {
+    log.debug({userId, roleKey}, "Validate perms")
     if (roleKey.length === 0) {
       return false;
     }
+    
     const roleId = await this.authRepository.getRoleId(roleKey);
-    if (roleId === -1) {
-      return false;
+    
+    // Check Redis cache first if the role exists
+    if (roleId !== -1) {
+      const redisResult = await getRedisClientInstance().sIsMember(
+        `role:${roleKey}:users`,
+        `${userId}`,
+      );
+      if (redisResult === 1) {
+        return true;
+      }
     }
 
-    const redisResult = await getRedisClientInstance().sIsMember(
-      `role:${roleKey}:users`,
-      `${userId}`,
-    );
-    if (redisResult === 1) {
-      return true;
-    }
-
+    // Get all roles for the user from the database
     const rolesForUser = await this.authRepository.getRolesForUser(userId);
     const roleSet = new Set(rolesForUser);
 
-    return (
+    const adminRoleKey = `${roleKey.substring(0, roleKey.lastIndexOf(":"))}:admin`;
+    const hasPermission = (
       roleSet.has("global:admin") ||
       roleSet.has(roleKey) ||
-      roleSet.has(`${roleKey.substring(0, roleKey.lastIndexOf(":"))}:admin`)
+      roleSet.has(adminRoleKey)
     );
+
+    log.debug({ 
+      userId, 
+      roleKey, 
+      roleId,
+      rolesForUser: Array.from(roleSet), 
+      adminRoleKey,
+      hasPermission 
+    }, "Permission validation");
+
+    return hasPermission;
   }
 
   /**
@@ -160,8 +175,10 @@ export class PolicyEngine {
 
     if (result) {
       await this.cacheRoleKeys([roleKey], ttlSec);
+      log.debug({ userId, targetUserId, roleKey, roleId }, "Successfully created and assigned role");
       return true;
     }
+    log.warn({ userId, targetUserId, roleKey, roleId }, "Failed to assign role");
     return false;
   }
 

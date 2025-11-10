@@ -35,6 +35,7 @@ export const createChannelSchema = z.object({
       type: z.boolean().optional(),
       icon: z.string().default("announce"),
       imageSrc: z.string().optional(),
+      imageFileId: z.string().optional(),
     })
     .loose()
     .optional(),
@@ -47,6 +48,8 @@ export const channelUpdateMetadata = z.object({
     .max(100, "Channel name too long"),
   description: z.string().optional(),
   postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
+  imageFileId: z.string().optional(),
+  imageSrc: z.string().optional(),
 });
 
 export const updateChannelSchema = z.object({

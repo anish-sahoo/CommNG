@@ -1,7 +1,7 @@
 "use client";
 import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Paperclip } from "lucide-react";
+import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
   DropdownButtons,
@@ -14,7 +14,7 @@ import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useTRPC } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 
 type AttachmentDescriptor = {
   fileId: string;
@@ -63,6 +63,7 @@ export const PostedCard = ({
   onReactionToggle,
 }: PostedCardProps) => {
   const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
   const channelMessagesQueryKey = useMemo<QueryKey>(() => {
@@ -132,6 +133,26 @@ export const PostedCard = ({
   const maxLength = 5000;
   const characterCount = editContent.length;
 
+  const handleDownloadFile = useCallback(
+    async (fileId: string, fileName: string) => {
+      try {
+        const fileData = await trpcClient.files.getFile.query({ fileId });
+        
+        // Create a temporary anchor element to trigger download
+        const link = document.createElement("a");
+        link.href = fileData.data; // This is the S3 URL or data URL
+        link.download = fileName;
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error("Failed to download file:", error);
+      }
+    },
+    [trpcClient],
+  );
+
   const actionMenuItems: DropdownMenuItemConfig[] = [
     {
       id: "edit-post",
@@ -199,13 +220,18 @@ export const PostedCard = ({
                 </div>
                 <div className="flex flex-col gap-2">
                   {attachmentItems.map((attachment) => (
-                    <div
+                    <button
+                      type="button"
                       key={attachment.fileId}
-                      className="flex items-center gap-2 rounded-lg border border-border bg-card/80 px-3 py-2 text-secondary text-sm"
+                      onClick={() =>
+                        handleDownloadFile(attachment.fileId, attachment.fileName)
+                      }
+                      className="flex items-center gap-2 rounded-lg border border-border bg-card/80 px-3 py-2 text-secondary text-sm hover:bg-primary/10 transition-colors cursor-pointer"
                     >
                       <Paperclip className="h-4 w-4 text-secondary/70" />
-                      <span className="truncate">{attachment.fileName}</span>
-                    </div>
+                      <span className="truncate flex-1 text-left">{attachment.fileName}</span>
+                      <Download className="h-4 w-4 text-secondary/70" />
+                    </button>
                   ))}
                 </div>
               </div>

@@ -1,15 +1,15 @@
 import { TitleShell } from "@/components/layouts/title-shell";
 
 type ChannelMembersPageProps = {
-  params: {
+  params: Promise<{
     channel_id: string;
-  };
+  }>;
 };
 
-export default function ChannelMembersPage({
+export default async function ChannelMembersPage({
   params,
 }: ChannelMembersPageProps) {
-  const channelId = params.channel_id;
+  const { channel_id: channelId } = await params;
 
   return (
     <TitleShell

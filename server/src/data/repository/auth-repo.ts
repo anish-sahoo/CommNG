@@ -4,6 +4,7 @@ import log from "../../utils/logger.js";
 import { getRedisClientInstance } from "../db/redis.js";
 import { roles, userRoles, users } from "../db/schema.js";
 import { db } from "../db/sql.js";
+import { InternalServerError, NotFoundError } from "../../types/errors.js";
 
 export class AuthRepository {
   async getUserIdsForRole(roleKey: string) {
@@ -46,7 +47,10 @@ export class AuthRepository {
       })
       .from(roles)
       .where(eq(roles.roleKey, roleKey));
-
+    if(!roleData || roleData.length === 0) {
+      log.warn(`Role ${roleKey} not found`)
+      return -1;
+    }
     return roleData[0]?.roleId ?? -1;
   }
 
