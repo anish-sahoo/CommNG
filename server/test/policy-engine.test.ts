@@ -159,7 +159,7 @@ describe("PolicyEngine", () => {
       const result1 = await policyEngine.validate("1", "channel:1:write");
       const result2 = await policyEngine.validate("1", "channel:1:delete");
       const result3 = await policyEngine.validate("1", "channel:1:custom");
-      
+
       expect(result1).toBe(true);
       expect(result2).toBe(true);
       expect(result3).toBe(true);
@@ -223,7 +223,7 @@ describe("PolicyEngine", () => {
       // User 1 has global:admin, so will have access even to invalid role keys
       const result = await policyEngine.validate("1", "invalidrolekey");
       expect(result).toBe(true);
-      
+
       // User without global:admin should not have access
       const result2 = await policyEngine.validate("2", "invalidrolekey");
       expect(result2).toBe(false);
