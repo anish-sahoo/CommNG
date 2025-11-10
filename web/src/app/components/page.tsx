@@ -190,9 +190,13 @@ const Components = () => {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = mobileNavOpen ? "hidden" : "";
+    if (typeof window !== "undefined") {
+      document.body.style.overflow = mobileNavOpen ? "hidden" : "";
+    }
     return () => {
-      document.body.style.overflow = "";
+      if (typeof window !== "undefined") {
+        document.body.style.overflow = "";
+      }
     };
   }, [mobileNavOpen]);
 

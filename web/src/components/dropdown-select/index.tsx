@@ -21,6 +21,11 @@ export const DropdownSelect = ({
   onChange: (value: string) => void;
 }) => {
   const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Scroll the trigger into view when dropdown opens
   const handleOpenChange = (open: boolean) => {
@@ -50,7 +55,7 @@ export const DropdownSelect = ({
       </SelectTrigger>
 
       {/* Use a portal to always render on top of everything */}
-      <SelectPortal container={document.body}>
+      {mounted && <SelectPortal container={document.body}>
         <SelectContent
           position="popper"
           side="bottom"
@@ -72,7 +77,7 @@ export const DropdownSelect = ({
             ))}
           </SelectGroup>
         </SelectContent>
-      </SelectPortal>
+      </SelectPortal>}
     </Select>
   );
 };
