@@ -226,7 +226,8 @@ export const userRoles = pgTable(
   ],
 );
 
-// SUBSCRIPTIONS
+// CHANNEL SUBSCRIPTIONS - for notification preferences only
+// Access control is handled via the roles system
 export const channelSubscriptions = pgTable(
   "channel_subscriptions",
   {
@@ -239,12 +240,18 @@ export const channelSubscriptions = pgTable(
     channelId: integer("channel_id")
       .references(() => channels.channelId, { onDelete: "cascade" })
       .notNull(),
-    permission: permissionEnum("permission").notNull(),
     notificationsEnabled: boolean("notifications_enabled")
       .default(true)
       .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
+    uniqueIndex("ux_channel_subscriptions_user_channel").on(
+      table.userId,
+      table.channelId,
+    ),
     index("ix_channel_subscriptions_user_id").on(table.userId),
     index("ix_channel_subscriptions_channel_id").on(table.channelId),
   ],

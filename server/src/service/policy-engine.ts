@@ -99,6 +99,72 @@ export class PolicyEngine {
     return false;
   }
 
+  /**
+   * Create a role and assign it to a user in one transaction
+   * @param userId userId creating/assigning the role
+   * @param targetUserId userId that will receive the role
+   * @param roleKey roleKey to create (e.g., 'channel:1:admin')
+   * @param action action for the role (e.g., 'admin', 'post', 'read')
+   * @param namespace namespace for the role ('channel', 'global', etc.)
+   * @param channelId optional channelId for channel-scoped roles
+   * @param ttlSec time to live for cache, optional
+   * @returns
+   */
+  async createRoleAndAssign(
+    userId: string,
+    targetUserId: string,
+    roleKey: string,
+    action: string,
+    namespace: "global" | "channel" | "mentor" | "feature",
+    channelId?: number | null,
+    ttlSec: number = this.DEFAULT_TTL,
+  ) {
+    // Check if role already exists
+    let roleId = await this.authRepository.getRoleId(roleKey);
+    
+    // If role doesn't exist, create it
+    if (roleId === -1) {
+      const subjectId = channelId ? channelId.toString() : null;
+      const newRole = await this.authRepository.createRole(
+        roleKey,
+        action,
+        namespace,
+        channelId,
+        subjectId,
+      );
+      
+      if (!newRole) {
+        // Role creation failed, possibly due to race condition
+        // Try to get the role ID again in case it was created by another process
+        roleId = await this.authRepository.getRoleId(roleKey);
+        if (roleId === -1) {
+          throw new BadRequestError("Failed to create role");
+        }
+      } else {
+        roleId = newRole.roleId;
+      }
+    }
+
+    const userExists =
+      await this.authRepository.checkIfUserExists(targetUserId);
+    if (!userExists) {
+      throw new BadRequestError("User not found");
+    }
+
+    const result = await this.authRepository.grantAccess(
+      userId,
+      targetUserId,
+      roleId,
+      roleKey,
+    );
+
+    if (result) {
+      await this.cacheRoleKeys([roleKey], ttlSec);
+      return true;
+    }
+    return false;
+  }
+
   private async cacheRoleKeys(
     roleKeys: string[],
     ttlSec: number = this.DEFAULT_TTL,

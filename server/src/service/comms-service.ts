@@ -170,4 +170,39 @@ export class CommsService {
       "Something went wrong updating channel settings",
     );
   }
+
+  async deleteChannel(user_id: string, channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:admin`,
+    );
+    if (!isAdmin) {
+      throw new ForbiddenError(
+        "Only channel administrators can delete this channel",
+      );
+    }
+    await this.getChannelById(channel_id);
+    return this.commsRepo.deleteChannel(channel_id);
+  }
+
+  async leaveChannel(user_id: string, channel_id: number) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    await this.getChannelById(channel_id);
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:admin`,
+    );
+
+    if (isAdmin) {
+      throw new ForbiddenError(
+        "Channel administrators cannot leave the channel. Please delete the channel or transfer admin rights first.",
+      );
+    }
+    return this.commsRepo.removeUserFromChannel(user_id, channel_id);
+  }
 }

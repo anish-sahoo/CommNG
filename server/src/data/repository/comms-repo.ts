@@ -293,11 +293,10 @@ export class CommsRepository {
 
     return deleted;
   }
-  // Channel subscription methods
+  // Channel subscription methods - for notification preferences only
   async createSubscription(
     userId: string,
     channelId: number,
-    permission: "read" | "write" | "both",
     notificationsEnabled: boolean = true,
   ) {
     // Check if subscription already exists
@@ -321,12 +320,41 @@ export class CommsRepository {
       .values({
         userId,
         channelId,
-        permission,
         notificationsEnabled,
       })
       .returning();
 
     return subscription;
+  }
+
+  async ensureChannelSubscription(userId: string, channelId: number) {
+    try {
+      // Check if subscription already exists
+      const existing = await db
+        .select()
+        .from(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId)
+          )
+        )
+        .limit(1);
+
+      if (existing.length === 0) {
+        // Create subscription with notifications enabled by default
+        await db.insert(channelSubscriptions).values({
+          userId,
+          channelId,
+          notificationsEnabled: true,
+        });
+        log.debug({ userId, channelId }, "Auto-created channel subscription");
+      }
+      return true;
+    } catch (e) {
+      log.error(e, `Error ensuring subscription for user ${userId} in channel ${channelId}`);
+      return false;
+    }
   }
 
   async deleteSubscription(subscriptionId: number, userId: string) {
@@ -354,7 +382,6 @@ export class CommsRepository {
       .select({
         subscriptionId: channelSubscriptions.subscriptionId,
         channelId: channelSubscriptions.channelId,
-        permission: channelSubscriptions.permission,
         notificationsEnabled: channelSubscriptions.notificationsEnabled,
         channelName: channels.name,
       })
@@ -411,13 +438,6 @@ export class CommsRepository {
         metadata: channels.metadata,
       })
       .from(channels)
-      .leftJoin(
-        channelSubscriptions,
-        and(
-          eq(channelSubscriptions.channelId, channels.channelId),
-          eq(channelSubscriptions.userId, userId),
-        ),
-      )
       .leftJoin(userRoles, eq(userRoles.userId, userId))
       .leftJoin(
         roles,
@@ -429,8 +449,9 @@ export class CommsRepository {
       )
       .where(
         or(
+          // Channel is public
           sql`coalesce(${channels.metadata}->>'type', 'public') = 'public'`,
-          isNotNull(channelSubscriptions.subscriptionId),
+          // User has a role in the channel
           isNotNull(roles.roleId),
         ),
       )
@@ -623,15 +644,70 @@ export class CommsRepository {
   ): Promise<boolean> {
     try {
       await db.transaction(async (tx) => {
-        for (const updateFn of listOfUpdates) {
-          await updateFn(tx);
+        for (const update of listOfUpdates) {
+          await update(tx);
         }
       });
       return true;
     } catch (err) {
       log.error(err, "Error updating channel settings");
-      throw new InternalServerError("Error updating channel settings");
+      return false;
     }
+  }
+
+  async deleteChannel(channelId: number) {
+    const [deleted] = await db
+      .delete(channels)
+      .where(eq(channels.channelId, channelId))
+      .returning();
+
+    if (!deleted) {
+      throw new NotFoundError("Channel not found");
+    }
+
+    return deleted;
+  }
+
+  async removeUserFromChannel(userId: string, channelId: number) {
+    return await db.transaction(async (tx) => {
+      // Get user's roles in this channel
+      const userChannelRoles = await tx
+        .select({ roleId: roles.roleId })
+        .from(roles)
+        .innerJoin(userRoles, eq(userRoles.roleId, roles.roleId))
+        .where(
+          and(
+            eq(roles.channelId, channelId),
+            eq(roles.namespace, "channel"),
+            eq(userRoles.userId, userId)
+          )
+        );
+
+      // Remove all role assignments for this user in this channel
+      if (userChannelRoles.length > 0) {
+        const roleIds = userChannelRoles.map(r => r.roleId);
+        await tx
+          .delete(userRoles)
+          .where(
+            and(
+              eq(userRoles.userId, userId),
+              inArray(userRoles.roleId, roleIds)
+            )
+          );
+      }
+
+      // Remove subscription
+      await tx
+        .delete(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId)
+          )
+        );
+
+      return { success: true };
+    });
   }
 
   /*async getChannelSettings(channelId: number) {
