@@ -194,24 +194,29 @@ export const PostedCard = ({
 
   return (
     <>
-      <Card className="w-full p-4 relative">
-        <div className="absolute top-4 right-4 z-10">
+      <Card className="relative w-full p-3 sm:p-4">
+        <div className="absolute top-2 right-2 z-10 sm:top-4 sm:right-4">
           <DropdownButtons
             items={actionMenuItems}
             align="end"
             triggerAriaLabel="Post actions"
+            className="scale-90 sm:scale-100"
           />
         </div>
-        <div className="flex items-center gap-4 px-6 py-4 pr-12">
-          <Avatar />
-          <div className="flex flex-col gap-2 px-4 py-0 w-full">
-            <div className="text-secondary text-subheader font-semibold">
+        <div className="flex flex-col gap-4 px-2 pt-6 sm:flex-row sm:items-start sm:gap-4 sm:px-4 sm:pt-4">
+          <div className="flex justify-start sm:pt-2">
+            <Avatar />
+          </div>
+          <div className="flex flex-col gap-2 w-full">
+            <div className="text-secondary text-base font-semibold sm:text-subheader">
               {name}
-              <div className="text-secondary text-sm font-semibold italic">
+              <div className="text-secondary text-xs font-semibold italic sm:text-sm">
                 {rank}
               </div>
             </div>
-            <div className="text-secondary text-sm font-normal">{content}</div>
+            <div className="text-secondary text-sm font-normal break-words">
+              {content}
+            </div>
 
             {attachmentItems.length ? (
               <div className="flex flex-col gap-2">

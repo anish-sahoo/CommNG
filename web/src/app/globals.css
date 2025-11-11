@@ -114,6 +114,8 @@
   --sidebar-accent-foreground: #1f1a10;
   --sidebar-border: rgba(34, 33, 33, 0.12);
   --sidebar-ring: rgba(40, 51, 150, 0.45);
+
+  --app-content-max-width: min(110rem, calc(100vw - 5rem));
 }
 
 .dark {
@@ -162,6 +164,8 @@
   --sidebar-accent-foreground: #1f1a10;
   --sidebar-border: rgba(255, 255, 255, 0.14);
   --sidebar-ring: rgba(140, 150, 255, 0.5);
+
+  --app-content-max-width: min(110rem, calc(100vw - 5rem));
 }
 
 @layer base {
@@ -198,5 +202,12 @@
 
   .profile-card__section-border {
     border-color: var(--profile-card-branch-border);
+  }
+}
+
+@layer utilities {
+  .app-content-width {
+    width: 100%;
+    max-width: var(--app-content-max-width);
   }
 }
