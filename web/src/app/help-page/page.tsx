@@ -21,7 +21,7 @@ export default function HelpPage() {
   const AnnounceIcon = icons.addAlert;
   const AcknowledgeIcon = icons.done;
   const BellIcon = icons.bell;
-  const ArrowDownIcon = icons.arrowDown;
+  const ArrowRightIcon = icons.arrowRight;
 
   const cueClass =
     "mt-2 inline-flex items-center gap-2 rounded-full bg-background/70 px-3 py-2 text-xs text-secondary shadow-sm ring-1 ring-border/60";
@@ -484,7 +484,7 @@ export default function HelpPage() {
         initialState[section.id] = true;
       }
       return initialState;
-    },
+    }
   );
 
   const handleSectionToggle = (id: string, open: boolean) => {
@@ -581,16 +581,16 @@ export default function HelpPage() {
               >
                 <CollapsibleTrigger
                   aria-label={`Toggle ${section.title}`}
-                  className="flex w-full items-center justify-between text-left text-base font-semibold text-secondary"
+                  className="flex w-full items-center gap-3 text-left text-base font-semibold text-secondary"
                 >
-                  {section.title}
-                  <ArrowDownIcon
+                  <ArrowRightIcon
                     className={cn(
                       "h-5 w-5 text-secondary transition-transform",
-                      openSections[section.id] ? "rotate-180" : "rotate-0",
+                      openSections[section.id] ? "rotate-90" : "rotate-0"
                     )}
                     aria-hidden="true"
                   />
+                  {section.title}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-3 text-sm text-secondary">
                   {section.content}
