@@ -188,25 +188,35 @@ const createChannel = protectedProcedure
     withErrorHandling("createChannel", async () => {
       const userId = ctx.auth.user.id;
 
-      log.debug({ userId, channelName: input.name }, "Creating channel");
+      log.debug({ userId, channelName: input.name, channelDescription: input.description }, "Creating channel");
 
-      return await commsRepo.createChannel(input.name, input.metadata);
+      return await commsRepo.createChannel(input.name, input.description, input.metadata);
     }),
   );
 
-// update channel settings
+
 const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("updateChannel", async () => {
       const userId = ctx.auth.user.id;
-      const accessible = await policyEngine.validate(
-        userId,
-        `channel:${input.channelId}:admin`,
+
+      // Check if user has write or both permission via their subscription
+      const userSubscriptions = await commsRepo.getUserSubscriptions(userId);
+      const channelSubscription = userSubscriptions.find(
+        sub => sub.channelId === input.channelId
       );
-      if (!accessible) {
-        throw new UnauthorizedError("Invalid Request");
+
+      if (!channelSubscription) {
+        throw new UnauthorizedError("You are not subscribed to this channel");
       }
+
+      // Check if user has write or both permission
+      if (channelSubscription.permission !== 'write' &&
+        channelSubscription.permission !== 'both') {
+        throw new UnauthorizedError("You do not have permission to update this channel");
+      }
+
       return await commsService.updateChannelSettings(
         input.channelId,
         input.metadata,
@@ -231,6 +241,9 @@ const createSubscription = protectedProcedure
     withErrorHandling("createSubscription", async () => {
       const userId = ctx.auth.user.id;
 
+      console.log({ userId, channelId: input.channelId });
+      console.log("Creating subscription");
+      
       log.debug(
         { userId, channelId: input.channelId },
         "Creating subscription",

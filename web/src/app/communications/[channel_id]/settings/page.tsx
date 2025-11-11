@@ -89,12 +89,36 @@ export default function ChannelSettingsPage({
         setNotificationSetting(
           channelSubscription.notificationsEnabled ? "option2" : "option1",
         );
+        setIsAdmin(channelSubscription.permission === "both");
+
         console.log("Subscription ID:", channelSubscription.subscriptionId);
+        console.log("Permission:", channelSubscription.permission);
       } else {
         console.log("No subscription found for channel ID:", parsedChannelId);
       }
     }
   }, [subscriptions, parsedChannelId]);
+
+    // Fetch full channel data
+  const { data: channels } = useQuery({
+    queryKey: ["channels"],
+    queryFn: async () => {
+      if (!parsedChannelId) return null;
+      return await trpcClient.comms.getAllChannels.query();
+    },
+  });
+
+  // Load channel data when it arrives
+  useEffect(() => {
+    const channel = channels?.find((ch) => ch.channelId === parsedChannelId);
+
+    if (channel) {
+      setChannelName(channel.name || "");
+      setChannelDescription(channel.description || "");
+
+      console.log("Found channel:", channel);
+    }
+  }, [channels, parsedChannelId]);
 
   const leaveChannel = useMutation(
     trpc.comms.deleteSubscription.mutationOptions(),
@@ -115,28 +139,6 @@ export default function ChannelSettingsPage({
     }
   };
 
-  // Fetch full channel data
-  const { data: channels } = useQuery({
-    queryKey: ["channels"],
-    queryFn: async () => {
-      if (!parsedChannelId) return null;
-      return await trpcClient.comms.getAllChannels.query();
-    },
-  });
-
-  // Load channel data when it arrives
-  useEffect(() => {
-    const channel = channels?.find((ch) => ch.channelId === parsedChannelId);
-
-    if (channel) {
-      setChannelName(channel.name || "");
-      setChannelDescription(channel.description || "");
-      setIsAdmin(channel.postPermissionLevel === "admin");
-
-      console.log("Found channel:", channel);
-    }
-  }, [channels, parsedChannelId]);
-
   const updateChannelMutation = useMutation(
     trpc.comms.updateChannelSettings.mutationOptions(),
   );
@@ -144,18 +146,25 @@ export default function ChannelSettingsPage({
   const handleSaveChanges = async () => {
     if (!parsedChannelId) return;
 
-    try {
-      await updateChannelMutation.mutateAsync({
-        channelId: parsedChannelId,
-        metadata: {
-          name: channelName,
-          description: channelDescription,
-          notificationsEnabled: notificationSetting === "muted" ? false : true,
-        },
-      });
-      console.log("Settings saved successfully");
-    } catch (error) {
-      console.error("Failed to save settings:", error);
+    // if the user has read and write permissions
+    if (isAdmin) {
+      try {
+        console.log("Saving settings, new channel name?:", channelName);
+        console.log("Saving settings, new channel description?:", channelDescription);
+        await updateChannelMutation.mutateAsync({
+          channelId: parsedChannelId,
+          metadata: {
+            name: channelName,
+            description: channelDescription,
+          },
+        });
+        console.log("Settings saved successfully");
+      } catch (error) {
+        console.error("Failed to save settings:", error);
+      }
+    }
+    else {
+      console.log("yoh you're not admin smh");
     }
   };
 

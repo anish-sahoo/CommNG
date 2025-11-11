@@ -293,6 +293,7 @@ export class CommsRepository {
 
     return deleted;
   }
+
   // Channel subscription methods
   async createSubscription(
     userId: string,
@@ -300,34 +301,51 @@ export class CommsRepository {
     permission: "read" | "write" | "both",
     notificationsEnabled: boolean = true,
   ) {
-    // Check if subscription already exists
-    const existingSubscription = await db
-      .select()
-      .from(channelSubscriptions)
-      .where(
-        and(
-          eq(channelSubscriptions.userId, userId),
-          eq(channelSubscriptions.channelId, channelId),
-        ),
-      )
-      .limit(1);
+    try {
+      // Check if subscription already exists
+      console.log('Checking for existing subscription:', { userId, channelId });
 
-    if (existingSubscription.length > 0) {
-      throw new ConflictError("User is already subscribed to this channel");
+      const existingSubscription = await db
+        .select({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          permission: channelSubscriptions.permission,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+        })
+        .from(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .limit(1);
+
+      console.log('Existing subscription check result:', existingSubscription);
+
+      if (existingSubscription.length > 0) {
+        throw new ConflictError("User is already subscribed to this channel");
+      }
+
+      console.log('Creating new subscription...');
+
+      const [subscription] = await db
+        .insert(channelSubscriptions)
+        .values({
+          userId,
+          channelId,
+          permission,
+          notificationsEnabled,
+        })
+        .returning();
+
+      console.log("Created subscription:", subscription);
+      return subscription;
+    } catch (error) {
+      console.error('Full error details:', error);
+      throw error;
     }
-
-    const [subscription] = await db
-      .insert(channelSubscriptions)
-      .values({
-        userId,
-        channelId,
-        permission,
-        notificationsEnabled,
-      })
-      .returning();
-
-    console.log("Created subscription:", subscription);
-    return subscription;
   }
 
   async deleteSubscription(subscriptionId: number, userId: string) {
@@ -357,7 +375,6 @@ export class CommsRepository {
         channelId: channelSubscriptions.channelId,
         permission: channelSubscriptions.permission,
         notificationsEnabled: channelSubscriptions.notificationsEnabled,
-        channelName: channels.name,
       })
       .from(channelSubscriptions)
       .innerJoin(
@@ -385,7 +402,7 @@ export class CommsRepository {
   }
 
   // Channel creation method
-  async createChannel(name: string, metadata?: Record<string, unknown>) {
+  async createChannel(name: string, description?: string, metadata?: Record<string, unknown>) {
     // Check if channel with this name already exists
     const existingChannel = await this.getChannelDataByName(name);
 
@@ -397,6 +414,7 @@ export class CommsRepository {
       .insert(channels)
       .values({
         name,
+        description: description || null,
         metadata: metadata || null,
       })
       .returning();

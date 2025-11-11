@@ -28,6 +28,10 @@ export const createChannelSchema = z.object({
     .string()
     .min(1, "Channel name cannot be empty")
     .max(100, "Channel name too long"),
+  description: z
+    .string()
+    .max(1200, "Channel description too long")
+    .optional(),
   metadata: z
     .object({
       description: z.string().optional(),

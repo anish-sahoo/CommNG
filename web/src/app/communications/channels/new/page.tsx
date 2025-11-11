@@ -23,6 +23,7 @@ export default function NewChannelPage() {
   const [error, setError] = useState<string | null>(null);
 
   const createChannel = useMutation(trpc.comms.createChannel.mutationOptions());
+  const addSubscription = useMutation(trpc.comms.createSubscription.mutationOptions());
 
   const channelsQueryKey = useMemo<QueryKey>(
     () => trpc.comms.getAllChannels.queryKey(),
@@ -50,8 +51,9 @@ export default function NewChannelPage() {
       : { imageSrc: "/default_channel_image.png" };
 
     try {
-      await createChannel.mutateAsync({
+      const newChannel = await createChannel.mutateAsync({
         name,
+        description,
         metadata: {
           description,
           icon: "announce",
@@ -61,6 +63,15 @@ export default function NewChannelPage() {
 
       await qc.invalidateQueries({ queryKey: channelsQueryKey });
       router.push("/communications");
+
+      console.log("Subscribing to new channel:", newChannel.channelId);
+
+      await addSubscription.mutateAsync({
+        channelId: newChannel.channelId,
+        permission: "both",
+        notificationsEnabled: true,
+      });
+
     } catch (err) {
       if (err instanceof TRPCClientError) {
         const zodMessage =
