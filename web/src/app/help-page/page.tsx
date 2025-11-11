@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
@@ -478,11 +478,13 @@ export default function HelpPage() {
   ];
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
-    () =>
-      contentSections.reduce(
-        (acc, section) => ({ ...acc, [section.id]: true }),
-        {} as Record<string, boolean>,
-      ),
+    () => {
+      const initialState: Record<string, boolean> = {};
+      for (const section of contentSections) {
+        initialState[section.id] = true;
+      }
+      return initialState;
+    },
   );
 
   const handleSectionToggle = (id: string, open: boolean) => {
@@ -492,10 +494,11 @@ export default function HelpPage() {
   const toggleAllSections = () => {
     setOpenSections((prev) => {
       const shouldOpen = Object.values(prev).every((open) => !open);
-      return contentSections.reduce(
-        (acc, section) => ({ ...acc, [section.id]: shouldOpen }),
-        {} as Record<string, boolean>,
-      );
+      const nextState: Record<string, boolean> = {};
+      for (const section of contentSections) {
+        nextState[section.id] = shouldOpen;
+      }
+      return nextState;
     });
   };
 
@@ -519,9 +522,9 @@ export default function HelpPage() {
           <div className="sticky top-[4.25rem] z-20 border-b border-border/70 bg-background/95 px-1 pb-3 pt-2 backdrop-blur sm:top-[4.5rem] sm:px-0">
             <div className="mx-auto flex w-full app-content-width flex-col gap-3">
               <p className="max-w-3xl text-sm text-secondary sm:text-base">
-                Everything you need to get started: learn how to browse channels,
-                send messages, apply for mentorship, and make the most of your
-                experience.
+                Everything you need to get started: learn how to browse
+                channels, send messages, apply for mentorship, and make the most
+                of your experience.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <TabsList
@@ -549,7 +552,9 @@ export default function HelpPage() {
                   size="sm"
                   onClick={toggleAllSections}
                   aria-label={
-                    anySectionOpen ? "Collapse all sections" : "Expand all sections"
+                    anySectionOpen
+                      ? "Collapse all sections"
+                      : "Expand all sections"
                   }
                   className="w-full text-sm sm:w-auto"
                 >
