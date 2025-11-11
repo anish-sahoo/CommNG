@@ -79,7 +79,7 @@ This platform allows for the Massachusetts National Guard to foster trust, clari
 - PostgreSQL 15+
 - Docker Desktop (for containerized environments)
 - AWS CLI (for deployment)
-- Terraform CLI
+- Terraform CLI 
 
 ## 👥 User Personas
 
