@@ -18,6 +18,7 @@ const Navigation = ({
 }: NavigationProps) => {
   const pathname = usePathname();
   const previousPathnameRef = useRef(pathname);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!mobileOpen) {
@@ -31,6 +32,21 @@ const Navigation = ({
     }
   }, [mobileOpen, onMobileClose, pathname]);
 
+  useEffect(() => {
+    if (mobileOpen) {
+      return;
+    }
+
+    // Prevent hidden navigation from retaining focus on its child elements.
+    const activeElement = document.activeElement;
+    if (
+      activeElement instanceof HTMLElement &&
+      overlayRef.current?.contains(activeElement)
+    ) {
+      activeElement.blur();
+    }
+  }, [mobileOpen]);
+
   return (
     <>
       <div className="hidden lg:block">
@@ -39,13 +55,14 @@ const Navigation = ({
       </div>
 
       <div
+        ref={overlayRef}
         className={cn(
           "fixed inset-0 z-50 flex lg:hidden transition-opacity duration-300",
           mobileOpen
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
         )}
-        aria-hidden={!mobileOpen}
+        inert={mobileOpen ? undefined : ""}
       >
         <button
           type="button"
