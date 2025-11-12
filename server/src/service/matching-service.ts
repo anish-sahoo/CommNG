@@ -24,9 +24,7 @@ export class MatchingService {
       .limit(MatchingService.MAX_MATCH_REQUESTS);
 
     log.info(
-      {
-        count: selectedMentees.length,
-      },
+      { count: selectedMentees.length },
       "Found active mentees for matching",
     );
 
@@ -42,10 +40,7 @@ export class MatchingService {
 
     if (failedMenteeUserIds.length > 0) {
       log.error(
-        {
-          failedMenteeUserIds,
-          mentorUserId,
-        },
+        { failedMenteeUserIds, mentorUserId },
         "Failed to create matching requests",
       );
     }
@@ -66,9 +61,7 @@ export class MatchingService {
       .limit(MatchingService.MAX_MATCH_REQUESTS);
 
     log.info(
-      {
-        count: selectedMentors.length,
-      },
+      { count: selectedMentors.length },
       "Found available mentors for matching",
     );
 
@@ -84,10 +77,7 @@ export class MatchingService {
 
     if (failedMentorUserIds.length > 0) {
       log.error(
-        {
-          menteeUserId,
-          failedMentorUserIds,
-        },
+        { menteeUserId, failedMentorUserIds },
         "Failed to create matching requests",
       );
     }

@@ -4,6 +4,7 @@ import type {
   CommsRepository,
   Transaction,
 } from "../data/repository/comms-repo.js";
+import { channelRole } from "../data/roles.js";
 import type { ChannelUpdateMetadata } from "../types/comms-types.js";
 import {
   BadRequestError,
@@ -342,19 +343,17 @@ export class CommsService {
       throw new ForbiddenError("Cannot join a private channel");
     }
 
+    const roleKey = channelRole("read", channel_id);
+
     // Check if user already has a role in this channel
-    const hasRole = await policyEngine.validate(
-      user_id,
-      `channel:${channel_id}:read`,
-    );
+    const hasRole = await policyEngine.validate(user_id, roleKey);
 
     if (hasRole) {
       throw new BadRequestError("You are already a member of this channel");
     }
 
     // Create read role and assign it to the user
-    const roleKey = `channel:${channel_id}:read`;
-    await policyEngine.createRoleAndAssign(
+    await policyEngine.createAndAssignChannelRole(
       user_id,
       user_id,
       roleKey,
