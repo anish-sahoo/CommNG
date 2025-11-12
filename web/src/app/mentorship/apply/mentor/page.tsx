@@ -10,6 +10,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { SelectableButton } from "@/components/buttons";
 
 export default function MentorshipApplyMentorPage() {
   const [positionSelection, setPositionSelection] = useState<string>("");
@@ -497,6 +498,8 @@ export default function MentorshipApplyMentorPage() {
               counterColor="#CDCDCD"
             />
           </section>
+
+          <SelectableButton text="Submit" className="mt-4 mb-4 bg-yellow-600 text-white" />
         </div>
       </div>
     </div>
