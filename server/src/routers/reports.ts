@@ -20,3 +20,8 @@ const getReports = procedure
 export const reportsRouter = router({
   getReports,
 });
+
+// assign report
+// create report
+// update report
+// delete report
