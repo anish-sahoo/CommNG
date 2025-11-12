@@ -54,7 +54,7 @@ const ChannelLink = ({
         setImageUrl(fileData.data);
       } catch (error) {
         console.error("Failed to fetch channel image:", error);
-        setImageUrl("/default_channel_image.png");
+        setImageUrl("/images/placeholders/default_channel_image.png");
       }
     };
 

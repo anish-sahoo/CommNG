@@ -51,7 +51,9 @@ export default function NewChannelPage() {
         metadata: {
           description,
           icon: "announce",
-          imageFileId: values.imageFileId || "/default_channel_image.png",
+          imageFileId:
+            values.imageFileId ||
+            "/images/placeholders/default_channel_image.png",
         },
       });
 
