@@ -47,7 +47,7 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
 
 export const channelPostPermissionEnum = pgEnum(
   "channel_post_permission_enum",
-  ["admin", "everyone", "custom"],
+  ["admin", "everyone", "custom"]
 );
 
 export const users = pgTable(
@@ -70,7 +70,7 @@ export const users = pgTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [uniqueIndex("ux_users_email").on(table.email)],
+  (table) => [uniqueIndex("ux_users_email").on(table.email)]
 );
 
 export type User = typeof users.$inferSelect;
@@ -138,7 +138,7 @@ export const channels = pgTable(
       .notNull()
       .default("admin"),
   },
-  (table) => [uniqueIndex("ux_channels_name").on(table.name)],
+  (table) => [uniqueIndex("ux_channels_name").on(table.name)]
 );
 
 /**
@@ -188,7 +188,7 @@ export const roles = pgTable(
     uniqueIndex("ux_roles_role_key").on(table.roleKey),
     index("ix_roles_namespace_subject").on(table.namespace, table.subjectId),
     index("ix_roles_channel_id").on(table.channelId),
-  ],
+  ]
 );
 
 export const files = pgTable("files", {
@@ -223,7 +223,7 @@ export const userRoles = pgTable(
     }),
     index("ix_user_roles_role_id").on(table.roleId),
     index("ix_user_roles_user_assigned_by").on(table.userId, table.assignedBy),
-  ],
+  ]
 );
 
 // CHANNEL SUBSCRIPTIONS - for notification preferences only
@@ -250,11 +250,11 @@ export const channelSubscriptions = pgTable(
   (table) => [
     uniqueIndex("ux_channel_subscriptions_user_channel").on(
       table.userId,
-      table.channelId,
+      table.channelId
     ),
     index("ix_channel_subscriptions_user_id").on(table.userId),
     index("ix_channel_subscriptions_channel_id").on(table.channelId),
-  ],
+  ]
 );
 
 // MESSAGES
@@ -277,7 +277,7 @@ export const messages = pgTable(
   (table) => [
     index("ix_messages_channel_id").on(table.channelId),
     index("ix_messages_sender_id").on(table.senderId),
-  ],
+  ]
 );
 
 export const messageAttachments = pgTable(
@@ -301,9 +301,9 @@ export const messageAttachments = pgTable(
     index("ix_message_attachments_file_id").on(table.fileId),
     uniqueIndex("ux_message_attachments_message_file").on(
       table.messageId,
-      table.fileId,
+      table.fileId
     ),
-  ],
+  ]
 );
 
 export const messageReactions = pgTable(
@@ -325,11 +325,11 @@ export const messageReactions = pgTable(
     uniqueIndex("ux_message_reactions_user").on(
       table.messageId,
       table.userId,
-      table.emoji,
+      table.emoji
     ),
     index("ix_message_reactions_message_id").on(table.messageId),
     index("ix_message_reactions_user_id").on(table.userId),
-  ],
+  ]
 );
 
 export type MessageReaction = typeof messageReactions.$inferSelect;
@@ -353,7 +353,7 @@ export const mentors = pgTable(
     // CHECK (years_of_service IS NULL OR years_of_service >= 0)
     sql`CONSTRAINT ck_mentors_years_of_service CHECK (${table.yearsOfService.name} IS NULL OR ${table.yearsOfService.name} >= 0)`,
     index("ix_mentors_user_id").on(table.userId),
-  ],
+  ]
 );
 
 // MENTORSHIP REQUESTS
@@ -369,7 +369,7 @@ export const mentorMatchingRequests = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [index("ix_mentor_matching_requests_user_id").on(table.userId)],
+  (table) => [index("ix_mentor_matching_requests_user_id").on(table.userId)]
 );
 
 // MENTORSHIP MATCHES
@@ -386,11 +386,11 @@ export const mentorshipMatches = pgTable(
   (table) => [
     uniqueIndex("ux_mentorship_matches_pair").on(
       table.requestorUserId,
-      table.mentorUserId,
+      table.mentorUserId
     ),
     index("ix_mentorship_matches_requestor_user_id").on(table.requestorUserId),
     index("ix_mentorship_matches_mentor_user_id").on(table.mentorUserId),
-  ],
+  ]
 );
 
 // Push subscriptions table — structured storage for web-push subscriptions.
@@ -416,7 +416,7 @@ export const pushSubscriptions = pgTable(
   (table) => [
     uniqueIndex("ux_push_subscriptions_endpoint").on(table.endpoint),
     index("ix_push_subscriptions_user_id").on(table.userId),
-  ],
+  ]
 );
 
 // MENTEES: track mentees seeking mentorship
@@ -441,7 +441,7 @@ export const mentees = pgTable(
   (table) => [
     index("ix_mentees_user_id").on(table.userId),
     index("ix_mentees_status").on(table.status),
-  ],
+  ]
 );
 
 // MESSAGE BLASTS: track broadcast messages
@@ -471,7 +471,7 @@ export const messageBlasts = pgTable(
     index("ix_message_blasts_sender_id").on(table.senderId),
     index("ix_message_blasts_status").on(table.status),
     index("ix_message_blasts_valid_until").on(table.validUntil),
-  ],
+  ]
 );
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
@@ -491,3 +491,41 @@ export type NewMessageBlast = typeof messageBlasts.$inferInsert;
 //   .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
 //   .where(eq(userRoles.userId, userId));
 // engine.hasAccess(roleKeys, `channel:${channelId}:read`);
+
+// Reports
+export const reportStatusEnum = pgEnum("report_status_enum", [
+  "Pending",
+  "Assigned",
+  "Resolved",
+]);
+
+export const reportCategoryEnum = pgEnum("report_category_enum", [
+  "Communication",
+  "Mentorship",
+  "Training",
+  "Resources"
+])
+
+export const reports = pgTable("reports", {
+  reportId: integer("report_id").primaryKey().generatedAlwaysAsIdentity(),
+  category: reportCategoryEnum("category"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: reportStatusEnum("status").notNull().default("Pending"),
+  submittedBy: text("submitted_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  assignedTo: text("assigned_to").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  assignedBy: text("assigned_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: false })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: false })
+    .defaultNow()
+    .notNull(),
+  resolvedAt: timestamp("resolved", { withTimezone: false }),
+});
