@@ -177,17 +177,17 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     (channel) => channel.channelId === parsedChannelId,
   );
   const isNotMember =
-    currentChannel && "permission" in currentChannel
-      ? currentChannel.permission === null
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === null
       : false;
   const readOnlyChannel =
     currentChannel && "postPermissionLevel" in currentChannel
       ? currentChannel.postPermissionLevel === "admin"
       : false;
   const hasPostPermission =
-    currentChannel && "permission" in currentChannel
-      ? currentChannel.permission === "admin" ||
-        currentChannel.permission === "post"
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === "admin" ||
+        currentChannel.userPermission === "post"
       : false;
   const canCreatePost = !readOnlyChannel || hasPostPermission;
 

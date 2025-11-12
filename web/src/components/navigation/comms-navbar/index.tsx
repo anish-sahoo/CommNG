@@ -12,7 +12,7 @@ type Channel<T extends string = string> = {
   label: string;
   href: Route<`/communications/${T}`>;
   type: "all" | "channel";
-  permission?: "admin" | "post" | "read" | null;
+  userPermission?: "admin" | "post" | "read" | null;
   postPermissionLevel?: "admin" | "everyone" | "custom";
 };
 
@@ -83,11 +83,11 @@ export const CommsNavBar = ({
   // Filter out channels where user has no permission (permission === null)
   const accessibleChannels = channelData.filter((channel) => {
     // If it's the DEMO_CHANNEL, always show it (it doesn't have a permission property)
-    if (!("permission" in channel)) {
+    if (!("userPermission" in channel)) {
       return true;
     }
     // Only show channels where user has some permission
-    return channel.permission !== null;
+    return channel.userPermission !== null;
   });
 
   const channels: Channel[] = [
@@ -102,8 +102,10 @@ export const CommsNavBar = ({
       label: channel.name,
       href: `/communications/${channel.channelId}` as const,
       type: "channel" as const,
-      permission:
-        "permission" in channel ? (channel.permission ?? undefined) : undefined,
+      userPermission:
+        "userPermission" in channel
+          ? (channel.userPermission ?? undefined)
+          : undefined,
       postPermissionLevel:
         "postPermissionLevel" in channel
           ? (channel.postPermissionLevel ?? undefined)
