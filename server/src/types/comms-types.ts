@@ -28,6 +28,7 @@ export const createChannelSchema = z.object({
     .string()
     .min(1, "Channel name cannot be empty")
     .max(100, "Channel name too long"),
+  postingPermissions: z.enum(["everyone", "custom", "admin"]).default("admin"),
   metadata: z
     .object({
       description: z.string().optional(),

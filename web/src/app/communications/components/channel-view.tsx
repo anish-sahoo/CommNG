@@ -177,9 +177,19 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     (channel) => channel.channelId === parsedChannelId,
   );
   const isNotMember =
-    currentChannel && "permission" in currentChannel
-      ? currentChannel.permission === null
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === null
       : false;
+  const readOnlyChannel =
+    currentChannel && "postPermissionLevel" in currentChannel
+      ? currentChannel.postPermissionLevel === "admin"
+      : false;
+  const hasPostPermission =
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === "admin" ||
+        currentChannel.userPermission === "post"
+      : false;
+  const canCreatePost = !readOnlyChannel || hasPostPermission;
 
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
@@ -432,16 +442,18 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       actions={
         <>
           <div className="hidden items-center gap-3 sm:flex">
-            <Button
-              variant="outline"
-              className="px-6 py-2 text-sm sm:text-base"
-              asChild
-            >
-              <Link href={`/communications/${channelId}/new`}>
-                <AddIcon className="h-4 w-4" />
-                <span className="text-sm sm:text-base">New Post</span>
-              </Link>
-            </Button>
+            {canCreatePost ? (
+              <Button
+                variant="outline"
+                className="px-6 py-2 text-sm sm:text-base"
+                asChild
+              >
+                <Link href={`/communications/${channelId}/new`}>
+                  <AddIcon className="h-4 w-4" />
+                  <span className="text-sm sm:text-base">New Post</span>
+                </Link>
+              </Button>
+            ) : null}
             <Link
               href={`/communications/${channelId}/settings`}
               className="inline-flex h-12 w-12 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-14 sm:w-14"
@@ -463,15 +475,17 @@ export function ChannelView({ channelId }: ChannelViewProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/communications/${channelId}/new`}
-                    className="flex items-center gap-2 text-secondary"
-                  >
-                    <AddIcon className="h-4 w-4 text-primary" />
-                    New Post
-                  </Link>
-                </DropdownMenuItem>
+                {canCreatePost ? (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={`/communications/${channelId}/new`}
+                      className="flex items-center gap-2 text-secondary"
+                    >
+                      <AddIcon className="h-4 w-4 text-primary" />
+                      New Post
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                   <Link
                     href={`/communications/${channelId}/settings`}
@@ -487,6 +501,12 @@ export function ChannelView({ channelId }: ChannelViewProps) {
         </>
       }
     >
+      {readOnlyChannel && !hasPostPermission ? (
+        <div className="mb-4 rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-secondary">
+          This is a read-only channel. Contact an admin if you need permission
+          to post updates.
+        </div>
+      ) : null}
       <MessageList
         channelId={parsedChannelId}
         messages={messagesToDisplay}

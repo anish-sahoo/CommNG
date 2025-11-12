@@ -75,7 +75,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
     >
       <div className="flex h-16 w-16 items-center justify-center">
         <Image
-          src="/favicon_yellow.svg"
+          src="/icons/favicon_yellow.svg"
           alt="CommNG app switcher logo"
           width={52}
           height={52}

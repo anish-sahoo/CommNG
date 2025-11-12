@@ -25,11 +25,12 @@ type ChannelMetadata = {
   imageFileId?: string;
 };
 
-function resolveIconName(icon?: string): IconName {
-  if (icon && icon in icons) {
-    return icon as IconName;
-  }
-  return "communications";
+type ChannelPostPermission = "admin" | "everyone" | "custom";
+
+function resolveChannelCardIcon(
+  level?: ChannelPostPermission | null,
+): IconName {
+  return level === "admin" ? "announce" : "communications";
 }
 
 export default function CommunicationsOverviewPage() {
@@ -309,7 +310,11 @@ export default function CommunicationsOverviewPage() {
               metadata.summary ??
               metadata.description ??
               "Demo communications channel";
-            const iconName = resolveIconName(metadata.icon);
+            const postPermissionLevel =
+              "postPermissionLevel" in channel
+                ? (channel.postPermissionLevel ?? null)
+                : null;
+            const iconName = resolveChannelCardIcon(postPermissionLevel);
             // Prioritize loading the first 3 images for better LCP
             const isPriority = index < 3;
 

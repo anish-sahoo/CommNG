@@ -273,6 +273,17 @@ export class CommsService {
       channel_id,
     );
 
+    if (channelData?.postPermissionLevel === "everyone") {
+      await policyEngine.createRoleAndAssign(
+        user_id,
+        user_id,
+        `channel:${channel_id}:post`,
+        "post",
+        "channel",
+        channel_id,
+      );
+    }
+
     // Auto-subscribe the user with notifications enabled
     await this.commsRepo.ensureChannelSubscription(user_id, channel_id);
 

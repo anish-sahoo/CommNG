@@ -46,12 +46,16 @@ export default function NewChannelPage() {
     }
 
     try {
+      const postingPermissions = values.readOnly ? "admin" : "everyone";
       await createChannel.mutateAsync({
         name,
+        postingPermissions,
         metadata: {
           description,
           icon: "announce",
-          imageFileId: values.imageFileId || "/default_channel_image.png",
+          imageFileId:
+            values.imageFileId ||
+            "/images/placeholders/default_channel_image.png",
         },
       });
 

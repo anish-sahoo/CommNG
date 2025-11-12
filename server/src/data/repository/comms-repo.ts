@@ -421,7 +421,11 @@ export class CommsRepository {
   }
 
   // Channel creation method
-  async createChannel(name: string, metadata?: Record<string, unknown>) {
+  async createChannel(
+    name: string,
+    metadata?: Record<string, unknown>,
+    postingPermissions: "admin" | "everyone" | "custom" = "admin",
+  ) {
     // Check if channel with this name already exists
     const existingChannel = await this.getChannelDataByName(name);
 
@@ -434,6 +438,7 @@ export class CommsRepository {
       .values({
         name,
         metadata: metadata || null,
+        postPermissionLevel: postingPermissions,
       })
       .returning();
 
@@ -445,18 +450,22 @@ export class CommsRepository {
       channelId: number;
       name: string;
       metadata: Record<string, unknown> | null;
-      permission: "admin" | "post" | "read" | null;
+      // What *this specific user* can do in the channel right now (derived from their roles)
+      userPermission: "admin" | "post" | "read" | null;
+      // The channel’s default posting policy (how the channel itself is configured: read-only, everyone, or custom)
+      postPermissionLevel: "admin" | "everyone" | "custom";
     }>(sql`
       SELECT DISTINCT ON (c.channel_id)
         c.channel_id AS "channelId",
         c.name,
         c.metadata,
+        c.post_permission_level AS "postPermissionLevel",
         CASE
           WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) >= 3 THEN 'admin'::text
           WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 2 THEN 'post'::text
           WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 1 THEN 'read'::text
           ELSE NULL
-        END as permission
+        END as "userPermission"
       FROM ${channels} c
       LEFT JOIN ${userRoles} ur ON ur.user_id = ${userId}
       LEFT JOIN ${roles} r ON r.role_id = ur.role_id
@@ -465,7 +474,7 @@ export class CommsRepository {
       WHERE
         COALESCE(c.metadata->>'type', 'public') = 'public'
         OR r.role_id IS NOT NULL
-      GROUP BY c.channel_id, c.name, c.metadata
+      GROUP BY c.channel_id, c.name, c.metadata, c.post_permission_level
       ORDER BY c.channel_id, c.name
     `);
 

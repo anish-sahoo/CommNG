@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
-import camaraderie from "../../../public/mentorship-images/camaraderie.jpg";
-import professional_growth from "../../../public/mentorship-images/professional_growth.jpg";
-import service_responsibility from "../../../public/mentorship-images/service_responsibility.jpg";
+import camaraderie from "../../../public/images/mentorship/camaraderie.jpg";
+import professional_growth from "../../../public/images/mentorship/professional_growth.jpg";
+import service_responsibility from "../../../public/images/mentorship/service_responsibility.jpg";
 
 const cards = [
   {

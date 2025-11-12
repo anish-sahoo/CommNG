@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useState } from "react";
+import { icons } from "@/components/icons";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ export type CreateChannelValues = {
   imageFileId?: string;
   hasUploadingPhoto?: boolean;
   hasErroredPhoto?: boolean;
+  readOnly: boolean;
 };
 
 interface Props {
@@ -35,15 +37,18 @@ type PhotoState = null | {
 
 export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
   const trpcClient = useTRPCClient();
+  const CheckIcon = icons.done;
 
   const [title, setTitle] = useState("");
   const [blurb, setBlurb] = useState("");
 
   const [photo, setPhoto] = useState<PhotoState>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
 
   const titleId = useId();
   const blurbId = useId();
+  const readOnlyId = useId();
 
   const hasUploadingPhoto = photo?.status === "uploading";
   const hasErroredPhoto = photo?.status === "error";
@@ -158,6 +163,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
       imageFileId: photo?.status === "uploaded" ? photo.fileId : undefined,
       hasUploadingPhoto,
       hasErroredPhoto,
+      readOnly,
     });
   };
 
@@ -188,6 +194,40 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
             {title.length}/{50}
           </div>
         </div>
+
+        <label
+          htmlFor={readOnlyId}
+          className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 transition hover:border-primary/60"
+        >
+          <input
+            id={readOnlyId}
+            type="checkbox"
+            checked={readOnly}
+            onChange={(event) => setReadOnly(event.target.checked)}
+            className="peer sr-only"
+            disabled={submitting}
+          />
+          <span
+            className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border-2 text-transparent transition ${
+              readOnly
+                ? "border-primary text-primary"
+                : "border-secondary/40 bg-background peer-hover:border-primary"
+            }`}
+            aria-hidden="true"
+          >
+            {readOnly ? <CheckIcon className="size-4 text-accent" /> : null}
+          </span>
+          <div className="space-y-1">
+            <span className="font-semibold text-secondary">
+              Read-only channel
+            </span>
+            <p className="text-sm text-muted-foreground">
+              When enabled, only channel admins or members you explicitly grant
+              posting permission to can create posts. Everyone else can only
+              read updates.
+            </p>
+          </div>
+        </label>
 
         <div className="flex flex-col gap-2">
           <label

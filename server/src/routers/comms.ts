@@ -10,7 +10,7 @@ import {
   deletePostSchema,
   deleteSubscriptionSchema,
   editPostSchema,
-  //getChannelMembersSchema,
+  getChannelMembersSchema,
   getChannelMessagesSchema,
   joinChannelSchema,
   leaveChannelSchema,
@@ -206,6 +206,7 @@ const createChannel = protectedProcedure
       const channelCreationResult = await commsRepo.createChannel(
         input.name,
         input.metadata,
+        input.postingPermissions,
       );
       if (!channelCreationResult || !channelCreationResult.channelId) {
         throw new InternalServerError("Something went wrong creating channel");
@@ -264,7 +265,7 @@ const updateChannelSettings = protectedProcedure
 
 // Channel members endpoint
 const getChannelMembers = protectedProcedure
-  .input(updateChannelSchema)
+  .input(getChannelMembersSchema)
   .query(({ input }) =>
     withErrorHandling("getChannelMembers", async () => {
       log.debug({ channelId: input.channelId }, "getChannelMembers");
