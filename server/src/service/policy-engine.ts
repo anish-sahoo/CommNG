@@ -52,6 +52,9 @@ export class PolicyEngine {
    */
   async validate(userId: string, roleKey: RoleKey) {
     log.debug({ userId, roleKey }, "Validate perms");
+    if (roleKey.length === 0) {
+      return false;
+    }
     const roleId = await this.authRepository.getRoleId(roleKey);
 
     // Check Redis cache first if the role exists
