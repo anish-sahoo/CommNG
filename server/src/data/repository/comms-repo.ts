@@ -450,7 +450,9 @@ export class CommsRepository {
       channelId: number;
       name: string;
       metadata: Record<string, unknown> | null;
-      permission: "admin" | "post" | "read" | null;
+      // What *this specific user* can do in the channel right now (derived from their roles)
+      userPermission: "admin" | "post" | "read" | null;
+      // The channel’s default posting policy (how the channel itself is configured: read-only, everyone, or custom)
       postPermissionLevel: "admin" | "everyone" | "custom";
     }>(sql`
       SELECT DISTINCT ON (c.channel_id)
@@ -463,7 +465,7 @@ export class CommsRepository {
           WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 2 THEN 'post'::text
           WHEN MAX(CASE WHEN r.action = 'admin' THEN 3 WHEN r.action = 'post' THEN 2 WHEN r.action = 'read' THEN 1 ELSE 0 END) = 1 THEN 'read'::text
           ELSE NULL
-        END as permission
+        END as "userPermission"
       FROM ${channels} c
       LEFT JOIN ${userRoles} ur ON ur.user_id = ${userId}
       LEFT JOIN ${roles} r ON r.role_id = ur.role_id
