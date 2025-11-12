@@ -11,6 +11,17 @@ import { db } from "../db/sql.js";
  * Repository to handle database queries/communication related to mentors
  */
 export class MentorRepository {
+  /**
+   * Create a new mentor profile for a user
+   * @param userId User ID
+   * @param mentorshipPreferences Optional mentorship preferences
+   * @param rank Optional rank
+   * @param yearsOfService Optional years of service
+   * @param eligibilityData Optional eligibility data
+   * @param status Mentor status (default: "requested")
+   * @returns Created mentor profile
+   * @throws ConflictError if profile already exists or creation fails
+   */
   async createMentor(
     userId: string,
     mentorshipPreferences?: string,
@@ -54,9 +65,19 @@ export class MentorRepository {
       throw new ConflictError("Failed to create mentor profile");
     }
 
-    return created;
+    // Ensure eligibilityData is typed correctly for CreateMentorOutput
+    return {
+      ...created,
+      eligibilityData: created.eligibilityData as Record<string, unknown> | null | undefined,
+    };
   }
 
+  /**
+   * Get a mentor profile by mentor ID
+   * @param mentorId Mentor ID
+   * @returns Mentor profile object
+   * @throws NotFoundError if mentor not found
+   */
   async getMentorById(mentorId: number): Promise<GetMentorOutput> {
     const [mentor] = await db
       .select({
@@ -85,6 +106,11 @@ export class MentorRepository {
     };
   }
 
+  /**
+   * Get a mentor profile by user ID
+   * @param userId User ID
+   * @returns Mentor profile object or null if not found
+   */
   async getMentorByUserId(userId: string): Promise<GetMentorOutput | null> {
     const [mentor] = await db
       .select({

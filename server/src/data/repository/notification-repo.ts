@@ -26,6 +26,11 @@ import log from "../../utils/logger.js";
  *   this repository. This repository performs a defensive validation as well.
  */
 export class NotificationRepository {
+  /**
+   * Save a web push subscription for a user.
+   * @param userId User ID
+   * @param subscription Subscription input object
+   */
   async saveWebPushSubscription(userId: string, subscription: SubscribeInput) {
     const endpoint = subscription.endpoint;
     const keys: PushSubscriptionKeys = subscription.keys;
@@ -46,6 +51,11 @@ export class NotificationRepository {
     });
   }
 
+  /**
+   * Get all active web push subscriptions for a topic.
+   * @param topic Topic string
+   * @returns Array of active push subscriptions
+   */
   async getAllActiveWebPushSubscriptions(
     topic: string,
   ): Promise<ActivePushSubscription[]> {
@@ -65,8 +75,8 @@ export class NotificationRepository {
   }
 
   /**
-   * Remove a subscription by endpoint string.
-   * Use this when you already have the raw endpoint URL.
+   * Remove a subscription by endpoint string. Use this when you already have the raw endpoint URL.
+   * @param endpoint Endpoint string
    */
   async removeSubscriptionByEndpoint(endpoint: string) {
     await db

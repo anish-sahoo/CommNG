@@ -35,6 +35,9 @@ export type MessageAttachmentRecord = {
   contentType?: string | null;
 };
 
+/**
+ * Repository for communication-related database operations (channels, messages, subscriptions, etc)
+ */
 export class CommsRepository {
   private async getAttachmentsForMessages(
     executor: Transaction | typeof db,
@@ -80,6 +83,12 @@ export class CommsRepository {
     return attachmentMap;
   }
 
+  /**
+   * Get channel by its ID
+   * @param channel_id Channel ID
+   * @returns Channel object
+   * @throws NotFoundError if channel not found
+   */
   async getChannelById(channel_id: number) {
     const [channel] = await db
       .select({ id: channels.channelId })
@@ -94,6 +103,11 @@ export class CommsRepository {
     return channel;
   }
 
+  /**
+   * Get all members of a channel, including their roles
+   * @param channel_id Channel ID
+   * @returns Array of member objects
+   */
   async getChannelMembers(channel_id: number) {
     const members = await db
       .select({
@@ -119,6 +133,15 @@ export class CommsRepository {
     return members;
   }
 
+  /**
+   * Create a new message in a channel, optionally with attachments
+   * @param user_id Sender user ID
+   * @param channel_id Channel ID
+   * @param content Message content
+   * @param attachmentFileIds Optional array of file IDs for attachments
+   * @returns Created message object with attachments
+   * @throws ConflictError if message creation fails
+   */
   async createMessage(
     user_id: string,
     channel_id: number,
@@ -174,6 +197,12 @@ export class CommsRepository {
     });
   }
 
+  /**
+   * Get a message by its ID, including attachments
+   * @param message_id Message ID
+   * @returns Message object with attachments
+   * @throws NotFoundError if message not found
+   */
   async getMessageById(message_id: number) {
     const [message] = await db
       .select({
@@ -201,6 +230,15 @@ export class CommsRepository {
     };
   }
 
+  /**
+   * Update a message's content and attachments
+   * @param message_id Message ID
+   * @param channel_id Channel ID
+   * @param content New message content
+   * @param attachmentFileIds Optional array of file IDs for attachments
+   * @returns Updated message object with attachments
+   * @throws ConflictError if update fails
+   */
   async updateMessage(
     message_id: number,
     channel_id: number,
@@ -266,6 +304,13 @@ export class CommsRepository {
     });
   }
 
+  /**
+   * Delete a message and return its details and attachment file IDs
+   * @param message_id Message ID
+   * @param channel_id Channel ID
+   * @returns Deleted message object and attachment file IDs
+   * @throws NotFoundError if message not found
+   */
   async deleteMessage(message_id: number, channel_id: number) {
     // First, get the attachments before deleting the message
     const attachments = await db
@@ -301,6 +346,14 @@ export class CommsRepository {
     };
   }
   // Channel subscription methods - for notification preferences only
+  /**
+   * Create a channel subscription for a user, throws if already exists
+   * @param userId User ID
+   * @param channelId Channel ID
+   * @param notificationsEnabled Whether notifications are enabled (default: true)
+   * @returns Created subscription object
+   * @throws ConflictError if already subscribed
+   */
   async createSubscription(
     userId: string,
     channelId: number,
@@ -334,6 +387,12 @@ export class CommsRepository {
     return subscription;
   }
 
+  /**
+   * Ensure a user is subscribed to a channel, creates if missing
+   * @param userId User ID
+   * @param channelId Channel ID
+   * @returns True if subscription exists or was created, false on error
+   */
   async ensureChannelSubscription(userId: string, channelId: number) {
     try {
       // Check if subscription already exists
@@ -367,6 +426,13 @@ export class CommsRepository {
     }
   }
 
+  /**
+   * Delete a user's channel subscription by subscription ID
+   * @param subscriptionId Subscription ID
+   * @param userId User ID
+   * @returns Deleted subscription object
+   * @throws NotFoundError if not found or no permission
+   */
   async deleteSubscription(subscriptionId: number, userId: string) {
     const [deleted] = await db
       .delete(channelSubscriptions)
@@ -387,6 +453,11 @@ export class CommsRepository {
     return deleted;
   }
 
+  /**
+   * Get all channel subscriptions for a user
+   * @param userId User ID
+   * @returns Array of subscription objects
+   */
   async getUserSubscriptions(userId: string) {
     return await db
       .select({
@@ -403,6 +474,11 @@ export class CommsRepository {
       .where(eq(channelSubscriptions.userId, userId));
   }
 
+  /**
+   * Get channel data by channel name
+   * @param name Channel name
+   * @returns Channel data array
+   */
   async getChannelDataByName(name: string) {
     return await db
       .select()
@@ -411,6 +487,11 @@ export class CommsRepository {
       .limit(1);
   }
 
+  /**
+   * Get channel data by channel ID
+   * @param channel_id Channel ID
+   * @returns Channel data object
+   */
   async getChannelDataByID(channel_id: number) {
     const [result] = await db
       .select()
@@ -421,6 +502,14 @@ export class CommsRepository {
   }
 
   // Channel creation method
+  /**
+   * Create a new channel. Throws if name already exists.
+   * @param name Channel name
+   * @param metadata Optional channel metadata
+   * @param postingPermissions Posting permission level (default: "admin")
+   * @returns Created channel object
+   * @throws ConflictError if channel name exists
+   */
   async createChannel(
     name: string,
     metadata?: Record<string, unknown>,
@@ -445,6 +534,11 @@ export class CommsRepository {
     return channel;
   }
 
+  /**
+   * Get all channels accessible to a user, with permissions.
+   * @param userId User ID
+   * @returns Array of accessible channel objects
+   */
   async getAccessibleChannels(userId: string) {
     const accessibleChannels = await db.execute<{
       channelId: number;
@@ -586,6 +680,12 @@ export class CommsRepository {
     return result;
   }
 
+  /**
+   * Get all messages in a channel, with reactions and attachments.
+   * @param channel_id Channel ID
+   * @param currentUserId Current user ID (for reactions)
+   * @returns Array of message objects with reactions and attachments
+   */
   async getChannelMessages(channel_id: number, currentUserId: string) {
     const messagesList = await db
       .select({
@@ -621,6 +721,14 @@ export class CommsRepository {
     }));
   }
 
+  /**
+   * Set or remove a reaction for a message by a user.
+   * @param messageId Message ID
+   * @param userId User ID
+   * @param emoji Emoji string
+   * @param active True to add, false to remove
+   * @returns Array of reactions for the message
+   */
   async setMessageReaction({
     messageId,
     userId,
@@ -660,6 +768,11 @@ export class CommsRepository {
     return reactions.get(messageId) ?? [];
   }
 
+  /**
+   * Batch update channel settings using a list of update functions.
+   * @param listOfUpdates Array of update functions (transaction)
+   * @returns True if successful, false on error
+   */
   async updateChannelSettings(
     listOfUpdates: ((tx: Transaction) => Promise<unknown>)[],
   ): Promise<boolean> {
@@ -676,6 +789,12 @@ export class CommsRepository {
     }
   }
 
+  /**
+   * Delete a channel by its ID. Throws if not found.
+   * @param channelId Channel ID
+   * @returns Deleted channel object
+   * @throws NotFoundError if channel not found
+   */
   async deleteChannel(channelId: number) {
     const [deleted] = await db
       .delete(channels)
@@ -689,6 +808,12 @@ export class CommsRepository {
     return deleted;
   }
 
+  /**
+   * Remove a user from a channel (roles and subscription).
+   * @param userId User ID
+   * @param channelId Channel ID
+   * @returns Success object
+   */
   async removeUserFromChannel(userId: string, channelId: number) {
     return await db.transaction(async (tx) => {
       // Get user's roles in this channel

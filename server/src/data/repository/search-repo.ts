@@ -21,7 +21,17 @@ const uniValues = sql.join(
   sql`, `,
 );
 
+/**
+ * Repository to handle search queries for users, channels, and universities
+ */
 export class SearchRepository {
+  /**
+   * Get search results for users, channels, and universities
+   * @param searchString Search string (case-insensitive)
+   * @param userId User ID for channel filtering
+   * @param limit Maximum number of results
+   * @returns Array of search result objects
+   */
   public async getSearchResults(
     searchString: string,
     userId: string,
