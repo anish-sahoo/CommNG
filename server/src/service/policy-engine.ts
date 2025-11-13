@@ -2,6 +2,7 @@ import pLimit from "p-limit";
 import { getRedisClientInstance } from "../data/db/redis.js";
 import type { RoleNamespace } from "../data/db/schema.js";
 import { AuthRepository } from "../data/repository/auth-repo.js";
+import { hasAnyPermission, hasPermission } from "../data/role-hierarchy.js";
 import {
   type ChannelRoleKey,
   GLOBAL_ADMIN_KEY,
@@ -21,12 +22,22 @@ export class PolicyEngine {
     this.authRepository = authRepository;
   }
 
+  /**
+   * Validates if a user has permission for any of the required roles.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
+   * Global admins bypass all checks.
+   *
+   * @param availableRoles Set of roles the user has
+   * @param requiredRoles Array of roles, user needs at least one
+   * @returns true if user has permission
+   */
   static validateList(availableRoles: Set<RoleKey>, requiredRoles: RoleKey[]) {
     if (availableRoles.has(GLOBAL_ADMIN_KEY)) {
       return true;
     }
 
-    return requiredRoles.some((role) => availableRoles.has(role));
+    // Check if user has any required role, accounting for hierarchy
+    return hasAnyPermission(availableRoles, requiredRoles);
   }
 
   /**
@@ -45,37 +56,36 @@ export class PolicyEngine {
   }
 
   /**
-   * Validate if a user has permission to access a resource
-   * @param userId User ID
-   * @param roleKey Role key (e.g., `channel:1:read`)
-   * @returns True if user has permission, false otherwise
+   * Validates if a user has permission to access a resource or not.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
+   * Global admins bypass all checks.
+   *
+   * @param userId userId
+   * @param roleKey roleKey, for example `channel:1:read`
+   * @returns `true` or `false`
    */
   async validate(userId: string, roleKey: RoleKey) {
     log.debug({ userId, roleKey }, "Validate perms");
     if (roleKey.length === 0) {
       return false;
     }
-    const roleId = await this.authRepository.getRoleId(roleKey);
-
-    // Check Redis cache first if the role exists
-    if (roleId !== null) {
-      const redisResult = await getRedisClientInstance().sIsMember(
-        `role:${roleKey}:users`,
-        `${userId}`,
-      );
-      if (redisResult === 1) {
-        return true;
-      }
-    }
 
     const roleSet = await this.authRepository.getRolesForUser(userId);
 
-    return roleSet.has(GLOBAL_ADMIN_KEY) || roleSet.has(roleKey);
+    if (roleSet.has(GLOBAL_ADMIN_KEY)) {
+      return true;
+    }
+
+    // Check if user has the required role (accounting for hierarchy)
+    return hasPermission(roleSet, roleKey);
   }
 
   /**
    * Validates if a user has permission for ANY of the provided roles.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
    * More efficient than calling validate() multiple times.
+   * Global admins bypass all checks.
+   *
    * @param userId userId
    * @param roleKeys array of roleKeys to check
    * @returns `true` if user has ANY of the roles, `false` otherwise
@@ -87,27 +97,12 @@ export class PolicyEngine {
 
     const roleSet = await this.authRepository.getRolesForUser(userId);
 
-    // Global admin bypass
     if (roleSet.has(GLOBAL_ADMIN_KEY)) {
       return true;
     }
 
-    // Check if user has any of the required roles in their role set
-    for (const roleKey of roleKeys) {
-      if (roleSet.has(roleKey)) {
-        return true;
-      }
-    }
-
-    // Check Redis cache for any of the roles
-    const redisClient = getRedisClientInstance();
-    const redisChecks = await Promise.all(
-      roleKeys.map((roleKey) =>
-        redisClient.sIsMember(`role:${roleKey}:users`, `${userId}`),
-      ),
-    );
-
-    return redisChecks.some((result) => result === 1);
+    // Check if user has any of the required roles (accounting for hierarchy)
+    return hasAnyPermission(roleSet, roleKeys);
   }
 
   /**

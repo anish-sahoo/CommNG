@@ -147,13 +147,6 @@ describe("PolicyEngine", () => {
       expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith("2");
     });
 
-    it("should always check if role exists via getRoleId first", async () => {
-      await policyEngine.validate("1", "channel:1:read");
-      expect(mockAuthRepository.getRoleId).toHaveBeenCalledWith(
-        "channel:1:read",
-      );
-    });
-
     it("should grant admin access for any action in the same namespace", async () => {
       // User 1 has channel:1:admin, should have access to any channel:1:* action
       const result1 = await policyEngine.validate("1", "channel:1:post");
@@ -476,40 +469,6 @@ describe("PolicyEngine", () => {
     });
   });
 
-  describe("caching behavior", () => {
-    it("should check redis cache before querying database", async () => {
-      const { getRedisClientInstance } = await import(
-        "../src/data/db/redis.js"
-      );
-
-      await policyEngine.validate("1", "channel:1:read");
-
-      expect(getRedisClientInstance().sIsMember).toHaveBeenCalledWith(
-        "role:channel:1:read:users",
-        "1",
-      );
-    });
-
-    it("should query database when redis returns 0 (not found)", async () => {
-      await policyEngine.validate("1", "channel:1:read");
-
-      expect(mockAuthRepository.getRolesForUser).toHaveBeenCalledWith("1");
-    });
-
-    it("should return true immediately when redis returns 1 (found)", async () => {
-      const { getRedisClientInstance } = await import(
-        "../src/data/db/redis.js"
-      );
-      vi.mocked(getRedisClientInstance().sIsMember).mockResolvedValueOnce(1);
-
-      const result = await policyEngine.validate("1", "channel:1:read");
-
-      expect(result).toBe(true);
-      // Should not call database when found in cache
-      expect(mockAuthRepository.getRolesForUser).not.toHaveBeenCalled();
-    });
-  });
-
   describe("global:admin superuser access", () => {
     it("should grant access to any role, even non-existent ones", async () => {
       // User 5 has ONLY global:admin
@@ -554,15 +513,6 @@ describe("PolicyEngine", () => {
       // User 2 does NOT have global:admin and doesn't have this specific role
       const result = await policyEngine.validate("2", "reporting:create");
       expect(result).toBe(false);
-    });
-
-    it("should check if role exists in system via getRoleId for caching", async () => {
-      await policyEngine.validate("5", "channel:2:read");
-
-      // Should call getRoleId to check cache
-      expect(mockAuthRepository.getRoleId).toHaveBeenCalledWith(
-        "channel:2:read",
-      );
     });
   });
 
