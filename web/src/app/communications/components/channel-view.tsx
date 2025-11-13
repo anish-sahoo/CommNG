@@ -456,7 +456,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
             ) : null}
             <Link
               href={`/communications/${channelId}/settings`}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-14 sm:w-14"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-10 sm:w-10"
               aria-label="Channel settings"
             >
               <SettingsIcon className="h-5 w-5 sm:h-8 sm:w-8" />
