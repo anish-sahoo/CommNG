@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// MentorshipDashboard placeholder lives at the URL mentees/mentors will eventually use once matching flows are implemented.
 export default function MentorshipDashboard() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-16 text-center">

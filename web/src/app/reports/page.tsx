@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+// ReportsPage placeholder marks the future analytics hub while the backend reporting endpoints are under development.
 export default function ReportsPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-16 text-center">

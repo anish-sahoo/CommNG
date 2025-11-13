@@ -33,6 +33,7 @@ function resolveChannelCardIcon(
   return level === "admin" ? "announce" : "communications";
 }
 
+// CommunicationsOverviewPage is the landing surface for the comms product: channel discovery, broadcast entry points, and asset prefetching for faster navigation into detail views.
 export default function CommunicationsOverviewPage() {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();

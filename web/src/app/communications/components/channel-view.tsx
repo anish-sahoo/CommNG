@@ -22,6 +22,8 @@ import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, MessageList } from "./index";
 
+// ChannelView hosts the single-channel experience inside Communications, handling membership gating and the optimistic timeline state desyncs that can happen between refetches.
+
 // Type for message reactions from the API
 type MessageReaction = {
   emoji: string;
@@ -206,6 +208,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     return match?.name ?? "Channel";
   }, [channelList, parsedChannelId]);
 
+  // PostedCard consumes a flattened message contract, so this memo keeps the shape consistent regardless of how the backend representation evolves.
   const messageItems: ChannelMessage[] = useMemo(() => {
     if (!messages.length) {
       return [];
