@@ -10,6 +10,7 @@ import {
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
-import { type ChannelMessage, ChannelShell, MessageList } from "./index";
+import { type ChannelMessage, MessageList } from "./index";
 
 // Type for message reactions from the API
 type MessageReaction = {
@@ -171,6 +172,25 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const messages = Array.isArray(messagesQuery.data) ? messagesQuery.data : [];
 
+  // Check if user is not a member (permission is null)
+  const currentChannel = channelList.find(
+    (channel) => channel.channelId === parsedChannelId,
+  );
+  const isNotMember =
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === null
+      : false;
+  const readOnlyChannel =
+    currentChannel && "postPermissionLevel" in currentChannel
+      ? currentChannel.postPermissionLevel === "admin"
+      : false;
+  const hasPostPermission =
+    currentChannel && "userPermission" in currentChannel
+      ? currentChannel.userPermission === "admin" ||
+        currentChannel.userPermission === "post"
+      : false;
+  const canCreatePost = !readOnlyChannel || hasPostPermission;
+
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
   const channelName = useMemo(() => {
@@ -239,9 +259,24 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     }) as unknown as QueryKey;
   }, [parsedChannelId, trpc]);
 
+  const { mutate: joinChannel, isPending: isJoining } = useMutation(
+    trpc.comms.joinChannel.mutationOptions({
+      onSuccess: () => {
+        // Refetch channel list and messages after joining
+        queryClient.invalidateQueries({
+          queryKey: trpc.comms.getAllChannels.queryKey(),
+        });
+        if (channelMessagesQueryKey) {
+          queryClient.invalidateQueries({
+            queryKey: channelMessagesQueryKey,
+          });
+        }
+      },
+    }),
+  );
+
   const messagesToDisplay = messagesState;
 
-  const ArrowLeftIcon = icons.arrowLeft;
   const AddIcon = icons.add;
   const SettingsIcon = icons.settings;
   const EllipsisIcon = icons.ellipsis;
@@ -365,35 +400,60 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     );
   }
 
-  return (
-    <ChannelShell
-      title={
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/communications"
-            className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-            aria-label="Back to all channels"
+  // Show "not a member" message if user doesn't have permission
+  if (isNotMember) {
+    return (
+      <TitleShell
+        title={channelName}
+        backHref="/communications"
+        backAriaLabel="Back to all channels"
+      >
+        <div className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border bg-muted/30 p-8 text-center">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xl font-semibold text-foreground">
+              You are not a member of this channel
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Please join this channel to view messages and participate in
+              discussions.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              if (parsedChannelId) {
+                joinChannel({ channelId: parsedChannelId });
+              }
+            }}
+            disabled={isJoining}
+            className="min-w-[200px]"
           >
-            <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-          </Link>
-          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            {channelName}
-          </span>
+            {isJoining ? "Joining..." : "Join Channel"}
+          </Button>
         </div>
-      }
+      </TitleShell>
+    );
+  }
+
+  return (
+    <TitleShell
+      title={channelName}
+      backHref="/communications"
+      backAriaLabel="Back to all channels"
       actions={
         <>
           <div className="hidden items-center gap-3 sm:flex">
-            <Button
-              variant="outline"
-              className="px-6 py-2 text-sm sm:text-base"
-              asChild
-            >
-              <Link href={`/communications/${channelId}/new`}>
-                <AddIcon className="h-4 w-4" />
-                <span className="text-sm sm:text-base">New Post</span>
-              </Link>
-            </Button>
+            {canCreatePost ? (
+              <Button
+                variant="outline"
+                className="px-6 py-2 text-sm sm:text-base"
+                asChild
+              >
+                <Link href={`/communications/${channelId}/new`}>
+                  <AddIcon className="h-4 w-4" />
+                  <span className="text-sm sm:text-base">New Post</span>
+                </Link>
+              </Button>
+            ) : null}
             <Link
               href={`/communications/${channelId}/settings`}
               className="inline-flex h-12 w-12 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-14 sm:w-14"
@@ -415,15 +475,17 @@ export function ChannelView({ channelId }: ChannelViewProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/communications/${channelId}/new`}
-                    className="flex items-center gap-2 text-secondary"
-                  >
-                    <AddIcon className="h-4 w-4 text-primary" />
-                    New Post
-                  </Link>
-                </DropdownMenuItem>
+                {canCreatePost ? (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={`/communications/${channelId}/new`}
+                      className="flex items-center gap-2 text-secondary"
+                    >
+                      <AddIcon className="h-4 w-4 text-primary" />
+                      New Post
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                   <Link
                     href={`/communications/${channelId}/settings`}
@@ -439,12 +501,18 @@ export function ChannelView({ channelId }: ChannelViewProps) {
         </>
       }
     >
+      {readOnlyChannel && !hasPostPermission ? (
+        <div className="mb-4 rounded-xl border border-border/70 bg-muted/40 p-4 text-sm text-secondary">
+          This is a read-only channel. Contact an admin if you need permission
+          to post updates.
+        </div>
+      ) : null}
       <MessageList
         channelId={parsedChannelId}
         messages={messagesToDisplay}
         onReactionToggle={handleReactionToggle}
       />
-    </ChannelShell>
+    </TitleShell>
   );
 }
 

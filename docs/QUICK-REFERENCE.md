@@ -1,3 +1,28 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">⚡ Quick Reference</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#common-commands">Commands</a> •
+  <a href="#github-actions">GitHub Actions</a> •
+  <a href="#key-infrastructure-details">Infra Details</a> •
+  <a href="#auto-scaling-settings">Auto-scaling</a> •
+  <a href="#task-resources">Resources</a> •
+  <a href="#health-checks">Health Checks</a> •
+  <a href="#troubleshooting-quick-checks">Troubleshooting</a> •
+  <a href="#useful-aws-console-links">AWS Links</a> •
+  <a href="#cost-estimates-monthly-low-traffic">Cost</a>
+</p>
+
 # ECS Fargate Deployment - Quick Reference
 
 ## Common Commands

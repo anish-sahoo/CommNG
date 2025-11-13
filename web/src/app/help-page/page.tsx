@@ -1,11 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { ChannelShell } from "../communications/components";
 
 export default function HelpPage() {
   const MenuIcon = icons.menu;
@@ -16,9 +21,10 @@ export default function HelpPage() {
   const AnnounceIcon = icons.addAlert;
   const AcknowledgeIcon = icons.done;
   const BellIcon = icons.bell;
+  const ArrowRightIcon = icons.arrowRight;
 
   const cueClass =
-    "mt-3 inline-flex items-center gap-2 rounded-full bg-background/70 px-3 py-2 text-xs text-secondary shadow-sm ring-1 ring-border/60";
+    "mt-2 inline-flex items-center gap-2 rounded-full bg-background/70 px-3 py-2 text-xs text-secondary shadow-sm ring-1 ring-border/60";
   const cueIconClass = "h-4 w-4 text-primary";
 
   type CueDisplayProps = {
@@ -377,129 +383,230 @@ export default function HelpPage() {
     },
   ];
 
+  const OnboardingContent = () => (
+    <>
+      <p className="text-sm text-secondary">
+        Follow these steps the first time you sign in so you can start
+        collaborating without missing any updates.
+      </p>
+      <ol className="list-decimal space-y-4 pl-5 text-sm text-secondary">
+        {onboardingSteps.map((step) => (
+          <li key={step.title} className="space-y-3">
+            <p>
+              <span className="font-semibold text-secondary">
+                {step.title}:
+              </span>{" "}
+              {step.description}
+            </p>
+            {step.cue}
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+
+  const RolesContent = () => (
+    <>
+      <p className="text-sm text-secondary">
+        Access is managed behind the scenes, but understanding each role helps
+        you know what to expect on screen.
+      </p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {roleGuides.map((role) => (
+          <article
+            key={role.title}
+            className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-4"
+          >
+            <h3 className="text-base font-semibold text-secondary">
+              {role.title}
+            </h3>
+            <ul className="list-disc space-y-1 pl-5 text-sm text-secondary">
+              {role.points.map((point) => (
+                <li key={point.id}>{point.content}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </>
+  );
+
+  const TasksContent = () => (
+    <div className="space-y-4 text-sm text-secondary">
+      {taskGuides.map((task) => (
+        <article
+          key={task.title}
+          className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-4"
+        >
+          <h3 className="text-base font-semibold text-secondary">
+            {task.title}
+          </h3>
+          <ol className="list-decimal space-y-2 pl-5">
+            {task.steps.map((step) => (
+              <li key={step.id}>{step.content}</li>
+            ))}
+          </ol>
+          {task.cue}
+          {task.note ? (
+            <p className="text-xs italic text-secondary">{task.note}</p>
+          ) : null}
+        </article>
+      ))}
+    </div>
+  );
+
+  const contentSections: Array<{
+    id: "onboarding" | "roles" | "tasks";
+    title: string;
+    content: ReactNode;
+  }> = [
+    {
+      id: "onboarding",
+      title: "Onboarding for New Users",
+      content: <OnboardingContent />,
+    },
+    {
+      id: "roles",
+      title: "Roles and Permissions",
+      content: <RolesContent />,
+    },
+    {
+      id: "tasks",
+      title: "Key Communications Tasks",
+      content: <TasksContent />,
+    },
+  ];
+
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(
+    () => {
+      const initialState: Record<string, boolean> = {};
+      for (const section of contentSections) {
+        initialState[section.id] = true;
+      }
+      return initialState;
+    },
+  );
+
+  const handleSectionToggle = (id: string, open: boolean) => {
+    setOpenSections((prev) => ({ ...prev, [id]: open }));
+  };
+
+  const toggleAllSections = () => {
+    setOpenSections((prev) => {
+      const shouldOpen = Object.values(prev).every((open) => !open);
+      const nextState: Record<string, boolean> = {};
+      for (const section of contentSections) {
+        nextState[section.id] = shouldOpen;
+      }
+      return nextState;
+    });
+  };
+
+  const anySectionOpen = Object.values(openSections).some(Boolean);
+
   return (
-    <Tabs defaultValue="communications" className="w-full">
-      <ChannelShell
+    <Tabs
+      defaultValue="communications"
+      className="w-full"
+      aria-label="Help Center categories"
+    >
+      <TitleShell
         title={
-          <div className="flex flex-col gap-4">
-            <div className="space-y-3">
-              <h1 className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-                Help Center
-              </h1>
-              <p className="max-w-2xl text-body text-secondary">
+          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            Help Center
+          </span>
+        }
+        scrollableContent={false}
+        contentClassName="md:pr-0"
+        pinnedContent={
+          <div className="sticky top-[4.25rem] z-20 border-b border-border/70 bg-background/95 px-1 pb-3 pt-2 backdrop-blur sm:top-[4.5rem] sm:px-0">
+            <div className="mx-auto flex w-full app-content-width flex-col gap-3">
+              <p className="max-w-3xl text-sm text-secondary sm:text-base">
                 Everything you need to get started: learn how to browse
                 channels, send messages, apply for mentorship, and make the most
                 of your experience.
               </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <TabsList
+                  className="flex justify-start gap-2 bg-transparent p-0"
+                  aria-label="Content topic tabs"
+                >
+                  <TabsTrigger
+                    value="communications"
+                    aria-label="View communications help"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                  >
+                    Communications
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="mentorship"
+                    aria-label="View mentorship help"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                  >
+                    Mentorship
+                  </TabsTrigger>
+                </TabsList>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleAllSections}
+                  aria-label={
+                    anySectionOpen
+                      ? "Collapse all sections"
+                      : "Expand all sections"
+                  }
+                  className="w-full text-sm sm:w-auto"
+                >
+                  {anySectionOpen ? "Collapse all" : "Expand all"}
+                </Button>
+              </div>
             </div>
-            <TabsList className="gap-2 bg-transparent p-0 flex justify-start">
-              <TabsTrigger
-                value="communications"
-                className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
-              >
-                Communications
-              </TabsTrigger>
-              <TabsTrigger
-                value="mentorship"
-                className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
-              >
-                Mentorship
-              </TabsTrigger>
-            </TabsList>
           </div>
         }
       >
-        <TabsContent value="communications" className="mt-6">
-          <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <div className="max-h-[65vh] space-y-6 overflow-y-auto pr-2">
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-secondary">
-                  Onboarding for New Users
-                </h2>
-                <p className="text-sm text-secondary">
-                  Follow these steps the first time you sign in so you can start
-                  collaborating without missing any updates.
-                </p>
-                <ol className="list-decimal space-y-4 pl-5 text-sm text-secondary">
-                  {onboardingSteps.map((step) => (
-                    <li key={step.title} className="space-y-3">
-                      <p>
-                        <span className="font-semibold text-secondary">
-                          {step.title}:
-                        </span>{" "}
-                        {step.description}
-                      </p>
-                      {step.cue}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-secondary">
-                  Roles and Permissions
-                </h2>
-                <p className="text-sm text-secondary">
-                  Access is managed behind the scenes, but understanding each
-                  role helps you know what to expect on screen.
-                </p>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {roleGuides.map((role) => (
-                    <article
-                      key={role.title}
-                      className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-4"
-                    >
-                      <h3 className="text-base font-semibold text-secondary">
-                        {role.title}
-                      </h3>
-                      <ul className="list-disc space-y-1 pl-5 text-sm text-secondary">
-                        {role.points.map((point) => (
-                          <li key={point.id}>{point.content}</li>
-                        ))}
-                      </ul>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h2 className="text-xl font-semibold text-secondary">
-                  Key Communications Tasks
-                </h2>
-                <div className="space-y-5 text-sm text-secondary">
-                  {taskGuides.map((task) => (
-                    <article
-                      key={task.title}
-                      className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-4"
-                    >
-                      <h3 className="text-base font-semibold text-secondary">
-                        {task.title}
-                      </h3>
-                      <ol className="list-decimal space-y-2 pl-5">
-                        {task.steps.map((step) => (
-                          <li key={step.id}>{step.content}</li>
-                        ))}
-                      </ol>
-                      {task.cue}
-                      {task.note ? (
-                        <p className="text-xs text-secondary italic">
-                          {task.note}
-                        </p>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
+        <TabsContent value="communications" className="space-y-4">
+          {contentSections.map((section) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className="scroll-mt-32"
+              aria-label={section.title}
+            >
+              <Collapsible
+                open={openSections[section.id] ?? true}
+                defaultOpen
+                onOpenChange={(open) => handleSectionToggle(section.id, open)}
+                className="rounded-xl border border-border/70 bg-background/80 p-4"
+              >
+                <CollapsibleTrigger
+                  aria-label={`Toggle ${section.title}`}
+                  className="flex w-full items-center gap-3 text-left text-base font-semibold text-secondary"
+                >
+                  <ArrowRightIcon
+                    className={cn(
+                      "h-5 w-5 text-secondary transition-transform",
+                      openSections[section.id] ? "rotate-90" : "rotate-0",
+                    )}
+                    aria-hidden="true"
+                  />
+                  {section.title}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 text-sm text-secondary">
+                  {section.content}
+                </CollapsibleContent>
+              </Collapsible>
+            </section>
+          ))}
         </TabsContent>
 
-        <TabsContent value="mentorship" className="mt-6">
-          <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
-            <h1>mentorship</h1>
-          </section>
+        <TabsContent value="mentorship" className="space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-secondary">Mentorship</h2>
+            <p className="text-sm text-secondary">Content coming soon.</p>
+          </div>
         </TabsContent>
-      </ChannelShell>
+      </TitleShell>
     </Tabs>
   );
 }

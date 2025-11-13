@@ -7,14 +7,12 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
-import Link from "next/link";
 import { useMemo, useState } from "react";
-import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { BroadcastModal, Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/lib/trpc";
-import ChannelShell from "../components/channel-shell";
 import { BroadcastCard, type BroadcastCardData } from "./components";
 
 export default function BroadcastsPage() {
@@ -164,24 +162,11 @@ export default function BroadcastsPage() {
     setPendingDeleteId(null);
   };
 
-  const ArrowLeftIcon = icons.arrowLeft;
-
   return (
-    <ChannelShell
-      title={
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/communications"
-            className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-            aria-label="Back to all channels"
-          >
-            <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-          </Link>
-          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Active Broadcast
-          </span>
-        </div>
-      }
+    <TitleShell
+      title="Active Broadcast"
+      backHref="/communications"
+      backAriaLabel="Back to all channels"
     >
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         {deleteError ? (
@@ -265,6 +250,6 @@ export default function BroadcastsPage() {
           </p>
         </Modal>
       ) : null}
-    </ChannelShell>
+    </TitleShell>
   );
 }

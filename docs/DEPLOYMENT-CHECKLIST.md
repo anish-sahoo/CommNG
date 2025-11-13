@@ -1,3 +1,26 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">🚀 Deployment Checklist</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#aws-account-setup">AWS Setup</a> •
+  <a href="#local-development-tools">Local Tools</a> •
+  <a href="#application-configuration">App Config</a> •
+  <a href="#terraform-configuration">Terraform</a> •
+  <a href="#github-repository-setup">GitHub</a> •
+  <a href="#initial-deployment-steps">Deployment Steps</a> •
+  <a href="#support">Support</a>
+</p>
+
 # Pre-Deployment Checklist
 
 Complete this checklist before deploying CommNG to AWS ECS Fargate.
@@ -169,10 +192,10 @@ curl http://$ALB_URL/api/health
 
 If you encounter issues during deployment:
 
-1. Check INFRA.md troubleshooting section
+1. Check [`INFRA.md`](./INFRA.md) troubleshooting section
 2. Review CloudWatch logs
 3. Check AWS Service Health Dashboard
-4. Consult QUICK-REFERENCE.md for common commands
+4. Consult [`QUICK-REFERENCE.md`](./QUICK-REFERENCE.md) for common commands
 5. Open an issue in the repository
 
 ---

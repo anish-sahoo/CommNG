@@ -32,7 +32,7 @@ export class MatchingService {
     for (const mentee of selectedMentees) {
       try {
         await this.createMatchingRequest(mentee.userId, mentorUserId);
-      } catch (error) {
+      } catch (_error) {
         failedMenteeUserIds.push(mentee.userId);
       }
     }
@@ -68,7 +68,7 @@ export class MatchingService {
     for (const mentor of selectedMentors) {
       try {
         await this.createMatchingRequest(menteeUserId, mentor.userId);
-      } catch (error) {
+      } catch (_error) {
         failedMentorUserIds.push(mentor.userId);
       }
     }

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
-import MA_NG_Logo from "../../../public/MA_NG_Logo.png";
+import MA_NG_Logo from "../../../public/images/logos/MA_NG_Logo.png";
 
 const emailSchema = z.email();
 

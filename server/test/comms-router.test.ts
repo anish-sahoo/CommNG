@@ -42,7 +42,6 @@ type MockSubscription = {
   subscriptionId: number;
   userId: string;
   channelId: number;
-  permission: "read" | "write" | "both";
   notificationsEnabled: boolean;
 };
 
@@ -53,6 +52,8 @@ type MockChannel = {
   name: string;
   metadata: Record<string, unknown> | null;
   createdAt: Date;
+  postPermissionLevel: "admin" | "everyone" | "custom";
+  userPermission?: "admin" | "post" | "read" | null;
 };
 
 type MockChannelMember = {
@@ -76,6 +77,7 @@ const mem: {
     channel_id: number;
     name: string;
     metadata: Record<string, unknown> | null;
+    post_permission_level: "admin" | "everyone" | "custom";
   }[];
   channelSubscriptions: Array<{
     id: number;
@@ -147,8 +149,14 @@ function createUser(name: string, email: string, password: string) {
 function createChannel(
   name: string,
   metadata: Record<string, unknown> | null = null,
+  postPermissionLevel: "admin" | "everyone" | "custom" = "admin",
 ) {
-  const ch = { channel_id: ++mem._ids.channel, name, metadata };
+  const ch = {
+    channel_id: ++mem._ids.channel,
+    name,
+    metadata,
+    post_permission_level: postPermissionLevel,
+  };
   mem.channels.push(ch);
   return ch;
 }
@@ -286,15 +294,12 @@ vi.mock("../src/trpc/app_router.js", () => {
       }): Promise<MockMessage>;
       createSubscription(input: {
         channelId: number;
-        permission: "read" | "write" | "both";
         notificationsEnabled: boolean;
       }): Promise<MockSubscription>;
       deleteSubscription(input: {
         subscriptionId: number;
       }): Promise<MockSubscription>;
-      getUserSubscriptions(input: {
-        userId?: number;
-      }): Promise<MockSubscriptionSummary[]>;
+      getUserSubscriptions(): Promise<MockSubscriptionSummary[]>;
       getChannelMessages(input: { channelId: number }): Promise<MockMessage[]>;
       toggleMessageReaction(input: {
         channelId: number;
@@ -362,6 +367,52 @@ vi.mock("../src/trpc/app_router.js", () => {
     if (!hasWriteSub && !hasWriteRole) {
       throw new Error("FORBIDDEN");
     }
+  }
+
+  function resolveUserPermission(
+    userId: string,
+    channelId: number,
+  ): "admin" | "post" | "read" | null {
+    const roleIds = mem.userRoles
+      .filter((ur) => ur.user_id === userId)
+      .map((ur) => ur.role_id);
+
+    const channelRoles = mem.roles.filter(
+      (role) =>
+        roleIds.includes(role.role_id) &&
+        role.namespace === "channel" &&
+        role.channel_id === channelId,
+    );
+
+    const hasAdminRole = channelRoles.some((role) => role.action === "admin");
+    const hasWriteRole =
+      hasAdminRole ||
+      channelRoles.some(
+        (role) => role.action === "write" || role.action === "post",
+      );
+    const hasReadRole =
+      hasWriteRole || channelRoles.some((role) => role.action === "read");
+
+    const subscription = mem.channelSubscriptions.find(
+      (sub) => sub.user_id === userId && sub.channel_id === channelId,
+    );
+
+    const hasWriteSub =
+      subscription &&
+      (subscription.permission === "write" ||
+        subscription.permission === "both");
+    const hasReadSub = hasWriteSub || subscription?.permission === "read";
+
+    if (hasAdminRole) {
+      return "admin";
+    }
+    if (hasWriteRole || hasWriteSub) {
+      return "post";
+    }
+    if (hasReadRole || hasReadSub) {
+      return "read";
+    }
+    return null;
   }
 
   function isChannelAdmin(userId: string, channelId: number) {
@@ -529,7 +580,6 @@ vi.mock("../src/trpc/app_router.js", () => {
           // Subscription endpoints
           async createSubscription(input: {
             channelId: number;
-            permission: "read" | "write" | "both";
             notificationsEnabled: boolean;
           }): Promise<MockSubscription> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
@@ -542,11 +592,12 @@ vi.mock("../src/trpc/app_router.js", () => {
             );
             if (existing) throw new Error("CONFLICT");
 
+            const permission: "read" | "write" | "both" = "read";
+
             const createdSubscription: MockSubscription = {
               subscriptionId: ++mem._ids.sub,
               userId: uid,
               channelId: input.channelId,
-              permission: input.permission,
               notificationsEnabled: input.notificationsEnabled,
             };
 
@@ -554,7 +605,7 @@ vi.mock("../src/trpc/app_router.js", () => {
               id: createdSubscription.subscriptionId,
               user_id: createdSubscription.userId,
               channel_id: createdSubscription.channelId,
-              permission: createdSubscription.permission,
+              permission,
               notifications_enabled: createdSubscription.notificationsEnabled,
             });
 
@@ -579,14 +630,12 @@ vi.mock("../src/trpc/app_router.js", () => {
             );
             if (!deleted) throw new Error("NOT_FOUND");
 
-            const result: MockSubscription = {
+            return {
               subscriptionId: deleted.id,
               userId: deleted.user_id,
               channelId: deleted.channel_id,
-              permission: deleted.permission,
               notificationsEnabled: deleted.notifications_enabled,
             };
-            return result;
           },
 
           async getUserSubscriptions(): Promise<MockSubscriptionSummary[]> {
@@ -604,7 +653,6 @@ vi.mock("../src/trpc/app_router.js", () => {
                   return {
                     subscriptionId: s.id,
                     channelId: s.channel_id,
-                    permission: s.permission,
                     notificationsEnabled: s.notifications_enabled,
                     userId: uid,
                     channelName: channel?.name || "Unknown Channel",
@@ -686,6 +734,8 @@ vi.mock("../src/trpc/app_router.js", () => {
                 name: c.name,
                 metadata: c.metadata,
                 createdAt: new Date(),
+                postPermissionLevel: c.post_permission_level,
+                userPermission: resolveUserPermission(uid, c.channel_id),
               }));
           },
 
@@ -791,6 +841,7 @@ vi.mock("../src/trpc/app_router.js", () => {
           async createChannel(input: {
             name: string;
             metadata?: Record<string, unknown>;
+            postingPermissions?: "admin" | "everyone" | "custom";
           }): Promise<MockChannel> {
             if (!ctx?.auth) throw new Error("UNAUTHORIZED");
 
@@ -811,12 +862,14 @@ vi.mock("../src/trpc/app_router.js", () => {
               name: input.name,
               metadata: input.metadata || null,
               createdAt: new Date(),
+              postPermissionLevel: input.postingPermissions ?? "admin",
             };
 
             mem.channels.push({
               channel_id: channel.channelId,
               name: channel.name,
               metadata: channel.metadata,
+              post_permission_level: channel.postPermissionLevel,
             });
 
             return channel;
@@ -1550,7 +1603,6 @@ describe("commsRouter subscription endpoints", () => {
       await expect(
         caller.comms.createSubscription({
           channelId,
-          permission: "read",
           notificationsEnabled: true,
         }),
       ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -1562,7 +1614,6 @@ describe("commsRouter subscription endpoints", () => {
       const caller = appRouter.createCaller(createContext(authedUserId));
       const subscription = await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
-        permission: "read",
         notificationsEnabled: true,
       });
 
@@ -1573,7 +1624,6 @@ describe("commsRouter subscription endpoints", () => {
       expect(subscription).toBeDefined();
       expect(subscription.userId).toBe(authedUserId);
       expect(subscription.channelId).toBe(testChannel.channel_id);
-      expect(subscription.permission).toBe("read");
       expect(subscription.notificationsEnabled).toBe(true);
     });
 
@@ -1585,7 +1635,6 @@ describe("commsRouter subscription endpoints", () => {
       // First subscription
       await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
-        permission: "write",
         notificationsEnabled: false,
       });
 
@@ -1593,7 +1642,6 @@ describe("commsRouter subscription endpoints", () => {
       await expect(
         caller.comms.createSubscription({
           channelId: testChannel.channel_id,
-          permission: "both",
           notificationsEnabled: true,
         }),
       ).rejects.toThrow(/CONFLICT/i);
@@ -1616,7 +1664,6 @@ describe("commsRouter subscription endpoints", () => {
       // Create a subscription to delete
       const subscription = await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
-        permission: "write",
         notificationsEnabled: true,
       });
       if (!subscription) {
@@ -1655,7 +1702,6 @@ describe("commsRouter subscription endpoints", () => {
       // Create a subscription first
       await caller.comms.createSubscription({
         channelId: testChannel.channel_id,
-        permission: "read",
         notificationsEnabled: true,
       });
 
@@ -1671,7 +1717,6 @@ describe("commsRouter subscription endpoints", () => {
       }
       expect(subscription).toHaveProperty("subscriptionId");
       expect(subscription).toHaveProperty("channelId");
-      expect(subscription).toHaveProperty("permission");
       expect(subscription).toHaveProperty("notificationsEnabled");
       expect(subscription).toHaveProperty("channelName");
     });
@@ -1815,7 +1860,7 @@ describe("commsRouter.createChannel", () => {
       const channelName = uniqueName("test-channel");
       const channel = await caller.comms.createChannel({
         name: channelName,
-        metadata: { description: "Test channel", type: "public" },
+        metadata: { description: "Test channel" },
       });
 
       if (!channel) {
@@ -1826,7 +1871,6 @@ describe("commsRouter.createChannel", () => {
       expect(channel.name).toBe(channelName);
       expect(channel.metadata).toEqual({
         description: "Test channel",
-        type: "public",
       });
       expect(channel).toHaveProperty("channelId");
       expect(channel).toHaveProperty("createdAt");

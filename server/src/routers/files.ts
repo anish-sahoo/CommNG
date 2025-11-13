@@ -203,3 +203,5 @@ export const filesRouter = router({
   confirmUpload,
   deleteFile,
 });
+
+export { fileService };

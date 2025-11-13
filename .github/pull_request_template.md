@@ -17,5 +17,12 @@
 - [ ] Data
 - [ ] DevOps
 
+## Screenshots (only for frontend changes)
+***NOTE: PRs will not be approved if a frontend change is missing either of these screenshots***
+
+### > Desktop Screenshot:
+
+### > Mobile Screenshot:
+
 ## Testing
 <!-- How did you verify your changes? -->

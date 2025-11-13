@@ -4,10 +4,11 @@ import Link from "next/link";
 import { use, useId, useState } from "react";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
+
 //import { useTRPC } from "@/lib/trpc";
-import { ChannelShell } from "../../components/channel-shell";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -19,7 +20,6 @@ export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
   //const trpc = useTRPC();
-  const ArrowLeftIcon = icons.arrowLeft;
   const ArrowRightIcon = icons.arrowRight;
   const LockIcon = icons.lock;
   const { channel_id: channelId } = use(params);
@@ -33,21 +33,10 @@ export default function ChannelSettingsPage({
   const notifFieldId = useId();
 
   return (
-    <ChannelShell
-      title={
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href={`/communications/${channelId}`}
-            className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-            aria-label="Back to channel"
-          >
-            <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-          </Link>
-          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Settings
-          </span>
-        </div>
-      }
+    <TitleShell
+      title="Settings"
+      backHref={`/communications/${channelId}`}
+      backAriaLabel="Back to channel"
     >
       <div className="flex flex-col divide-y divide-border">
         {/* Channel Name */}
@@ -151,6 +140,6 @@ export default function ChannelSettingsPage({
           Leave Channel
         </Button>
       </div>
-    </ChannelShell>
+    </TitleShell>
   );
 }
