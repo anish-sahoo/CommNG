@@ -70,14 +70,14 @@ function parseRoleKey(roleKey: RoleKey): {
  * @returns Role key string
  */
 function buildRoleKey(
-  namespace: string,
+  namespace: RoleNamespace,
   subject: string | null,
   action: string,
-): string {
+) {
   if (subject === null) {
-    return `${namespace}:${action}`;
+    return `${namespace}:${action}` as RoleKey;
   }
-  return `${namespace}:${subject}:${action}`;
+  return `${namespace}:${subject}:${action}` as RoleKey;
 }
 
 /**
@@ -96,7 +96,11 @@ function getActionRank(
     return null;
   }
   // Cast action to string since hierarchy is readonly array
-  return (hierarchy as readonly string[]).indexOf(action);
+  const idx = (hierarchy as readonly string[]).indexOf(action);
+  if (idx === -1) {
+    return null;
+  }
+  return idx;
 }
 
 /**
@@ -170,8 +174,7 @@ export function roleImplies(roleA: RoleKey, roleB: RoleKey): boolean {
  */
 export function getImpliedRoles(roleKey: RoleKey): RoleKey[] {
   const parsed = parseRoleKey(roleKey);
-  const hierarchyKey = parsed.namespace as keyof typeof ROLE_HIERARCHIES;
-  const hierarchy = ROLE_HIERARCHIES[hierarchyKey];
+  const hierarchy = ROLE_HIERARCHIES[parsed.namespace];
 
   // If no hierarchy exists, only the exact role is implied
   if (!hierarchy) {
@@ -191,7 +194,7 @@ export function getImpliedRoles(roleKey: RoleKey): RoleKey[] {
   // Build role keys for all implied actions
   return impliedActions.map((action) =>
     buildRoleKey(parsed.namespace, parsed.subject, action),
-  ) as RoleKey[];
+  );
 }
 
 /**
