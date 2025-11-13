@@ -39,6 +39,19 @@ export type CreateUserProfileInput = z.infer<
   typeof createUserProfileInputSchema
 >;
 
+export const updateUserProfileInputSchema = z.object({
+  name: z.string().min(1).optional(),
+  phoneNumber: z.string().nullable().optional(),
+  rank: z.string().nullable().optional(),
+  department: z.string().nullable().optional(),
+  branch: z.string().nullable().optional(),
+  image: z.string().uuid().nullable().optional(),
+});
+
+export type UpdateUserProfileInput = z.infer<
+  typeof updateUserProfileInputSchema
+>;
+
 export type RoleNamespace = "global" | "channel" | "mentor" | "feature";
 export type RoleSummary = {
   roleId: number;

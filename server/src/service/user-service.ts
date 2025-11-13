@@ -77,4 +77,34 @@ export class UserService {
 
     return updated;
   }
+
+  async updateUserProfile(
+    userId: string,
+    updateData: {
+      name?: string;
+      phoneNumber?: string | null;
+      rank?: string | null;
+      department?: string | null;
+      branch?: string | null;
+      image?: string | null;
+    },
+  ) {
+    const updated = await this.usersRepo.updateUserProfile(userId, updateData);
+
+    // Update cache with new data (best effort - don't fail if Redis is unavailable)
+    const cacheKey = `user:${userId}:data`;
+    try {
+      await getRedisClientInstance().set(cacheKey, JSON.stringify(updated), {
+        EX: USER_CACHE_TTL_SECONDS,
+      });
+    } catch (error) {
+      // Log but don't fail the operation if cache update fails
+      log.warn(
+        { error, cacheKey, userId },
+        "Failed to update user cache after profile update",
+      );
+    }
+
+    return updated;
+  }
 }

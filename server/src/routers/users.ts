@@ -6,6 +6,7 @@ import {
   checkEmailExistsInputSchema,
   createUserProfileInputSchema,
   getUserDataInputSchema,
+  updateUserProfileInputSchema,
 } from "../types/user-types.js";
 
 const userService = new UserService(new UserRepository());
@@ -46,8 +47,23 @@ const createUserProfile = protectedProcedure
     });
   });
 
+const updateUserProfile = protectedProcedure
+  .input(updateUserProfileInputSchema)
+  .meta({
+    requiresAuth: true,
+    description:
+      "Update user profile data (name, phone, rank, department, branch, profile picture)",
+  })
+  .mutation(async ({ ctx, input }) => {
+    return withErrorHandling("updateUserProfile", async () => {
+      const userId = ctx.auth.user.id;
+      return await userService.updateUserProfile(userId, input);
+    });
+  });
+
 export const userRouter = router({
   getUserData,
   checkEmailExists,
   createUserProfile,
+  updateUserProfile,
 });
