@@ -16,6 +16,9 @@ import {
 import { ensureNOTUsingAws } from "../utils/aws.js";
 import log from "../utils/logger.js";
 
+/**
+ * Service for file upload/download operations with storage adapter integration
+ */
 export class FileService {
   private fileRepository: FileRepository;
   public adapter: StorageAdapter;
@@ -26,9 +29,13 @@ export class FileService {
   }
 
   /**
-   * Create a DB record and return a presigned upload URL which the client
-   * can PUT to directly. Requires the adapter to implement
-   * `generatePresignedUploadUrl` (S3 adapter does).
+   * Create a DB record and return a presigned upload URL which the client can PUT to directly
+   * @param _userId User ID (reserved for future use)
+   * @param originalFileName Original file name
+   * @param opts Optional file input stream options
+   * @param expiresSeconds Optional expiration time in seconds (default: 900)
+   * @param _uploadedByOverride Optional override for uploader ID
+   * @returns Object with fileId, uploadUrl, and storedName
    */
   public async createPresignedUpload(
     _userId: string,
@@ -56,8 +63,12 @@ export class FileService {
   }
 
   /**
-   * Confirm a presigned upload by inserting the DB record. This is called
-   * after the client successfully PUTs the file to S3.
+   * Confirm a presigned upload by inserting the DB record after client uploads to S3
+   * @param userId User ID
+   * @param fileId File ID
+   * @param originalFileName Original file name
+   * @param storedName Stored file name
+   * @param opts Optional file input stream options
    */
   public async confirmPresignedUpload(
     userId: string,
@@ -79,6 +90,14 @@ export class FileService {
     });
   }
 
+  /**
+   * Store a file from a stream (for non-AWS environments)
+   * @param userId User ID
+   * @param originalFileName Original file name
+   * @param file Readable stream
+   * @param opts Optional file input stream options
+   * @returns File ID
+   */
   public async storeFileFromStream(
     userId: string,
     originalFileName: string,
@@ -121,6 +140,12 @@ export class FileService {
     return fileId;
   }
 
+  /**
+   * Get file stream for download
+   * @param fileId File ID
+   * @returns File stream with metadata
+   * @throws ForbiddenError if file is stored as URL (use getFileUrl instead)
+   */
   public async getFileStream(fileId: string): Promise<FileStreamNullable> {
     const fileData = await this.fileRepository.getFile(fileId);
     const metadata = this.normaliseMetadata(fileData.metadata);
@@ -155,6 +180,8 @@ export class FileService {
    * Return a downloadable URL for the given fileId. This will return the
    * stored public URL directly if the DB record contains one, or ask the
    * adapter to produce a URL (presigned GET) for stored locations.
+   * @param fileId File ID
+   * @returns Object with fileName, contentType, url, and location
    */
   public async getFileUrl(fileId: string): Promise<{
     fileName: string;
@@ -190,6 +217,10 @@ export class FileService {
     };
   }
 
+  /**
+   * Delete a file from storage and database
+   * @param fileId File ID
+   */
   public async deleteFile(fileId: string): Promise<void> {
     const fileData = await this.fileRepository.getFile(fileId);
     const location = fileData.location;
@@ -206,6 +237,11 @@ export class FileService {
     log.info({ fileId, location }, "File deleted from S3 and database");
   }
 
+  /**
+   * Convert a FileLike object to a Readable stream
+   * @param file FileLike object
+   * @returns Readable stream
+   */
   public async fileLikeToReadable(file: FileLike): Promise<Readable> {
     if (typeof Readable.fromWeb === "function") {
       return Readable.fromWeb(file.stream());

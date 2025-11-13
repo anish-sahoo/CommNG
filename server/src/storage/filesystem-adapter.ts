@@ -10,11 +10,21 @@ import {
   StorageAdapter,
 } from "./storage-adapter.js";
 
+/**
+ * Storage adapter for local filesystem operations
+ */
 export class FileSystemStorageAdapter extends StorageAdapter {
   private STORAGE_BASE_PATH = process.env.STORAGE_BASE_PATH ?? "../storage/";
   private BASE_URL =
     process.env.LOCAL_FILE_BASE_URL ?? "http://localhost:3000/files"; // optional
 
+  /**
+   * Store a file from a readable stream to local filesystem
+   * @param filename File name
+   * @param input Readable stream
+   * @param _opts File input stream options (not used)
+   * @returns File path object with relative path
+   */
   public async storeStream(
     filename: string,
     input: Readable,
@@ -43,6 +53,11 @@ export class FileSystemStorageAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * Get a readable stream for a file from local filesystem
+   * @param filePath Relative file path
+   * @returns Readable stream
+   */
   public async getStream(filePath: string): Promise<Readable> {
     const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
     const absolutePath = path.join(destDir, filePath);
@@ -50,6 +65,11 @@ export class FileSystemStorageAdapter extends StorageAdapter {
     return fs.createReadStream(absolutePath);
   }
 
+  /**
+   * Delete a file from local filesystem
+   * @param filePath Relative file path
+   * @returns True if deleted, false otherwise
+   */
   public async delete(filePath: string): Promise<boolean> {
     try {
       const destDir = path.resolve(process.cwd(), this.STORAGE_BASE_PATH);
@@ -61,11 +81,23 @@ export class FileSystemStorageAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * Get a URL to serve file locally
+   * @param filePath Relative file path
+   * @returns URL string
+   */
   public async getUrl(filePath: string): Promise<string> {
     // Return a URL to serve locally (optional, requires express/static serving)
     return `${this.BASE_URL}/${filePath}`;
   }
 
+  /**
+   * Generate presigned upload URL (not supported for filesystem adapter)
+   * @param _storageName Storage name
+   * @param _expiresSeconds Expiration time
+   * @param _contentType Content type
+   * @throws ForbiddenError always (not supported)
+   */
   public async generatePresignedUploadUrl(
     _storageName: string,
     _expiresSeconds: number,

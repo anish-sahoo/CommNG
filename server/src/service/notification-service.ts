@@ -8,6 +8,9 @@ import type {
 } from "../types/notification-types.js";
 import log from "../utils/logger.js";
 
+/**
+ * Service for managing web push notifications and subscriptions
+ */
 export class NotificationService {
   constructor(private repo: NotificationRepository) {
     const publicKey = process.env.VAPID_PUBLIC_KEY;
@@ -26,14 +29,20 @@ export class NotificationService {
     }
   }
 
+  /**
+   * Subscribe a user to web push notifications
+   * @param userId User ID
+   * @param subscription Subscription data (endpoint, keys)
+   */
   async subscribe(userId: string, subscription: SubscribeInput) {
     // subscription is already validated by the router; persist it directly
     await this.repo.saveWebPushSubscription(userId, subscription);
   }
 
   /**
-   * Send a payload to all subscribers for a topic. If topic is falsy, send
-   * to all web-push subscribers.
+   * Send a payload to all subscribers for a topic
+   * @param topic Topic name (default: "general")
+   * @param payload Notification payload
    */
   async sendNotifications(
     topic: string = "general",
@@ -61,11 +70,9 @@ export class NotificationService {
   }
 
   /**
-   * Send notifications to users matching the target audience.
-   * If targetAudience is null/undefined, sends to all active subscribers (global broadcast).
-   *
-   * @param targetAudience - Optional targeting criteria by branch, with ranks and departments
-   * @param payload - Notification payload to send
+   * Send notifications to users matching the target audience (global broadcast if null)
+   * @param targetAudience Optional targeting criteria by branch, ranks, and departments
+   * @param payload Notification payload to send
    */
   async sendTargetedNotifications(
     targetAudience: TargetAudience | null,
