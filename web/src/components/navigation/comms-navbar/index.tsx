@@ -12,20 +12,25 @@ type Channel<T extends string = string> = {
   label: string;
   href: Route<`/communications/${T}`>;
   type: "all" | "channel";
+  userPermission?: "admin" | "post" | "read" | null;
+  postPermissionLevel?: "admin" | "everyone" | "custom";
 };
 
 const ChannelLink = ({
   channel,
   isActive,
+  onNavigate,
 }: {
   channel: Channel;
   isActive: boolean;
+  onNavigate?: () => void;
 }) => {
   return (
     <li>
       <Link
         href={channel.href}
         aria-current={isActive ? "page" : undefined}
+        onClick={onNavigate}
         className={cn(
           "group relative flex items-center gap-3 px-6 py-3 transition-colors duration-200",
           isActive
@@ -59,9 +64,13 @@ const ChannelLink = ({
 
 type CommsNavBarProps = {
   className?: string;
+  onNavigate?: () => void;
 };
 
-export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
+export const CommsNavBar = ({
+  className,
+  onNavigate,
+}: CommsNavBarProps = {}) => {
   const pathname = usePathname();
   const trpc = useTRPC();
   const { data, isLoading } = useQuery(
@@ -71,6 +80,16 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
   const channelData =
     Array.isArray(data) && data.length > 0 ? data : [DEMO_CHANNEL];
 
+  // Filter out channels where user has no permission (permission === null)
+  const accessibleChannels = channelData.filter((channel) => {
+    // If it's the DEMO_CHANNEL, always show it (it doesn't have a permission property)
+    if (!("userPermission" in channel)) {
+      return true;
+    }
+    // Only show channels where user has some permission
+    return channel.userPermission !== null;
+  });
+
   const channels: Channel[] = [
     {
       id: "all",
@@ -78,11 +97,19 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
       href: "/communications",
       type: "all",
     },
-    ...(channelData.map((channel) => ({
+    ...(accessibleChannels.map((channel) => ({
       id: channel.channelId.toString(),
       label: channel.name,
       href: `/communications/${channel.channelId}` as const,
       type: "channel" as const,
+      userPermission:
+        "userPermission" in channel
+          ? (channel.userPermission ?? undefined)
+          : undefined,
+      postPermissionLevel:
+        "postPermissionLevel" in channel
+          ? (channel.postPermissionLevel ?? undefined)
+          : undefined,
     })) ?? []),
   ];
 
@@ -108,6 +135,7 @@ export const CommsNavBar = ({ className }: CommsNavBarProps = {}) => {
               key={channel.id}
               channel={channel}
               isActive={isActive}
+              onNavigate={onNavigate}
             />
           );
         })}

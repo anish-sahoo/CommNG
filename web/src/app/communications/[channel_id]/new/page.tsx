@@ -2,10 +2,9 @@
 
 import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useId, useMemo, useState } from "react";
-import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +13,6 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
-import { ChannelShell } from "../../components";
 
 type NewChannelPostPageProps = {
   params: Promise<{ channel_id: string }>;
@@ -31,7 +29,6 @@ function parseChannelId(channelId: string): number | null {
 export default function NewChannelPostPage({
   params,
 }: NewChannelPostPageProps) {
-  const ArrowLeftIcon = icons.arrowLeft;
   const resolvedParams = use(params);
   const channelId = resolvedParams.channel_id;
   const router = useRouter();
@@ -217,27 +214,16 @@ export default function NewChannelPostPage({
 
   if (parsedChannelId === null) {
     return (
-      <ChannelShell
-        title={
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href="/communications"
-              className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-              aria-label="Back to channels"
-            >
-              <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-            </Link>
-            <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-              Create New Post
-            </span>
-          </div>
-        }
+      <TitleShell
+        title="Create New Post"
+        backHref="/communications"
+        backAriaLabel="Back to channels"
       >
         <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-6 text-destructive">
           Invalid channel identifier. Please return to the channel list and try
           again.
         </div>
-      </ChannelShell>
+      </TitleShell>
     );
   }
 
@@ -312,21 +298,10 @@ export default function NewChannelPostPage({
   };
 
   return (
-    <ChannelShell
-      title={
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href={`/communications/${channelId}`}
-            className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-            aria-label="Back to channels"
-          >
-            <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-          </Link>
-          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Create New Post
-          </span>
-        </div>
-      }
+    <TitleShell
+      title="Create New Post"
+      backHref={`/communications/${channelId}`}
+      backAriaLabel="Back to channel"
     >
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <div className="space-y-4 p-3">
@@ -442,6 +417,6 @@ export default function NewChannelPostPage({
           </Button>
         </div>
       </form>
-    </ChannelShell>
+    </TitleShell>
   );
 }

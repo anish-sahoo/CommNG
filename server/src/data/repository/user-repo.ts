@@ -38,6 +38,65 @@ export class UserRepository {
     return Boolean(userRow);
   }
 
+  async createUserProfile(
+    userId: string,
+    profileData: {
+      name: string;
+      phoneNumber?: string | null;
+      rank?: string | null;
+      department?: string | null;
+      branch?: string | null;
+      image?: string | null;
+    },
+  ) {
+    const updateFields: Partial<typeof users.$inferInsert> = {
+      name: profileData.name,
+    };
+
+    if (profileData.phoneNumber !== undefined) {
+      updateFields.phoneNumber = profileData.phoneNumber;
+    }
+
+    if (profileData.rank !== undefined) {
+      updateFields.rank = profileData.rank;
+    }
+
+    if (profileData.department !== undefined) {
+      updateFields.department = profileData.department;
+    }
+
+    if (profileData.branch !== undefined) {
+      updateFields.branch = profileData.branch;
+    }
+
+    if (profileData.image !== undefined) {
+      updateFields.image = profileData.image;
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set(updateFields)
+      .where(eq(users.id, userId))
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        rank: users.rank,
+        department: users.department,
+        branch: users.branch,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        image: users.image,
+      });
+
+    if (!updated) {
+      throw new NotFoundError(`User ${userId} not found`);
+    }
+
+    return updated;
+  }
+
   async updateUserProfile(
     userId: string,
     updateData: {

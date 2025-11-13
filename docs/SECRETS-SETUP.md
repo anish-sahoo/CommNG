@@ -1,3 +1,28 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">🔐 Secrets Setup</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#overview">Overview</a> •
+  <a href="#vapid-keys-secret">VAPID Keys</a> •
+  <a href="#environment-variables-reference">Env Vars</a> •
+  <a href="#secrets-manager-json-key-syntax">JSON Syntax</a> •
+  <a href="#rotating-secrets">Rotation</a> •
+  <a href="#troubleshooting">Troubleshooting</a> •
+  <a href="#security-best-practices">Security</a> •
+  <a href="#local-development">Local Dev</a> •
+  <a href="#production-checklist">Production</a>
+</p>
+
 # Secrets Management Setup Guide
 
 This guide explains how to set up and manage secrets in AWS Secrets Manager for the CommNG application.

@@ -1,8 +1,37 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">⚙️ Configuration Hub</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#architecture-overview">Architecture</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#environment-variables">Environment</a> •
+  <a href="#key-configuration-points">Key Points</a> •
+  <a href="#secrets-management">Secrets</a> •
+  <a href="#testing-the-setup">Testing</a> •
+  <a href="#common-issues">Issues</a> •
+  <a href="#benefits-of-this-setup">Benefits</a> •
+  <a href="#next-steps">Next Steps</a>
+</p>
+
 # Configuration Summary: Shared Domain with ALB
 
-## Architecture Overview
+<a id="architecture-overview"></a>
 
-```
+## 🏗️ Architecture Overview
+
+<div align="center">
+
+```text
 User Request
     ↓
 Application Load Balancer (ALB)
@@ -11,18 +40,28 @@ Application Load Balancer (ALB)
     └─→ /* (everything else) → Web (Next.js:3001)
 ```
 
-Both services share the same URL: `http://your-alb-dns-name.com`
+</div>
 
-## How It Works
+> Both services share the same URL: `http://your-alb-dns-name.com`
 
-### 1. **ALB Path-Based Routing**
+---
+
+<a id="how-it-works"></a>
+
+## ⚙️ How It Works
+
+<details open>
+<summary><strong>1. ALB Path-Based Routing</strong></summary>
 
 The ALB listener rules route traffic:
 - Pattern: `/api/*` → Server target group
 - Pattern: `/trpc/*` → Server target group
 - Default: `/*` → Web target group
 
-### 2. **Same Domain, Different Services**
+</details>
+
+<details open>
+<summary><strong>2. Same Domain, Different Services</strong></summary>
 
 **From the user's perspective:**
 - `http://your-app.com/` → Next.js homepage
@@ -30,7 +69,10 @@ The ALB listener rules route traffic:
 - `http://your-app.com/api/trpc` → Node.js tRPC API
 - `http://your-app.com/api/auth` → Node.js auth endpoints
 
-### 3. **tRPC Configuration**
+</details>
+
+<details open>
+<summary><strong>3. tRPC Configuration</strong></summary>
 
 **Web side (query-provider.tsx):**
 ```typescript
@@ -53,9 +95,16 @@ app.use("/api/trpc", createExpressMiddleware({
 
 Listens on `/api/trpc` endpoint at port 3000.
 
-## Environment Variables
+</details>
 
-### Local Development
+---
+
+<a id="environment-variables"></a>
+
+## 🧬 Environment Variables
+
+<details open>
+<summary><strong>Local Development</strong></summary>
 
 **server/.env.local:**
 ```bash
@@ -75,7 +124,10 @@ NEXT_PUBLIC_WEB_BASE_URL=http://localhost:3001
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=BLZ07...
 ```
 
-### Production/ECS
+</details>
+
+<details open>
+<summary><strong>Production/ECS</strong></summary>
 
 **Server environment (from Terraform):**
 ```bash
@@ -105,20 +157,21 @@ NEXT_PUBLIC_WEB_BASE_URL=http://<alb-dns>
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=<from-vapid-secret:publicKey>
 ```
 
-## Key Configuration Points
+</details>
 
-### ✅ No Changes Needed
+---
 
-1. **query-provider.tsx** - Already handles same domain correctly
-2. **Server endpoints** - Already use `/api/trpc` prefix
-3. **CORS** - Already allows same-origin with credentials
+<a id="key-configuration-points"></a>
 
-### ✅ Handled by Terraform
+## 🧩 Key Configuration Points
 
-1. **ALB routing rules** - Automatically configured
-2. **Environment variables** - Injected into containers
-3. **Secrets Manager** - Values pulled at runtime
-4. **Health checks** - ALB checks `/health` on server
+<div align="center">
+
+| ✅ No Changes Needed | ✅ Handled by Terraform |
+| --- | --- |
+| 1. **query-provider.tsx** - Already handles same domain correctly<br>2. **Server endpoints** - Already use `/api/trpc` prefix<br>3. **CORS** - Already allows same-origin with credentials | 1. **ALB routing rules** - Automatically configured<br>2. **Environment variables** - Injected into containers<br>3. **Secrets Manager** - Values pulled at runtime<br>4. **Health checks** - ALB checks `/health` on server |
+
+</div>
 
 ### ⚠️ Manual Steps Required
 
@@ -126,7 +179,11 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=<from-vapid-secret:publicKey>
 2. **Store in Secrets Manager**: See [SECRETS-SETUP.md](./SECRETS-SETUP.md)
 3. **Initial Docker builds**: See [INFRA.md](./INFRA.md)
 
-## Secrets Management
+---
+
+<a id="secrets-management"></a>
+
+## 🔐 Secrets Management
 
 All secrets are stored in AWS Secrets Manager, not in code or Terraform:
 
@@ -153,9 +210,14 @@ At runtime, ECS:
 
 **Result**: Your application code reads `process.env.VAPID_PUBLIC_KEY` normally.
 
-## Testing the Setup
+---
 
-### 1. **Test ALB Routing**
+<a id="testing-the-setup"></a>
+
+## 🧪 Testing the Setup
+
+<details open>
+<summary><strong>1. Test ALB Routing</strong></summary>
 
 ```bash
 # Get ALB URL
@@ -171,7 +233,10 @@ curl http://$ALB_URL/health
 curl http://$ALB_URL/api/trpc
 ```
 
-### 2. **Verify Environment Variables in Container**
+</details>
+
+<details open>
+<summary><strong>2. Verify Environment Variables in Container</strong></summary>
 
 ```bash
 # List tasks
@@ -181,7 +246,10 @@ aws ecs list-tasks --cluster dev-comm-ng-cluster --service-name dev-comm-ng-serv
 aws ecs describe-tasks --cluster dev-comm-ng-cluster --tasks <task-arn>
 ```
 
-### 3. **Check Application Logs**
+</details>
+
+<details open>
+<summary><strong>3. Check Application Logs</strong></summary>
 
 ```bash
 # Server logs
@@ -196,9 +264,16 @@ Look for:
 - Successful database connections
 - No secret-related errors
 
-## Common Issues
+</details>
 
-### Issue: Health check stuck at "initializing" (Redis)
+---
+
+<a id="common-issues"></a>
+
+## 🚨 Common Issues
+
+<details>
+<summary><strong>Issue: Health check stuck at "initializing" (Redis)</strong></summary>
 
 **Symptoms**: Logs show "Redis Client: Connected" but never "Redis Client: Ready" and `/api/health` keeps reporting `postgres: true, redis: false`.
 
@@ -219,7 +294,10 @@ REDIS_TLS=true
 
 Locally (Docker/localhost), you typically don't want TLS, so omit `REDIS_TLS` and keep `REDIS_HOST=localhost`.
 
-### Issue: tRPC calls fail with 404
+</details>
+
+<details>
+<summary><strong>Issue: tRPC calls fail with 404</strong></summary>
 
 **Cause**: ALB routing rule not matching
 
@@ -231,19 +309,31 @@ aws elbv2 describe-rules --listener-arn <listener-arn>
 
 Should show rule with path pattern `/api/*` and `/trpc/*`.
 
-### Issue: CORS errors in browser
+</details>
+
+<details>
+<summary><strong>Issue: CORS errors in browser</strong></summary>
 
 **Cause**: Origin mismatch
 
 **Solution**: Both web and server use same domain via ALB, so CORS should work with `origin: true, credentials: true`.
 
-### Issue: Environment variable is undefined
+</details>
+
+<details>
+<summary><strong>Issue: Environment variable is undefined</strong></summary>
 
 **Cause**: Secret not populated or wrong format
 
 **Solution**: See [SECRETS-SETUP.md](./SECRETS-SETUP.md) troubleshooting section.
 
-## Benefits of This Setup
+</details>
+
+---
+
+<a id="benefits-of-this-setup"></a>
+
+## 🎯 Benefits of This Setup
 
 1. ✅ **Single domain** - Users only see one URL
 2. ✅ **No CORS issues** - Same-origin requests
@@ -253,10 +343,14 @@ Should show rule with path pattern `/api/*` and `/trpc/*`.
 6. ✅ **Independent scaling** - Server and web scale separately
 7. ✅ **Zero downtime** - ALB handles rolling deployments
 
-## Next Steps
+---
 
-1. Complete initial deployment (see [INFRA.md](./INFRA.md))
-2. Set up VAPID keys (see [SECRETS-SETUP.md](./SECRETS-SETUP.md))
+<a id="next-steps"></a>
+
+## 🧭 Next Steps
+
+1. Complete initial deployment (see [`INFRA.md`](./INFRA.md))
+2. Set up VAPID keys (see [`SECRETS-SETUP.md`](./SECRETS-SETUP.md))
 3. Test all endpoints through ALB
 4. Set up custom domain (optional)
 5. Add SSL certificate (optional)

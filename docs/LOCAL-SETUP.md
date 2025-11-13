@@ -1,3 +1,27 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">🛠️ Local Setup</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#prerequisites">Prereqs</a> •
+  <a href="#1-clone-the-repository--install-dependencies">Clone & Install</a> •
+  <a href="#2-configure-environment-variables">Env Vars</a> •
+  <a href="#3-start-development-servers">Run Apps</a> •
+  <a href="#4-database-management">Database</a> •
+  <a href="#5-development-scripts">Scripts</a> •
+  <a href="#6-troubleshooting">Troubleshooting</a> •
+  <a href="#7-next-steps">Next Steps</a>
+</p>
+
 # Local Development Setup
 
 Follow this guide to run the CommNG applications locally for development and testing.

@@ -31,3 +31,5 @@ storage/
 
 # Crash logs
 **/crash.log
+
+*.zip

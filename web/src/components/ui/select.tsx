@@ -172,12 +172,19 @@ function SelectScrollDownButton({
   );
 }
 
+function SelectPortal({
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Portal>) {
+  return <SelectPrimitive.Portal {...props} />;
+}
+
 export {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectLabel,
+  SelectPortal,
   SelectScrollDownButton,
   SelectScrollUpButton,
   SelectSeparator,

@@ -26,9 +26,11 @@ const navItems: NavItem[] = [
 const AppNavBarItem = ({
   item,
   isActive,
+  onNavigate,
 }: {
   item: NavItem;
   isActive: boolean;
+  onNavigate?: () => void;
 }) => {
   const Icon = icons[item.icon];
 
@@ -38,6 +40,7 @@ const AppNavBarItem = ({
         href={item.href}
         aria-label={item.label}
         aria-current={isActive ? "page" : undefined}
+        onClick={onNavigate}
         className={`group relative flex h-16 w-16 items-center justify-center rounded-3xl transition-all duration-300
           ${
             isActive
@@ -53,9 +56,10 @@ const AppNavBarItem = ({
 
 type AppNavBarProps = {
   className?: string;
+  onNavigate?: () => void;
 };
 
-export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
+export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
   const pathname = usePathname();
   const ProfileIcon = icons.user;
   const HelpIcon = icons.help;
@@ -71,7 +75,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
     >
       <div className="flex h-16 w-16 items-center justify-center">
         <Image
-          src="/favicon_yellow.svg"
+          src="/icons/favicon_yellow.svg"
           alt="CommNG app switcher logo"
           width={52}
           height={52}
@@ -86,6 +90,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
             key={item.id}
             item={item}
             isActive={pathname.startsWith(item.href)}
+            onNavigate={onNavigate}
           />
         ))}
       </ul>
@@ -100,6 +105,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
               ? "border-accent bg-accent text-primary"
               : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
           )}
+          onClick={onNavigate}
         >
           <HelpIcon className="h-6 w-6" />
         </Link>
@@ -113,6 +119,7 @@ export const AppNavBar = ({ className }: AppNavBarProps = {}) => {
               ? "border-accent bg-accent text-primary"
               : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
           )}
+          onClick={onNavigate}
         >
           <ProfileIcon className="h-6 w-6" strokeWidth={2} />
         </Link>

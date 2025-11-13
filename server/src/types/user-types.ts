@@ -26,6 +26,19 @@ export const checkEmailExistsInputSchema = z.object({
 
 export type CheckEmailExistsInput = z.infer<typeof checkEmailExistsInputSchema>;
 
+export const createUserProfileInputSchema = z.object({
+  name: z.string().min(1),
+  phoneNumber: z.string().nullable().optional(),
+  rank: z.string().nullable().optional(),
+  department: z.string().nullable().optional(),
+  branch: z.string().nullable().optional(),
+  imageFileId: z.string().uuid().nullable().optional(),
+});
+
+export type CreateUserProfileInput = z.infer<
+  typeof createUserProfileInputSchema
+>;
+
 export const updateUserProfileInputSchema = z.object({
   name: z.string().min(1).optional(),
   phoneNumber: z.string().nullable().optional(),

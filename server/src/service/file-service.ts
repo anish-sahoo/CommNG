@@ -190,6 +190,22 @@ export class FileService {
     };
   }
 
+  public async deleteFile(fileId: string): Promise<void> {
+    const fileData = await this.fileRepository.getFile(fileId);
+    const location = fileData.location;
+
+    // Delete from S3 storage using the adapter
+    log.debug({ fileId, location }, "Deleting file from S3");
+    const deleted = await this.adapter.delete(location);
+    if (!deleted) {
+      log.warn({ fileId, location }, "Failed to delete file from S3 storage");
+    }
+
+    // Delete from database
+    await this.fileRepository.deleteFile(fileId);
+    log.info({ fileId, location }, "File deleted from S3 and database");
+  }
+
   public async fileLikeToReadable(file: FileLike): Promise<Readable> {
     if (typeof Readable.fromWeb === "function") {
       return Readable.fromWeb(file.stream());

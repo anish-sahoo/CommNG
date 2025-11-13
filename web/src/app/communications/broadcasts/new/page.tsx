@@ -6,12 +6,10 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import { useTRPC } from "@/lib/trpc";
-import ChannelShell from "../../components/channel-shell";
 import {
   BroadcastForm,
   type BroadcastFormValues,
@@ -23,7 +21,6 @@ export default function NewBroadcastPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const ArrowLeftIcon = icons.arrowLeft;
 
   const createBroadcast = useMutation(
     trpc.messageBlasts.createAndSendMessageBlast.mutationOptions(),
@@ -90,27 +87,16 @@ export default function NewBroadcastPage() {
   };
 
   return (
-    <ChannelShell
-      title={
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/communications"
-            className="inline-flex h-12 w-12 items-center justify-center text-accent transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 sm:h-14 sm:w-14"
-            aria-label="Back to all channels"
-          >
-            <ArrowLeftIcon className="h-7 w-7 sm:h-8 sm:w-8" />
-          </Link>
-          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Create Broadcast
-          </span>
-        </div>
-      }
+    <TitleShell
+      title="Create Broadcast"
+      backHref="/communications"
+      backAriaLabel="Back to all channels"
     >
       <BroadcastForm
         onSubmit={handleSubmit}
         submitting={createBroadcast.isPending}
         error={error}
       />
-    </ChannelShell>
+    </TitleShell>
   );
 }

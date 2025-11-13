@@ -226,7 +226,8 @@ export const userRoles = pgTable(
   ],
 );
 
-// SUBSCRIPTIONS
+// CHANNEL SUBSCRIPTIONS - for notification preferences only
+// Access control is handled via the roles system
 export const channelSubscriptions = pgTable(
   "channel_subscriptions",
   {
@@ -239,12 +240,18 @@ export const channelSubscriptions = pgTable(
     channelId: integer("channel_id")
       .references(() => channels.channelId, { onDelete: "cascade" })
       .notNull(),
-    permission: permissionEnum("permission").notNull(),
     notificationsEnabled: boolean("notifications_enabled")
       .default(true)
       .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
+    uniqueIndex("ux_channel_subscriptions_user_channel").on(
+      table.userId,
+      table.channelId,
+    ),
     index("ix_channel_subscriptions_user_id").on(table.userId),
     index("ix_channel_subscriptions_channel_id").on(table.channelId),
   ],
@@ -467,6 +474,76 @@ export const messageBlasts = pgTable(
   ],
 );
 
+// const roleKeys = await db
+//   .select({ roleKey: roles.roleKey })
+//   .from(userRoles)
+//   .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
+//   .where(eq(userRoles.userId, userId));
+// engine.hasAccess(roleKeys, `channel:${channelId}:read`);
+
+// Reports
+export const reportStatusEnum = pgEnum("report_status_enum", [
+  "Pending",
+  "Assigned",
+  "Resolved",
+]);
+
+export const reportCategoryEnum = pgEnum("report_category_enum", [
+  "Communication",
+  "Mentorship",
+  "Training",
+  "Resources",
+]);
+
+export const reports = pgTable("reports", {
+  reportId: uuid("report_id").primaryKey().defaultRandom(),
+  category: reportCategoryEnum("category"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: reportStatusEnum("status").notNull().default("Pending"),
+  submittedBy: text("submitted_by")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull(),
+  assignedTo: text("assigned_to").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  assignedBy: text("assigned_by").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: false })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: false })
+    .defaultNow()
+    .notNull(),
+  resolvedAt: timestamp("resolved", { withTimezone: false }),
+});
+
+export const reportAttachments = pgTable(
+  "report_attachments",
+  {
+    attachmentId: integer("attachment_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
+    reportId: uuid("report_id")
+      .references(() => reports.reportId, { onDelete: "cascade" })
+      .notNull(),
+    fileId: uuid("file_id")
+      .references(() => files.fileId, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: false })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("ux_report_attachments_report_file").on(
+      table.reportId,
+      table.fileId,
+    ),
+    index("ix_report_attachments_report_id").on(table.reportId),
+  ],
+);
+
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
 export type Role = typeof roles.$inferSelect;
@@ -477,10 +554,7 @@ export type Mentee = typeof mentees.$inferSelect;
 export type NewMentee = typeof mentees.$inferInsert;
 export type MessageBlast = typeof messageBlasts.$inferSelect;
 export type NewMessageBlast = typeof messageBlasts.$inferInsert;
-
-// const roleKeys = await db
-//   .select({ roleKey: roles.roleKey })
-//   .from(userRoles)
-//   .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
-//   .where(eq(userRoles.userId, userId));
-// engine.hasAccess(roleKeys, `channel:${channelId}:read`);
+export type Report = typeof reports.$inferSelect;
+export type NewReport = typeof reports.$inferInsert;
+export type ReportAttachment = typeof reportAttachments.$inferSelect;
+export type NewReportAttachment = typeof reportAttachments.$inferInsert;

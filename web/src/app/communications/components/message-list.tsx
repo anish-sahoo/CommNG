@@ -1,6 +1,4 @@
 import PostedCard from "@/components/posted-card";
-import Reaction from "@/components/reaction-bubble";
-import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 
 export type ChannelMessage = {
   id: number;
@@ -47,58 +45,17 @@ export function MessageList({
   return (
     <div className="flex flex-col gap-6 overflow-x-hidden">
       {messages.map((message) => (
-        <div key={message.id} className="flex flex-col gap-2">
-          <PostedCard
-            channelId={channelId}
-            postId={message.id}
-            name={message.authorName ?? "Unknown Member"}
-            rank={message.authorRank ?? message.authorRole ?? ""}
-            content={message.content}
-            attachments={message.attachments}
-          />
-          {message.reactions?.length ? (
-            <div className="flex flex-wrap items-center gap-2 pl-6 pr-4 sm:pl-8 sm:pr-0">
-              {message.reactions.map((reaction, index) => (
-                <Reaction
-                  key={`${message.id}-${reaction.emoji}-${index}`}
-                  emoji={reaction.emoji}
-                  count={reaction.count}
-                  initiallyActive={reaction.reactedByCurrentUser ?? false}
-                  onToggle={(active) =>
-                    onReactionToggle?.({
-                      messageId: message.id,
-                      emoji: reaction.emoji,
-                      active,
-                    })
-                  }
-                />
-              ))}
-              <AddReaction
-                disabled={!onReactionToggle}
-                onSelect={(emoji) =>
-                  onReactionToggle?.({
-                    messageId: message.id,
-                    emoji,
-                    active: true,
-                  })
-                }
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 pl-6 pr-4 sm:pl-8 sm:pr-0">
-              <AddReaction
-                disabled={!onReactionToggle}
-                onSelect={(emoji) =>
-                  onReactionToggle?.({
-                    messageId: message.id,
-                    emoji,
-                    active: true,
-                  })
-                }
-              />
-            </div>
-          )}
-        </div>
+        <PostedCard
+          key={message.id}
+          channelId={channelId}
+          postId={message.id}
+          name={message.authorName ?? "Unknown Member"}
+          rank={message.authorRank ?? message.authorRole ?? ""}
+          content={message.content}
+          attachments={message.attachments}
+          reactions={message.reactions}
+          onReactionToggle={onReactionToggle}
+        />
       ))}
     </div>
   );

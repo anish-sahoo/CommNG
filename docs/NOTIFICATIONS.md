@@ -1,3 +1,27 @@
+<div align="center" style="margin: 1.5rem auto;">
+  <table role="presentation" style="border:none;border-radius:18px;background:#0f172a;padding:1.5rem 2rem;box-shadow:0 10px 30px rgba(15,23,42,0.35);color:#f8fafc;width:100%;max-width:1200px;">
+    <tr>
+      <td style="vertical-align:middle;padding-right:1.5rem;">
+        <img src="../web/public/favicon_yellow.svg" alt="CommNG Favicon" width="72">
+      </td>
+      <td style="vertical-align:middle;">
+        <h1 style="margin:0;font-size:2rem;color:#f8fafc;">📣 Notifications Setup</h1>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p align="center">
+  <a href="#overview">Overview</a> •
+  <a href="#1-generate-vapid-keys">Generate Keys</a> •
+  <a href="#2-set-environment-variables">Env Vars</a> •
+  <a href="#3-how-the-repo-uses-the-keys">Usage</a> •
+  <a href="#4-verify-subscription-flow-dev">Verify Flow</a> •
+  <a href="#5-sending-a-test-notification">Test Send</a> •
+  <a href="#6-security--production-notes">Security</a> •
+  <a href="#7-troubleshooting">Troubleshooting</a>
+</p>
+
 # Web Push / VAPID Setup
 
 This document explains how to generate VAPID keys, configure environment variables for the server and client, and perform a quick end-to-end test of Web Push (no cloud provider required).
