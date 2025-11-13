@@ -229,6 +229,35 @@ export class CommsService {
     return this.commsRepo.removeUserFromChannel(user_id, channel_id);
   }
 
+  async removeUserFromChannel(
+    user_id: string,
+    channel_id: number,
+    target_user_id: string,
+  ) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    await this.getChannelById(channel_id);
+
+    // Verify the requester is admin
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      `channel:${channel_id}:admin`,
+    );
+    if (!isAdmin) {
+      throw new ForbiddenError(
+        "Only channel administrators can remove members",
+      );
+    }
+
+    // Don't allow removing yourself
+    if (user_id === target_user_id) {
+      throw new BadRequestError("Cannot remove yourself from the channel");
+    }
+
+    return this.commsRepo.removeUserFromChannel(target_user_id, channel_id);
+  }
+
   async joinChannel(user_id: string, channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");

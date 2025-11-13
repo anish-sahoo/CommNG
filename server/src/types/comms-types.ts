@@ -94,11 +94,17 @@ export const joinChannelSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
 
+export const removeMemberSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+  userId: z.string(),
+});
+
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type DeleteChannelInput = z.infer<typeof deleteChannelSchema>;
 export type LeaveChannelInput = z.infer<typeof leaveChannelSchema>;
 export type JoinChannelInput = z.infer<typeof joinChannelSchema>;
+export type RemoveMemberInput = z.infer<typeof removeMemberSchema>;
 export type DeletePostInput = z.infer<typeof deletePostSchema>;
 export type ToggleReactionInput = z.infer<typeof toggleReactionSchema>;
 export type GetChannelMessagesInput = z.infer<typeof getChannelMessagesSchema>;
