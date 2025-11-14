@@ -66,13 +66,7 @@ export class MentorRepository {
     }
 
     // Ensure eligibilityData is typed correctly for CreateMentorOutput
-    return {
-      ...created,
-      eligibilityData: created.eligibilityData as
-        | Record<string, unknown>
-        | null
-        | undefined,
-    };
+    return created;
   }
 
   /**
@@ -100,13 +94,7 @@ export class MentorRepository {
       throw new NotFoundError(`Mentor ${mentorId} not found`);
     }
 
-    return {
-      ...mentor,
-      eligibilityData: mentor.eligibilityData as
-        | Record<string, unknown>
-        | null
-        | undefined,
-    };
+    return mentor;
   }
 
   /**
@@ -133,12 +121,6 @@ export class MentorRepository {
       return null;
     }
 
-    return {
-      ...mentor,
-      eligibilityData: mentor.eligibilityData as
-        | Record<string, unknown>
-        | null
-        | undefined,
-    };
+    return mentor;
   }
 }
