@@ -132,7 +132,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [_isSmallScreen, setIsSmallScreen] = useState(false);
 
   useEffect(() => {
     const checkScreen = () => {
@@ -209,7 +209,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
-  const channelName = useMemo(() => {
+  const _channelName = useMemo(() => {
     if (!channelList.length || !parsedChannelId) {
       return "Channel";
     }
@@ -220,6 +220,11 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
     return match?.name ?? "Channel";
   }, [channelList, parsedChannelId]);
+
+  const displayChannelName =
+    _isSmallScreen && _channelName.length > 18
+      ? `${_channelName.slice(0, 18)}…`
+      : _channelName;
 
   // PostedCard consumes a flattened message contract, so this memo keeps the shape consistent regardless of how the backend representation evolves.
   const messageItems: ChannelMessage[] = useMemo(() => {
