@@ -85,6 +85,7 @@ export default function ChannelSettingsPage({
 
       if (channelSubscription) {
         setSubscriptionId(channelSubscription.subscriptionId);
+        console.log("Notification setting for channel:", channelSubscription.notificationsEnabled);
         setNotificationSetting(
           channelSubscription.notificationsEnabled ? "option2" : "option1",
         );
@@ -151,11 +152,13 @@ export default function ChannelSettingsPage({
       try {
         console.log("Saving settings, new channel name?:", channelName);
         console.log("Saving settings, new channel description?:", channelDescription);
+        console.log("Saving settings, new notification setting?:", notificationSetting === "option2");
         await updateChannelMutation.mutateAsync({
           channelId: parsedChannelId,
           metadata: {
             name: channelName,
             description: channelDescription,
+            notificationsEnabled: notificationSetting === "option2",
           },
         });
         console.log("Settings saved successfully");

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { channels } from "../data/db/schema.js";
+import { channels, channelSubscriptions } from "../data/db/schema.js";
 import type {
   CommsRepository,
   Transaction,
@@ -232,6 +232,16 @@ export class CommsService {
           .update(channels)
           .set({ metadata: { description: metadata.description } })
           .where(eq(channels.channelId, channel_id)),
+      );
+    }
+
+    console.log("NOTIFICATIONS ENABLED:", metadata.notificationsEnabled)
+    if (metadata.notificationsEnabled) {
+      updates.push((tx) =>
+        tx
+          .update(channelSubscriptions)
+          .set({ notificationsEnabled: metadata.notificationsEnabled })
+          .where(eq(channelSubscriptions.channelId, channel_id)),
       );
     }
     const result = await this.commsRepo.updateChannelSettings(updates);

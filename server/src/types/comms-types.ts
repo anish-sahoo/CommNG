@@ -48,6 +48,7 @@ export const channelUpdateMetadata = z.object({
   description: z.string().optional(),
   postingPermissions: z.enum(["everyone", "custom", "admin"]).optional(),
   imageFileId: z.string().optional(),
+  notificationsEnabled: z.boolean().default(true),
 });
 
 export const updateChannelSchema = z.object({
