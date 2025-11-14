@@ -117,6 +117,7 @@ export class CommsRepository {
         rank: users.rank,
         branch: users.branch,
         department: users.department,
+        image: users.image,
         roleKey: roles.roleKey,
         action: roles.action,
       })
