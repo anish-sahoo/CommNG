@@ -1962,13 +1962,13 @@ describe("updateChannelSettings (service -> repo)", () => {
       userId,
       channelId,
       notificationsEnabled,
-      metadata as ChannelUpdateMetadata,
+      metadata,
     );
 
     expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
     expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
     expect(Array.isArray(captured)).toBe(true);
-    expect(captured.length).toBe(1);
+    expect(captured.length).toBe(2);
 
     // Ensure each update function calls tx.update when executed
     const tx = {
@@ -1978,8 +1978,12 @@ describe("updateChannelSettings (service -> repo)", () => {
         }),
       }),
     } as unknown as Transaction;
-    await captured[0]?.(tx);
-    expect(tx.update).toHaveBeenCalled();
+
+    for (const fn of captured) {
+      await fn(tx);
+    }
+
+    expect(tx.update).toHaveBeenCalledTimes(2);
     // service should return the channel row from getChannelDataByID
     expect(result).toEqual({ channelId, name: "new-name", metadata: null });
   });
@@ -2018,12 +2022,12 @@ describe("updateChannelSettings (service -> repo)", () => {
       userId,
       channelId,
       notificationsEnabled,
-      metadata as ChannelUpdateMetadata,
+      metadata,
     );
 
     expect(mockRepo.getChannelById).toHaveBeenCalledWith(channelId);
     expect(mockRepo.updateChannelSettings).toHaveBeenCalled();
-    expect(captured.length).toBe(3);
+    expect(captured.length).toBe(4);
 
     const tx = {
       update: vi.fn().mockReturnValue({
@@ -2032,12 +2036,13 @@ describe("updateChannelSettings (service -> repo)", () => {
         }),
       }),
     } as unknown as Transaction;
+
     // Execute all captured update functions and ensure tx.update is called for each
     for (const fn of captured) {
       await fn(tx);
     }
 
-    expect(tx.update).toHaveBeenCalledTimes(3);
+    expect(tx.update).toHaveBeenCalledTimes(4);
     expect(result).toEqual({ channelId, name: "multi", metadata });
   });
 });
