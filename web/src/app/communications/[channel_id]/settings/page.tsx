@@ -44,8 +44,8 @@ export default function ChannelSettingsPage({
   const [channelDescription, setChannelDescription] = useState("");
   const [notificationSetting, setNotificationSetting] = useState("option2");
   const [modalOpen, setModalOpen] = useState(false);
-  const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const nameFieldId = useId();
   const descFieldId = useId();
@@ -81,7 +81,6 @@ export default function ChannelSettingsPage({
 
       // Set saved values 
       if (channelSubscription) {
-        setSubscriptionId(channelSubscription.subscriptionId);
         setNotificationSetting(
           channelSubscription.notificationsEnabled ? "option2" : "option1",
         );
@@ -143,8 +142,8 @@ export default function ChannelSettingsPage({
   const handleSaveChanges = async () => {
     if (!parsedChannelId) return;
 
-    if (isAdmin) { // Admin is able to change channel name, description, notif preferences
-      try {
+    try {
+      if (isAdmin) { // Admin is able to change channel name, description, notif preferences
         await updateChannelMutation.mutateAsync({
           channelId: parsedChannelId,
           metadata: {
@@ -153,19 +152,23 @@ export default function ChannelSettingsPage({
           },
           notificationsEnabled: notificationSetting === "option2",
         });
-      } catch (error) {
-        console.error("Failed to save settings:", error);
       }
-    }
-    else { // Non-admin can only change notif preferences
-      try {
+      else { // Non-admin can only change notif preferences
         await updateChannelMutation.mutateAsync({
           channelId: parsedChannelId,
           notificationsEnabled: notificationSetting === "option2",
         });
-      } catch (error) {
-        console.error("Failed to save settings:", error);
       }
+
+      // Show successful save message
+      setShowSuccessMessage(true);
+
+      // Hide after 5 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Failed to save settings: ", error)
     }
   };
 
@@ -322,6 +325,13 @@ export default function ChannelSettingsPage({
           handleLeave();
         }}
       />
+
+      {/* Success message */}
+        {showSuccessMessage && (
+          <div className="text-sm font-medium text-center text-primary">
+            Changes successfully saved
+          </div>
+        )}
     </TitleShell>
   );
 }
