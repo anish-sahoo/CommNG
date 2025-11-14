@@ -19,6 +19,15 @@ provider "aws" {
 }
 
 # ------------------------------------------------------------
+# Configuration Variables
+# ------------------------------------------------------------
+variable "enable_infrastructure_scheduler" {
+  description = "Enable automatic shutdown/startup of infrastructure (6 PM - 8 AM EST)"
+  type        = bool
+  default     = true  # Set to false to disable the scheduler
+}
+
+# ------------------------------------------------------------
 # Get default VPC and subnet group
 # ------------------------------------------------------------
 data "aws_vpc" "default" {
@@ -1322,5 +1331,232 @@ resource "aws_lambda_permission" "allow_eventbridge" {
   function_name = aws_lambda_function.ecs_restart_on_secret_rotation.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.secret_rotation.arn
+}
+
+# ------------------------------------------------------------
+# Infrastructure Scheduler (6 PM EST shutdown, 8 AM EST startup)
+# ------------------------------------------------------------
+
+# IAM Role for Scheduler Lambda
+resource "aws_iam_role" "scheduler_lambda" {
+  count = var.enable_infrastructure_scheduler ? 1 : 0
+  name = "dev-comm-ng-scheduler-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "dev-comm-ng-scheduler-lambda-role"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# Lambda CloudWatch Logs Policy
+resource "aws_iam_role_policy_attachment" "scheduler_lambda_logs" {
+  count      = var.enable_infrastructure_scheduler ? 1 : 0
+  role       = aws_iam_role.scheduler_lambda[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# Lambda Policy for ECS and RDS Control
+resource "aws_iam_role_policy" "scheduler_lambda_control" {
+  count = var.enable_infrastructure_scheduler ? 1 : 0
+  name = "scheduler-control-policy"
+  role = aws_iam_role.scheduler_lambda[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService",
+          "ecs:DescribeServices"
+        ]
+        Resource = [
+          aws_ecs_service.server.id,
+          aws_ecs_service.web.id
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "rds:StopDBInstance",
+          "rds:StartDBInstance",
+          "rds:DescribeDBInstances"
+        ]
+        Resource = aws_db_instance.dev_db_comm_ng.arn
+      }
+    ]
+  })
+}
+
+# Package shutdown Lambda
+data "archive_file" "scheduler_shutdown_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/infrastructure_scheduler"
+  output_path = "${path.module}/lambda/infrastructure_scheduler_shutdown.zip"
+  excludes    = ["startup.js", "package.json"]
+}
+
+# Package startup Lambda
+data "archive_file" "scheduler_startup_lambda" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda/infrastructure_scheduler"
+  output_path = "${path.module}/lambda/infrastructure_scheduler_startup.zip"
+  excludes    = ["shutdown.js", "package.json"]
+}
+
+# Shutdown Lambda Function
+resource "aws_lambda_function" "infrastructure_shutdown" {
+  count            = var.enable_infrastructure_scheduler ? 1 : 0
+  filename         = data.archive_file.scheduler_shutdown_lambda.output_path
+  function_name    = "dev-comm-ng-infrastructure-shutdown"
+  role            = aws_iam_role.scheduler_lambda[0].arn
+  handler         = "shutdown.handler"
+  source_code_hash = data.archive_file.scheduler_shutdown_lambda.output_base64sha256
+  runtime         = "nodejs20.x"
+  timeout         = 120
+
+  environment {
+    variables = {
+      ECS_CLUSTER_NAME  = aws_ecs_cluster.main.name
+      ECS_SERVICE_NAMES = "${aws_ecs_service.server.name},${aws_ecs_service.web.name}"
+      DB_INSTANCE_ID    = aws_db_instance.dev_db_comm_ng.identifier
+      AWS_REGION        = "us-east-1"
+    }
+  }
+
+  tags = {
+    Name        = "dev-comm-ng-infrastructure-shutdown"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# Startup Lambda Function
+resource "aws_lambda_function" "infrastructure_startup" {
+  count            = var.enable_infrastructure_scheduler ? 1 : 0
+  filename         = data.archive_file.scheduler_startup_lambda.output_path
+  function_name    = "dev-comm-ng-infrastructure-startup"
+  role            = aws_iam_role.scheduler_lambda[0].arn
+  handler         = "startup.handler"
+  source_code_hash = data.archive_file.scheduler_startup_lambda.output_base64sha256
+  runtime         = "nodejs20.x"
+  timeout         = 120
+
+  environment {
+    variables = {
+      ECS_CLUSTER_NAME  = aws_ecs_cluster.main.name
+      ECS_SERVICE_NAMES = "${aws_ecs_service.server.name},${aws_ecs_service.web.name}"
+      DB_INSTANCE_ID    = aws_db_instance.dev_db_comm_ng.identifier
+      AWS_REGION        = "us-east-1"
+    }
+  }
+
+  tags = {
+    Name        = "dev-comm-ng-infrastructure-startup"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# CloudWatch Log Groups for Scheduler Lambdas
+resource "aws_cloudwatch_log_group" "scheduler_shutdown_lambda" {
+  count             = var.enable_infrastructure_scheduler ? 1 : 0
+  name              = "/aws/lambda/${aws_lambda_function.infrastructure_shutdown[0].function_name}"
+  retention_in_days = 1
+
+  tags = {
+    Name        = "dev-comm-ng-scheduler-shutdown-lambda-logs"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "scheduler_startup_lambda" {
+  count             = var.enable_infrastructure_scheduler ? 1 : 0
+  name              = "/aws/lambda/${aws_lambda_function.infrastructure_startup[0].function_name}"
+  retention_in_days = 1
+
+  tags = {
+    Name        = "dev-comm-ng-scheduler-startup-lambda-logs"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# EventBridge Scheduler - Shutdown at 6 PM EST (11 PM UTC / 10 PM UTC during DST)
+# Using cron for both DST and standard time - AWS EventBridge uses UTC
+resource "aws_cloudwatch_event_rule" "infrastructure_shutdown_schedule" {
+  count               = var.enable_infrastructure_scheduler ? 1 : 0
+  name                = "dev-comm-ng-shutdown-6pm-est"
+  description         = "Shutdown infrastructure at 6 PM EST daily"
+  schedule_expression = "cron(0 23 * * ? *)" # 11 PM UTC = 6 PM EST (during standard time)
+
+  tags = {
+    Name        = "dev-comm-ng-shutdown-schedule"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# EventBridge Scheduler - Startup at 8 AM EST (1 PM UTC / 12 PM UTC during DST)
+resource "aws_cloudwatch_event_rule" "infrastructure_startup_schedule" {
+  count               = var.enable_infrastructure_scheduler ? 1 : 0
+  name                = "dev-comm-ng-startup-8am-est"
+  description         = "Startup infrastructure at 8 AM EST daily"
+  schedule_expression = "cron(0 13 * * ? *)" # 1 PM UTC = 8 AM EST (during standard time)
+
+  tags = {
+    Name        = "dev-comm-ng-startup-schedule"
+    Environment = "dev"
+    Project     = "comm_ng"
+  }
+}
+
+# EventBridge Targets
+resource "aws_cloudwatch_event_target" "shutdown_lambda" {
+  count     = var.enable_infrastructure_scheduler ? 1 : 0
+  rule      = aws_cloudwatch_event_rule.infrastructure_shutdown_schedule[0].name
+  target_id = "InfrastructureShutdownLambda"
+  arn       = aws_lambda_function.infrastructure_shutdown[0].arn
+}
+
+resource "aws_cloudwatch_event_target" "startup_lambda" {
+  count     = var.enable_infrastructure_scheduler ? 1 : 0
+  rule      = aws_cloudwatch_event_rule.infrastructure_startup_schedule[0].name
+  target_id = "InfrastructureStartupLambda"
+  arn       = aws_lambda_function.infrastructure_startup[0].arn
+}
+
+# Lambda Permissions for EventBridge
+resource "aws_lambda_permission" "allow_eventbridge_shutdown" {
+  count         = var.enable_infrastructure_scheduler ? 1 : 0
+  statement_id  = "AllowExecutionFromEventBridgeShutdown"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.infrastructure_shutdown[0].function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.infrastructure_shutdown_schedule[0].arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge_startup" {
+  count         = var.enable_infrastructure_scheduler ? 1 : 0
+  statement_id  = "AllowExecutionFromEventBridgeStartup"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.infrastructure_startup[0].function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.infrastructure_startup_schedule[0].arn
 }
 
