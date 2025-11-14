@@ -458,7 +458,7 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
-                Member List View
+                Member List View...
               </h2>
             </div>
             <ListView />
