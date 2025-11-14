@@ -1,17 +1,13 @@
 "use client";
 
+import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  skipToken,
-  useMutation,
-  useQuery,
-} from "@tanstack/react-query";
+import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { RemoveMemberModal } from "@/components/modal/remove-member-modal";
 import SearchBar from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
-import { icons } from "@/components/icons";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/lib/trpc";
 
@@ -52,9 +48,7 @@ export default function ChannelMembersPage({
     : null;
 
   const channelInput =
-    channelId === null || isNaN(channelId)
-      ? skipToken
-      : { channelId };
+    channelId === null || Number.isNaN(channelId) ? skipToken : { channelId };
 
   // Fetch channel members
   const membersQuery = useQuery(
@@ -126,7 +120,8 @@ export default function ChannelMembersPage({
       await membersQuery.refetch();
     } catch (error) {
       toast.error("Failed to remove member", {
-        description: error instanceof Error ? error.message : "An error occurred",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
       });
     }
   };
