@@ -68,7 +68,7 @@ export function TitleShell({
                   <ArrowLeftIcon className="h-6 w-6" aria-hidden="true" />
                 </Link>
               ) : null}
-              <div className="min-w-0 flex-1">{headerTitle}</div>
+              <div className="min-w-0 flex-1 ml-1">{headerTitle}</div>
             </div>
             {actions ? (
               <div className="flex flex-shrink-0 items-center gap-3">

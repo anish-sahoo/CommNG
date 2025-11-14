@@ -251,7 +251,7 @@ const NavigationShell = ({
         ) : null}
         <div
           className={cn(
-            "flex flex-1 flex-col px-4 py-10 sm:px-5 md:px-6 lg:pr-10 lg:pt-16",
+            "flex flex-1 flex-col px-4 py-5 sm:px-5 md:px-6 lg:pr-10 lg:pt-5",
             desktopOffsetClass,
             desktopPaddingClass,
           )}
