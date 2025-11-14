@@ -205,7 +205,7 @@ export const PostedCard = ({
             triggerClassName="scale-90 sm:scale-100"
           />
         </div>
-        <div className="flex flex-col gap-4 px-2 pt-6 sm:flex-row sm:items-start sm:gap-4 sm:px-4 sm:pt-4">
+        <div className="flex items-start gap-4 px-2 pt-6 sm:px-4 sm:pt-4">
           <div className="flex justify-start sm:pt-2">
             <Avatar />
           </div>
