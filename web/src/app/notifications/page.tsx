@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTRPCClient } from "../../lib/trpc";
+import { useTRPCClient } from "@/lib/trpc";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
