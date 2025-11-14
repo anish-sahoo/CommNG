@@ -7,23 +7,36 @@ import log from "../utils/logger.js";
 
 const USER_CACHE_TTL_SECONDS = 60 * 60; // keep in sync with Cache decorator default
 
+/**
+ * Service for user data operations with caching
+ */
 export class UserService {
   private usersRepo: UserRepository;
   private fileRepo: FileRepository;
 
   /**
-   * @param usersRepo (optional) a reportRepository instance
+   * @param usersRepo a reportRepository instance
    */
   constructor(usersRepo: UserRepository, fileRepo?: FileRepository) {
     this.usersRepo = usersRepo;
     this.fileRepo = fileRepo ?? new FileRepository();
   }
 
+  /**
+   * Get user data by ID (cached)
+   * @param user_id User ID
+   * @returns User data object
+   */
   @Cache((user_id: string) => `user:${user_id}:data`)
   async getUserData(user_id: string) {
     return this.usersRepo.getUserData(user_id);
   }
 
+  /**
+   * Check if a user exists by email
+   * @param email User email
+   * @returns True if user exists, false otherwise
+   */
   async doesUserExistByEmail(email: string) {
     return this.usersRepo.doesUserExistByEmail(email);
   }

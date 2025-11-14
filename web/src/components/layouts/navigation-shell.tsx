@@ -95,6 +95,7 @@ const NavigationShell = ({
   );
 
   const userId = sessionData?.user?.id;
+  // Persist dismissals per user so that signing into another account on the same device reveals their own outstanding broadcasts
   const storageKey = userId ? `commng:broadcast-acks:${userId}` : null;
   const displayableBroadcasts = useMemo(() => {
     if (!activeBroadcasts || activeBroadcasts.length === 0) {
@@ -103,6 +104,7 @@ const NavigationShell = ({
     if (!userId) {
       return activeBroadcasts;
     }
+    // Never pop up a modal for a blast the current user authored; the sender already sees confirmation elsewhere
     return activeBroadcasts.filter((blast) => blast.senderId !== userId);
   }, [activeBroadcasts, userId]);
 

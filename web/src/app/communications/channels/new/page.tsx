@@ -15,6 +15,7 @@ import {
   type CreateChannelValues,
 } from "../components/channel-form";
 
+// NewChannelPage guides admins through creating a communications channel, wiring the form to TRPC mutations and cache invalidation.
 export default function NewChannelPage() {
   const trpc = useTRPC();
   const router = useRouter();

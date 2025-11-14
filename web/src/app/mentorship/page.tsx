@@ -21,6 +21,7 @@ const cards = [
   },
 ];
 
+// MentorshipLanding is the marketing entry for the mentorship program, steering users toward mentor/mentee applications with thematic imagery.
 export default function MentorshipLanding() {
   return (
     <TitleShell

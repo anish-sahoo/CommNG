@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
 
+// ProfileSettingsPage currently just exposes sign-out while the fuller preferences experience is being built.
 export default function ProfileSettingsPage() {
   const router = useRouter();
   const [isSigningOut, setIsSigningOut] = useState(false);

@@ -15,6 +15,7 @@ import { authClient } from "@/lib/auth-client";
 import { useTRPC } from "@/lib/trpc";
 import { BroadcastCard, type BroadcastCardData } from "./components";
 
+// BroadcastsPage lists every currently active blast with management affordances, acting as the inbox counterpart to the inline modal surfaced elsewhere.
 export default function BroadcastsPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

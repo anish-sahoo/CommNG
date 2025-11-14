@@ -40,6 +40,7 @@ export function QueryProvider({ children }: PropsWithChildren) {
         httpBatchLink({
           url: trpcUrl,
           fetch(url, options) {
+            // API sessions ride on cookies; force credentialed requests even when NEXT_PUBLIC_API_BASE_URL points off-origin
             return fetch(url, { ...options, credentials: "include" });
           },
         }),

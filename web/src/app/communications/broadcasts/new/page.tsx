@@ -16,6 +16,7 @@ import {
   resolveAudience,
 } from "../components";
 
+// NewBroadcastPage collects the structured fields for a message blast before delegating to the TRPC mutation that fans it out to the right audience.
 export default function NewBroadcastPage() {
   const trpc = useTRPC();
   const router = useRouter();

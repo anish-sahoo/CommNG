@@ -1,6 +1,9 @@
 import type { SearchRepository } from "../data/repository/search-repo.js";
 import log from "../utils/logger.js";
 
+/**
+ * Service for search and typeahead functionality
+ */
 export class SearchService {
   private searchRepository;
 
@@ -8,6 +11,14 @@ export class SearchService {
     this.searchRepository = searchRepository;
   }
 
+  /**
+   * Get typeahead search suggestions for a query
+   * @param query Search query string
+   * @param userId User ID
+   * @param limit Maximum number of results
+   * @param type Match type ("substring" or "prefix")
+   * @returns Array of search results
+   */
   public async getTypeAheadSuggestions(
     query: string,
     userId: string,
