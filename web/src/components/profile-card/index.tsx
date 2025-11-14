@@ -241,7 +241,7 @@ export default function ProfileCard({
         </div>
 
         <div className="px-6 pb-6 sm:px-8">
-          <div className="mt-4 flex flex-col gap-6 sm:mt-6 sm:flex-row sm:items-start sm:gap-10 lg:gap-12">
+          <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-start sm:gap-10 lg:gap-12">
             <div className="relative z-10 -mt-16 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-card bg-neutral text-secondary shadow-lg sm:-mt-20 sm:h-32 sm:w-32">
               {avatarSrc ? (
                 <Image
@@ -260,7 +260,7 @@ export default function ProfileCard({
               )}
             </div>
 
-            <div className="relative z-10 flex flex-1 flex-col gap-4 pt-4 sm:ml-8 sm:pt-2 lg:pt-0">
+            <div className="relative z-10 flex flex-1 flex-col gap-3 pt-2 sm:ml-8 sm:pt-2 lg:pt-0">
               <div className="space-y-1 text-secondary sm:max-w-2xl">
                 <h2 className="text-2xl font-semibold leading-tight sm:text-3xl">
                   {name}
