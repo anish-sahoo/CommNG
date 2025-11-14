@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@images/*": ["./public/images/*"],
+      "@server/*": ["../server/src/*"]
     },
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
