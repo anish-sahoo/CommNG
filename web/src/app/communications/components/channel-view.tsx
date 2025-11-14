@@ -132,6 +132,19 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => {
+      window.removeEventListener("resize", checkScreen);
+    };
+  }, []);
+
   // Explicitly type mutation variables to ensure correct inference
   type ToggleReactionVars = {
     channelId: number;
@@ -207,6 +220,13 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
     return match?.name ?? "Channel";
   }, [channelList, parsedChannelId]);
+
+  const displayChannelName = useMemo(() => {
+    if (isSmallScreen && channelName.length > 18) {
+      return `${channelName.slice(0, 18)}...`;
+    }
+    return channelName;
+  }, [channelName, isSmallScreen]);
 
   // PostedCard consumes a flattened message contract, so this memo keeps the shape consistent regardless of how the backend representation evolves.
   const messageItems: ChannelMessage[] = useMemo(() => {
@@ -409,7 +429,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   if (isNotMember) {
     return (
       <TitleShell
-        title={channelName}
+        title={displayChannelName}
         backHref="/communications"
         backAriaLabel="Back to all channels"
       >
@@ -441,7 +461,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   return (
     <TitleShell
-      title={channelName}
+      title={displayChannelName}
       backHref="/communications"
       backAriaLabel="Back to all channels"
       actions={
