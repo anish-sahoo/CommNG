@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { useTRPCClient } from "../../lib/trpc";
+import { useTRPCClient } from "@/lib/trpc";
 
 /*
 Probably quite trash react code but use this as an example of what to do (and what not to do) 
