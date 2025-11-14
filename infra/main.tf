@@ -1317,24 +1317,20 @@ resource "aws_cloudwatch_log_group" "ecs_restart_lambda" {
 }
 
 # EventBridge Rule for Secrets Manager Rotation
+# Uses native Secrets Manager events (no CloudTrail required)
 resource "aws_cloudwatch_event_rule" "secret_rotation" {
   name        = "dev-comm-ng-secret-rotation-trigger"
   description = "Trigger ECS restart when Secrets Manager rotates secrets"
 
   event_pattern = jsonencode({
     source      = ["aws.secretsmanager"]
-    detail-type = ["AWS API Call via CloudTrail"]
-    detail = {
-      eventName = ["RotationSucceeded"]
-      requestParameters = {
-        secretId = [
-          aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn,
-          aws_secretsmanager_secret.cache_auth.arn,
-          aws_secretsmanager_secret.vapid_keys.arn,
-          aws_secretsmanager_secret.better_auth_secret.arn
-        ]
-      }
-    }
+    detail-type = ["AWS Secrets Manager Secret Rotation"]
+    resources = [
+      aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn,
+      aws_secretsmanager_secret.cache_auth.arn,
+      aws_secretsmanager_secret.vapid_keys.arn,
+      aws_secretsmanager_secret.better_auth_secret.arn
+    ]
   })
 
   tags = {

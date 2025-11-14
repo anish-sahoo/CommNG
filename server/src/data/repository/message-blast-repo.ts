@@ -14,7 +14,7 @@ import { messageBlasts } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
 /**
- * Repository to handle database queries/communication related to message blasts
+ * Repository to handle database queries/communication related to message blasts.
  */
 export class MessageBlastRepository {
   /**
@@ -28,6 +28,17 @@ export class MessageBlastRepository {
     };
   }
 
+  /**
+   * Create a new message blast.
+   * @param senderId Sender user ID
+   * @param title Message blast title
+   * @param content Message blast content
+   * @param targetAudience Optional target audience
+   * @param validUntil Optional valid until date
+   * @param status Message blast status (default: "draft")
+   * @returns Created message blast object
+   * @throws ConflictError if creation fails
+   */
   async createMessageBlast(
     senderId: string,
     title: string,
@@ -69,6 +80,12 @@ export class MessageBlastRepository {
     return this.parseMessageBlastRow(created);
   }
 
+  /**
+   * Get a message blast by its ID.
+   * @param blastId Message blast ID
+   * @returns Message blast object
+   * @throws NotFoundError if not found
+   */
   async getMessageBlastById(blastId: number): Promise<GetMessageBlastOutput> {
     const [blast] = await db
       .select({
@@ -94,6 +111,11 @@ export class MessageBlastRepository {
     return this.parseMessageBlastRow(blast);
   }
 
+  /**
+   * Get all message blasts sent by a user.
+   * @param senderId Sender user ID
+   * @returns Array of message blast objects
+   */
   async getMessageBlastsBySender(
     senderId: string,
   ): Promise<GetMessageBlastOutput[]> {
@@ -116,6 +138,17 @@ export class MessageBlastRepository {
     return rows.map((row) => this.parseMessageBlastRow(row));
   }
 
+  /**
+   * Update a message blast.
+   * @param blastId Message blast ID
+   * @param title Optional new title
+   * @param content Optional new content
+   * @param targetAudience Optional new target audience
+   * @param validUntil Optional new valid until date
+   * @param status Optional new status
+   * @returns Updated message blast object
+   * @throws NotFoundError if not found
+   */
   async updateMessageBlast(
     blastId: number,
     title?: string,
@@ -159,6 +192,12 @@ export class MessageBlastRepository {
     return this.parseMessageBlastRow(updated);
   }
 
+  /**
+   * Mark a message blast as sent.
+   * @param blastId Message blast ID
+   * @returns Updated message blast object
+   * @throws NotFoundError if not found
+   */
   async markAsSent(blastId: number): Promise<UpdateMessageBlastOutput> {
     const [updated] = await db
       .update(messageBlasts)
@@ -188,6 +227,12 @@ export class MessageBlastRepository {
     return this.parseMessageBlastRow(updated);
   }
 
+  /**
+   * Mark a message blast as failed.
+   * @param blastId Message blast ID
+   * @returns Updated message blast object
+   * @throws NotFoundError if not found
+   */
   async markAsFailed(blastId: number): Promise<UpdateMessageBlastOutput> {
     const [updated] = await db
       .update(messageBlasts)
@@ -216,6 +261,11 @@ export class MessageBlastRepository {
     return this.parseMessageBlastRow(updated);
   }
 
+  /**
+   * Delete a message blast by its ID.
+   * @param blastId Message blast ID
+   * @throws NotFoundError if not found
+   */
   async deleteMessageBlast(blastId: number): Promise<void> {
     const [deleted] = await db
       .delete(messageBlasts)
@@ -227,6 +277,11 @@ export class MessageBlastRepository {
     }
   }
 
+  /**
+   * Get all message blasts by status.
+   * @param status Message blast status
+   * @returns Array of message blast objects
+   */
   async getMessageBlastsByStatus(
     status: "draft" | "sent" | "failed",
   ): Promise<GetMessageBlastOutput[]> {
@@ -277,6 +332,12 @@ export class MessageBlastRepository {
     )})`;
   }
 
+  /**
+   * Get all active message blasts for a user based on audience query.
+   * @param query Audience query object
+   * @param userId Optional user ID for visibility
+   * @returns Array of message blast objects
+   */
   async getMessageBlastsForUser(
     query: ActiveMessageBlastsForUserQuery,
     userId?: string,

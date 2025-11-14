@@ -67,6 +67,7 @@ export const PostedCard = ({
   const queryClient = useQueryClient();
 
   const channelMessagesQueryKey = useMemo<QueryKey>(() => {
+    // TRPC builds a read-only tuple for each query; casting once keeps stable reference React Query can use for invalidations
     return trpc.comms.getChannelMessages.queryKey({
       channelId: channelId,
     }) as unknown as QueryKey;
@@ -138,6 +139,7 @@ export const PostedCard = ({
       try {
         const fileData = await trpcClient.files.getFile.query({ fileId });
 
+        // The file service hands back a signed URL/string, so delegating to an <a> avoids buffering the blob in JS memory
         // Create a temporary anchor element to trigger download
         const link = document.createElement("a");
         link.href = fileData.data; // This is the S3 URL or data URL
@@ -200,7 +202,7 @@ export const PostedCard = ({
             items={actionMenuItems}
             align="end"
             triggerAriaLabel="Post actions"
-            className="scale-90 sm:scale-100"
+            triggerClassName="scale-90 sm:scale-100"
           />
         </div>
         <div className="flex flex-col gap-4 px-2 pt-6 sm:flex-row sm:items-start sm:gap-4 sm:px-4 sm:pt-4">

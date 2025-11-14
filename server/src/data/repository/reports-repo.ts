@@ -43,9 +43,17 @@ const BASE_REPORT_FIELDS = {
 /**
  * Repository to handle database queries/communication related to reports.
  */
+/**
+ * Repository to handle database queries/communication related to reports.
+ */
 export class ReportRepository {
   /**
    * Returns the reports created by a specific user.
+   */
+  /**
+   * Returns the reports created by a specific user.
+   * @param userId User ID
+   * @returns Array of report objects with attachments
    */
   async getReportsForUser(userId: string) {
     const result = await db
@@ -68,6 +76,12 @@ export class ReportRepository {
   /**
    * Fetch a single report. Throws if not found.
    */
+  /**
+   * Fetch a single report by its ID.
+   * @param reportId Report ID
+   * @returns Report object with attachments
+   * @throws NotFoundError if not found
+   */
   async getReportById(reportId: string) {
     const [report] = await db
       .select(BASE_REPORT_FIELDS)
@@ -89,6 +103,12 @@ export class ReportRepository {
 
   /**
    * Create a new report.
+   */
+  /**
+   * Create a new report.
+   * @param input CreateReport input object
+   * @returns Created report object with attachments
+   * @throws ConflictError if creation fails
    */
   async createReport(input: CreateReport) {
     return await db.transaction(async (tx) => {
@@ -122,6 +142,14 @@ export class ReportRepository {
 
   /**
    * Update an existing report.
+   */
+  /**
+   * Update an existing report.
+   * @param reportId Report ID
+   * @param updates EditReport updates object
+   * @returns Updated report object with attachments
+   * @throws NotFoundError if not found
+   * @throws ConflictError if update fails
    */
   async updateReport(reportId: string, updates: EditReport["updates"]) {
     return await db.transaction(async (tx) => {
@@ -187,6 +215,12 @@ export class ReportRepository {
   /**
    * Delete a report permanently.
    */
+  /**
+   * Delete a report permanently.
+   * @param reportId Report ID
+   * @returns Deleted report ID object
+   * @throws NotFoundError if not found
+   */
   async deleteReport(reportId: string) {
     const deleted = await db
       .delete(reports)
@@ -202,6 +236,14 @@ export class ReportRepository {
 
   /**
    * Assign a report to another user and update the status.
+   */
+  /**
+   * Assign a report to another user and update the status.
+   * @param reportId Report ID
+   * @param assigneeId Assignee user ID
+   * @param assignedBy User ID who assigned
+   * @returns Updated report object with attachments
+   * @throws NotFoundError if not found
    */
   async assignReport({ reportId, assigneeId, assignedBy }: AssignReport) {
     const [updated] = await db

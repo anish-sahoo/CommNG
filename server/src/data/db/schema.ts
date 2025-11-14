@@ -346,7 +346,9 @@ export const mentors = pgTable(
     mentorshipPreferences: text("mentorship_preferences"),
     rank: text("rank"),
     yearsOfService: integer("years_of_service"),
-    eligibilityData: jsonb("eligibility_data"),
+    eligibilityData: jsonb("eligibility_data").$type<
+      Record<string, unknown> | null | undefined
+    >(),
     status: mentorStatusEnum("status").default("requested").notNull(),
   },
   (table) => [

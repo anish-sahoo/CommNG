@@ -140,6 +140,7 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random()}`;
+      // The ID only lives on client-side for optimistic UI; fall back to a timestamp seed on platforms without crypto.randomUUID
       void uploadChannelPhoto(id, file);
     },
     [uploadChannelPhoto],

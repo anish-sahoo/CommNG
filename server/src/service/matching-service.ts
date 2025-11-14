@@ -13,7 +13,7 @@ export class MatchingService {
    * Trigger matching process when a mentor is created
    */
   async triggerMatchingForNewMentor(mentorUserId: string): Promise<void> {
-    log.info("Triggering matching process for new mentor", { mentorUserId });
+    log.info({ mentorUserId }, "Triggering matching process for new mentor");
 
     // Find a random subset of active mentees up to MAX_MATCH_REQUESTS
     const selectedMentees = await db
@@ -23,9 +23,12 @@ export class MatchingService {
       .orderBy(sql`RANDOM()`)
       .limit(MatchingService.MAX_MATCH_REQUESTS);
 
-    log.info("Found active mentees for matching", {
-      count: selectedMentees.length,
-    });
+    log.info(
+      {
+        count: selectedMentees.length,
+      },
+      "Found active mentees for matching",
+    );
 
     // For each selected mentee, create a matching request
     const failedMenteeUserIds: string[] = [];
@@ -38,10 +41,13 @@ export class MatchingService {
     }
 
     if (failedMenteeUserIds.length > 0) {
-      log.error("Failed to create matching requests", {
-        failedMenteeUserIds,
-        mentorUserId,
-      });
+      log.error(
+        {
+          failedMenteeUserIds,
+          mentorUserId,
+        },
+        "Failed to create matching requests",
+      );
     }
   }
 
@@ -49,7 +55,7 @@ export class MatchingService {
    * Trigger matching process when a mentee is created
    */
   async triggerMatchingForNewMentee(menteeUserId: string): Promise<void> {
-    log.info("Triggering matching process for new mentee", { menteeUserId });
+    log.info({ menteeUserId }, "Triggering matching process for new mentee");
 
     // Find a random subset of available mentors up to MAX_MATCH_REQUESTS
     const selectedMentors = await db
@@ -59,9 +65,12 @@ export class MatchingService {
       .orderBy(sql`RANDOM()`)
       .limit(MatchingService.MAX_MATCH_REQUESTS);
 
-    log.info("Found available mentors for matching", {
-      count: selectedMentors.length,
-    });
+    log.info(
+      {
+        count: selectedMentors.length,
+      },
+      "Found available mentors for matching",
+    );
 
     // For each selected mentor, create a matching request
     const failedMentorUserIds: string[] = [];
@@ -74,10 +83,13 @@ export class MatchingService {
     }
 
     if (failedMentorUserIds.length > 0) {
-      log.error("Failed to create matching requests", {
-        menteeUserId,
-        failedMentorUserIds,
-      });
+      log.error(
+        {
+          menteeUserId,
+          failedMentorUserIds,
+        },
+        "Failed to create matching requests",
+      );
     }
   }
 
@@ -96,7 +108,7 @@ export class MatchingService {
       .limit(1);
 
     if (existingRequest.length > 0) {
-      log.debug("Matching request already exists for mentee", { menteeUserId });
+      log.debug({ menteeUserId }, "Matching request already exists for mentee");
       return;
     }
 
@@ -106,6 +118,6 @@ export class MatchingService {
       requestPreferences: `Auto-generated request for mentor: ${mentorUserId}`,
     });
 
-    log.info("Created matching request", { menteeUserId, mentorUserId });
+    log.info({ menteeUserId, mentorUserId }, "Created matching request");
   }
 }

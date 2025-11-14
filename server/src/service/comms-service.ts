@@ -13,6 +13,9 @@ import {
 import log from "../utils/logger.js";
 import { policyEngine } from "./policy-engine.js";
 
+/**
+ * Service for communication-related business logic (channels, messages, subscriptions)
+ */
 export class CommsService {
   private commsRepo: CommsRepository;
 
@@ -20,6 +23,12 @@ export class CommsService {
     this.commsRepo = commsRepo;
   }
 
+  /**
+   * Get channel by ID
+   * @param channel_id Channel ID
+   * @returns Channel object
+   * @throws BadRequestError if channel_id has decimal points
+   */
   async getChannelById(channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -28,6 +37,12 @@ export class CommsService {
     return this.commsRepo.getChannelById(channel_id);
   }
 
+  /**
+   * Get all members of a channel
+   * @param channel_id Channel ID
+   * @returns Array of channel members
+   * @throws BadRequestError if channel_id has decimal points
+   */
   async getChannelMembers(channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -36,6 +51,15 @@ export class CommsService {
     return this.commsRepo.getChannelMembers(channel_id);
   }
 
+  /**
+   * Create a new message in a channel
+   * @param user_id Sender user ID
+   * @param channel_id Channel ID
+   * @param content Message content
+   * @param attachment_file_ids Optional array of file IDs for attachments
+   * @returns Created message object
+   * @throws BadRequestError if channel_id has decimal points
+   */
   async createMessage(
     user_id: string,
     channel_id: number,
@@ -56,6 +80,17 @@ export class CommsService {
     );
   }
 
+  /**
+   * Edit an existing message
+   * @param user_id User ID (must be the message author)
+   * @param channel_id Channel ID
+   * @param message_id Message ID
+   * @param content New message content
+   * @param attachment_file_ids Optional array of file IDs for attachments
+   * @returns Updated message object
+   * @throws BadRequestError if IDs have decimal points or message doesn't belong to channel
+   * @throws ForbiddenError if user is not the message author
+   */
   async editMessage(
     user_id: string,
     channel_id: number,
@@ -93,6 +128,16 @@ export class CommsService {
     );
   }
 
+  /**
+   * Delete a message (author or channel admin only)
+   * @param user_id User ID (message author or channel admin)
+   * @param channel_id Channel ID
+   * @param message_id Message ID
+   * @param fileService Optional file service to delete attachments
+   * @returns Deleted message object
+   * @throws BadRequestError if IDs have decimal points or message doesn't belong to channel
+   * @throws ForbiddenError if user is not author or admin
+   */
   async deleteMessage(
     user_id: string,
     channel_id: number,
@@ -148,10 +193,22 @@ export class CommsService {
     return result;
   }
 
+  /**
+   * Get channel settings by ID
+   * @param channel_id Channel ID
+   * @returns Channel settings object
+   */
   async getChannelSettings(channel_id: number) {
     return this.commsRepo.getChannelDataByID(channel_id);
   }
 
+  /**
+   * Update channel settings (name, posting permissions, description)
+   * @param channel_id Channel ID
+   * @param metadata Channel update metadata
+   * @returns Updated channel settings
+   * @throws InternalServerError if update fails
+   */
   async updateChannelSettings(
     channel_id: number,
     metadata: ChannelUpdateMetadata,
@@ -194,6 +251,14 @@ export class CommsService {
     );
   }
 
+  /**
+   * Delete a channel (admin only)
+   * @param user_id User ID (must be channel admin)
+   * @param channel_id Channel ID
+   * @returns Deleted channel object
+   * @throws BadRequestError if channel_id has decimal points
+   * @throws ForbiddenError if user is not channel admin
+   */
   async deleteChannel(user_id: string, channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -211,6 +276,14 @@ export class CommsService {
     return this.commsRepo.deleteChannel(channel_id);
   }
 
+  /**
+   * Leave a channel (removes roles and subscription, admin cannot leave)
+   * @param user_id User ID
+   * @param channel_id Channel ID
+   * @returns Success object
+   * @throws BadRequestError if channel_id has decimal points
+   * @throws ForbiddenError if user is channel admin
+   */
   async leaveChannel(user_id: string, channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -229,6 +302,14 @@ export class CommsService {
     return this.commsRepo.removeUserFromChannel(user_id, channel_id);
   }
 
+  /**
+   * Join a public channel (creates read role and auto-subscribes)
+   * @param user_id User ID
+   * @param channel_id Channel ID
+   * @returns Success object with channel ID
+   * @throws BadRequestError if channel_id has decimal points or user already member
+   * @throws ForbiddenError if channel is not public
+   */
   async joinChannel(user_id: string, channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
