@@ -303,7 +303,15 @@ export class CommsService {
     return this.commsRepo.removeUserFromChannel(user_id, channel_id);
   }
 
-<<<<<<< HEAD
+  /**
+   * Remove a user from a channel (admin only)
+   * @param user_id User ID of the requester (must be channel admin)
+   * @param channel_id Channel ID
+   * @param target_user_id User ID of the user to remove
+   * @returns Success object
+   * @throws BadRequestError if channel_id has decimal points or user tries to remove themselves
+   * @throws ForbiddenError if requester is not channel admin
+   */
   async removeUserFromChannel(
     user_id: string,
     channel_id: number,
@@ -333,7 +341,6 @@ export class CommsService {
     return this.commsRepo.removeUserFromChannel(target_user_id, channel_id);
   }
 
-=======
   /**
    * Join a public channel (creates read role and auto-subscribes)
    * @param user_id User ID
@@ -342,7 +349,6 @@ export class CommsService {
    * @throws BadRequestError if channel_id has decimal points or user already member
    * @throws ForbiddenError if channel is not public
    */
->>>>>>> origin/main
   async joinChannel(user_id: string, channel_id: number) {
     if (channel_id !== Math.trunc(channel_id)) {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
@@ -369,26 +375,14 @@ export class CommsService {
     const roleKey = channelRole("read", channel_id);
 
     // Check if user already has a role in this channel
-<<<<<<< HEAD
-    const roleKey = channelRole("read", channel_id);
-    const hasRole = await policyEngine.validate(
-      user_id,
-      roleKey,
-    );
-=======
     const hasRole = await policyEngine.validate(user_id, roleKey);
->>>>>>> origin/main
 
     if (hasRole) {
       throw new BadRequestError("You are already a member of this channel");
     }
 
     // Create read role and assign it to the user
-<<<<<<< HEAD
-    await policyEngine.createRoleAndAssign(
-=======
     await policyEngine.createAndAssignChannelRole(
->>>>>>> origin/main
       user_id,
       user_id,
       roleKey,
@@ -399,7 +393,7 @@ export class CommsService {
 
     if (channelData?.postPermissionLevel === "everyone") {
       const postRoleKey = channelRole("post", channel_id);
-      await policyEngine.createRoleAndAssign(
+      await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
         postRoleKey,

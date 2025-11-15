@@ -172,11 +172,7 @@ const createChannel = protectedProcedure
 
       // Create admin role and assign it to the channel creator
       const roleKey = channelRole("admin", channelCreationResult.channelId);
-<<<<<<< HEAD
-      await policyEngine.createRoleAndAssign(
-=======
       await policyEngine.createAndAssignChannelRole(
->>>>>>> origin/main
         userId,
         userId,
         roleKey,
@@ -211,10 +207,6 @@ const updateChannelSettings = protectedProcedure
   .mutation(({ ctx, input }) =>
     withErrorHandling("updateChannel", async () => {
       ensureHasRole(ctx, [channelRole("admin", input.channelId)]);
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
       return await commsService.updateChannelSettings(
         input.channelId,
         input.metadata,
