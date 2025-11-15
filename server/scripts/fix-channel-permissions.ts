@@ -44,7 +44,7 @@ async function main() {
 
   console.log(`Granting ${roleKey} to ${userEmail} (${user.id})`);
   try {
-    const result = await policyEngine.createRoleAndAssign(
+    const result = await policyEngine.createAndAssignChannelRole(
       user.id,
       user.id,
       roleKey,

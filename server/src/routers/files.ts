@@ -1,10 +1,15 @@
 import { FileRepository } from "../data/repository/file-repo.js";
+import { channelRole } from "../data/roles.js";
 import { FileService } from "../service/file-service.js";
-import { policyEngine } from "../service/policy-engine.js";
 import { S3StorageAdapter } from "../storage/s3-adapter.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
-import { ForbiddenError, InternalServerError } from "../types/errors.js";
+import {
+  ensureHasRole,
+  procedure,
+  protectedProcedure,
+  router,
+} from "../trpc/trpc.js";
+import { InternalServerError } from "../types/errors.js";
 import type { FileDownloadPayload } from "../types/file-types.js";
 import {
   confirmUploadInputSchema,
@@ -34,7 +39,6 @@ const fileService = new FileService(fileRepository, adapter);
 const createPresignedUpload = protectedProcedure
   .input(createPresignedUploadInputSchema)
   .meta({
-    requiresAuth: true,
     description: "Get S3 presigned upload URL for a file (metadata only)",
   })
   .mutation(async ({ ctx, input }) =>
@@ -58,7 +62,6 @@ const createPresignedUpload = protectedProcedure
 const confirmUpload = protectedProcedure
   .input(confirmUploadInputSchema)
   .meta({
-    requiresAuth: true,
     description: "Confirm S3 upload is complete and persist DB record",
   })
   .mutation(async ({ ctx, input }) =>
@@ -88,7 +91,6 @@ const confirmUpload = protectedProcedure
 const uploadForUser = protectedProcedure
   .input(uploadForUserInputSchema)
   .meta({
-    requiresAuth: true,
     description:
       "Upload a user-specific file in Filesystem (profile picture, etc.)",
   })
@@ -116,24 +118,16 @@ const uploadForUser = protectedProcedure
 const uploadForChannel = protectedProcedure
   .input(uploadForChannelInputSchema)
   .meta({
-    requiresAuth: true,
     description:
       "Upload a channel-specific file (post attachment, cover photo, etc.)",
   })
   .mutation(async ({ ctx, input }) =>
     withErrorHandling("uploadForChannel", async () => {
       ensureNOTUsingAws("FileSystem uploads not enabled");
+      ensureHasRole(ctx, [channelRole("post", input.channelId)]);
+
       const userId = ctx.auth.user.id;
-      const { file, channelId, action, contentType } = input;
-      const allowed = await policyEngine.validate(
-        userId,
-        `channel:${channelId}:${action}`,
-      );
-      if (!allowed) {
-        throw new ForbiddenError(
-          `No ${action} permission for channel ${channelId}`,
-        );
-      }
+      const { file, contentType } = input;
 
       const stream = await fileService.fileLikeToReadable(file);
       const resolvedContentType =
@@ -145,6 +139,7 @@ const uploadForChannel = protectedProcedure
           stream,
           { contentType: resolvedContentType },
         );
+
         return { fileId };
       } catch (err) {
         log.error(err, "Channel file upload failed");
@@ -155,7 +150,7 @@ const uploadForChannel = protectedProcedure
 
 const getFile = procedure
   .input(getFileInputSchema)
-  .meta({ requiresAuth: true, description: "Get a file stream from its UUID" })
+  .meta({ description: "Get a file stream from its UUID" })
   .query(async ({ input }) =>
     withErrorHandling("getFile", async () => {
       try {
@@ -179,7 +174,7 @@ const getFile = procedure
 
 const deleteFile = protectedProcedure
   .input(deleteFileInputSchema)
-  .meta({ requiresAuth: true, description: "Delete a file and its DB record" })
+  .meta({ description: "Delete a file and its DB record" })
   .mutation(async ({ input }) =>
     withErrorHandling("deleteFile", async () => {
       try {
