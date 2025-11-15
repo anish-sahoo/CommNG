@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { channels } from "../data/db/schema.js";
-import { channelRole } from "../data/roles.js";
 import type {
   CommsRepository,
   Transaction,
 } from "../data/repository/comms-repo.js";
+import { channelRole } from "../data/roles.js";
 import type { ChannelUpdateMetadata } from "../types/comms-types.js";
 import {
   BadRequestError,
