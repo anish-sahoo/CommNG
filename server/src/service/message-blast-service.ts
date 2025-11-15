@@ -4,6 +4,9 @@ import type { CreateMessageBlastInput } from "../types/message-blast-types.js";
 import log from "../utils/logger.js";
 import notificationService from "./notification-service.js";
 
+/**
+ * Service for creating and managing message blasts (broadcast messages)
+ */
 export class MessageBlastService {
   private messageBlastRepository: MessageBlastRepository;
   private userRepository: UserRepository;
@@ -16,6 +19,11 @@ export class MessageBlastService {
     this.userRepository = userRepository;
   }
 
+  /**
+   * Create a new message blast and send notifications to target audience
+   * @param input Message blast input data
+   * @param userId User ID of creator
+   */
   async createMessageBlast(input: CreateMessageBlastInput, userId: string) {
     const result = await this.messageBlastRepository.createMessageBlast(
       userId,
@@ -40,6 +48,11 @@ export class MessageBlastService {
       });
   }
 
+  /**
+   * Get all active message blasts for a user based on their profile
+   * @param userId User ID
+   * @returns Array of active message blasts
+   */
   async getActiveBlastsForUser(userId: string) {
     const userData = await this.userRepository.getUserData(userId);
     if (!userData) {
@@ -55,6 +68,10 @@ export class MessageBlastService {
     );
   }
 
+  /**
+   * Delete a message blast by ID
+   * @param blastId Blast ID
+   */
   async deleteMessageBlast(blastId: number) {
     await this.messageBlastRepository.deleteMessageBlast(blastId);
   }

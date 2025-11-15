@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTRPCClient } from "../../lib/trpc";
+import { useTRPCClient } from "@/lib/trpc";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -10,6 +10,7 @@ function urlBase64ToUint8Array(base64String: string) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+// NotificationsPage is an internal playground for the push pipeline, pairing a manual login with subscription/test buttons.
 export default function NotificationsPage() {
   const trpc = useTRPCClient();
   const [status, setStatus] = useState<string | null>(null);

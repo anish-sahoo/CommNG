@@ -14,15 +14,17 @@ import {
   StorageAdapter,
 } from "./storage-adapter.js";
 
+/**
+ * Storage adapter for AWS S3 operations with presigned URL support
+ */
 export class S3StorageAdapter extends StorageAdapter {
   private s3: S3Client;
   private bucket: string;
   private publicBaseUrl: string;
 
   /**
-   * @param opts.bucket - S3 bucket name
-   * @param opts.region - AWS region
-   * @param opts.publicBaseUrl - public URL base of the bucket
+   * Create S3 storage adapter
+   * @param opts Object with bucket, optional region, and public base url
    */
   constructor(opts: {
     bucket: string;
@@ -41,6 +43,13 @@ export class S3StorageAdapter extends StorageAdapter {
     );
   }
 
+  /**
+   * Store a file from a readable stream to S3
+   * @param filename File name
+   * @param input Readable stream
+   * @param opts File input stream options
+   * @returns File path object with S3 object key
+   */
   public async storeStream(
     filename: string,
     input: Readable,
@@ -61,6 +70,11 @@ export class S3StorageAdapter extends StorageAdapter {
     return { path: filename };
   }
 
+  /**
+   * Get stream from S3 (not supported, use getUrl instead)
+   * @param _path S3 object key
+   * @throws ForbiddenError always (use presigned GET URLs instead)
+   */
   public async getStream(_path: string): Promise<Readable> {
     // Streaming directly from S3 is not allowed in this adapter. Clients
     // must use presigned GET URLs (getUrl) to retrieve file contents.
@@ -69,6 +83,11 @@ export class S3StorageAdapter extends StorageAdapter {
     );
   }
 
+  /**
+   * Delete a file from S3
+   * @param path S3 object key
+   * @returns True if deleted, false otherwise
+   */
   public async delete(path: string): Promise<boolean> {
     try {
       await this.s3.send(
@@ -83,11 +102,23 @@ export class S3StorageAdapter extends StorageAdapter {
     }
   }
 
+  /**
+   * Get a presigned GET URL for an S3 object
+   * @param path S3 object key
+   * @returns Presigned GET URL
+   */
   public async getUrl(path: string): Promise<string> {
     // Return a presigned GET URL so private buckets work correctly.
     return await this.generatePresignedGetUrl(path);
   }
 
+  /**
+   * Generate a presigned PUT URL for uploading to S3
+   * @param key S3 object key
+   * @param expiresSeconds Expiration time in seconds (default: 900)
+   * @param contentType Content type (optional)
+   * @returns Presigned PUT URL
+   */
   public async generatePresignedUploadUrl(
     key: string,
     expiresSeconds = 900,
@@ -101,6 +132,12 @@ export class S3StorageAdapter extends StorageAdapter {
     return await getSignedUrl(this.s3, cmd, { expiresIn: expiresSeconds });
   }
 
+  /**
+   * Generate a presigned GET URL for downloading from S3
+   * @param key S3 object key
+   * @param expiresSeconds Expiration time in seconds (default: 3600)
+   * @returns Presigned GET URL
+   */
   public async generatePresignedGetUrl(
     key: string,
     expiresSeconds = 3600,

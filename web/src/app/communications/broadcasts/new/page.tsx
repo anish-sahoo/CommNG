@@ -8,14 +8,15 @@ import {
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { TitleShell } from "@/components/layouts/title-shell";
-import { useTRPC } from "@/lib/trpc";
 import {
   BroadcastForm,
   type BroadcastFormValues,
   resolveAudience,
-} from "../components";
+} from "@/app/communications/broadcasts/components";
+import { TitleShell } from "@/components/layouts/title-shell";
+import { useTRPC } from "@/lib/trpc";
 
+// NewBroadcastPage collects the structured fields for a message blast before delegating to the TRPC mutation that fans it out to the right audience.
 export default function NewBroadcastPage() {
   const trpc = useTRPC();
   const router = useRouter();

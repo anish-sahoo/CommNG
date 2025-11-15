@@ -22,6 +22,8 @@ import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, MessageList } from "./index";
 
+// ChannelView hosts the single-channel experience inside Communications, handling membership gating and the optimistic timeline state desyncs that can happen between refetches.
+
 // Type for message reactions from the API
 type MessageReaction = {
   emoji: string;
@@ -29,6 +31,7 @@ type MessageReaction = {
   reactedByCurrentUser?: boolean;
 };
 
+// Reaction toggles mutate nested arrays later on, so keep cache-owned data isolated by cloning before any optimistic updates run
 function cloneMessages(messages: ChannelMessage[]): ChannelMessage[] {
   return messages.map((message) => ({
     ...message,
@@ -129,6 +132,19 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const [_isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => {
+      window.removeEventListener("resize", checkScreen);
+    };
+  }, []);
+
   // Explicitly type mutation variables to ensure correct inference
   type ToggleReactionVars = {
     channelId: number;
@@ -193,7 +209,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const [messagesState, setMessagesState] = useState<ChannelMessage[]>([]);
 
-  const channelName = useMemo(() => {
+  const _channelName = useMemo(() => {
     if (!channelList.length || !parsedChannelId) {
       return "Channel";
     }
@@ -205,6 +221,12 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     return match?.name ?? "Channel";
   }, [channelList, parsedChannelId]);
 
+  const displayChannelName =
+    _isSmallScreen && _channelName.length > 18
+      ? `${_channelName.slice(0, 18)}…`
+      : _channelName;
+
+  // PostedCard consumes a flattened message contract, so this memo keeps the shape consistent regardless of how the backend representation evolves.
   const messageItems: ChannelMessage[] = useMemo(() => {
     if (!messages.length) {
       return [];
@@ -228,6 +250,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const hasHydratedFromServerRef = useRef(false);
 
+  // React Query will briefly serve undefined during route transitions; this flag ensures that transient empties do not blow away optimistic local state
   useEffect(() => {
     if (!messagesQuery.isSuccess) {
       return;
@@ -404,7 +427,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   if (isNotMember) {
     return (
       <TitleShell
-        title={channelName}
+        title={displayChannelName}
         backHref="/communications"
         backAriaLabel="Back to all channels"
       >
@@ -436,7 +459,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   return (
     <TitleShell
-      title={channelName}
+      title={displayChannelName}
       backHref="/communications"
       backAriaLabel="Back to all channels"
       actions={
@@ -456,7 +479,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
             ) : null}
             <Link
               href={`/communications/${channelId}/settings`}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-14 sm:w-14"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:h-10 sm:w-10"
               aria-label="Channel settings"
             >
               <SettingsIcon className="h-5 w-5 sm:h-8 sm:w-8" />

@@ -12,6 +12,16 @@ import { db } from "../db/sql.js";
  * Repository to handle database queries/communication related to mentees
  */
 export class MenteeRepository {
+  /**
+   * Create a new mentee profile for a user
+   * @param userId User ID
+   * @param learningGoals Optional learning goals
+   * @param experienceLevel Optional experience level
+   * @param preferredMentorType Optional preferred mentor type
+   * @param status Mentee status (default: "active")
+   * @returns Created mentee profile
+   * @throws ConflictError if profile already exists or creation fails
+   */
   async createMentee(
     userId: string,
     learningGoals?: string,
@@ -57,6 +67,12 @@ export class MenteeRepository {
     return created;
   }
 
+  /**
+   * Get a mentee profile by mentee ID
+   * @param menteeId Mentee ID
+   * @returns Mentee profile object
+   * @throws NotFoundError if mentee not found
+   */
   async getMenteeById(menteeId: number): Promise<GetMenteeOutput> {
     const [mentee] = await db
       .select({
@@ -80,6 +96,11 @@ export class MenteeRepository {
     return mentee;
   }
 
+  /**
+   * Get a mentee profile by user ID
+   * @param userId User ID
+   * @returns Mentee profile object or null if not found
+   */
   async getMenteeByUserId(userId: string): Promise<GetMenteeOutput | null> {
     const [mentee] = await db
       .select({
@@ -99,6 +120,16 @@ export class MenteeRepository {
     return mentee || null;
   }
 
+  /**
+   * Update a mentee profile
+   * @param menteeId Mentee ID
+   * @param learningGoals Optional learning goals
+   * @param experienceLevel Optional experience level
+   * @param preferredMentorType Optional preferred mentor type
+   * @param status Optional mentee status
+   * @returns Updated mentee profile
+   * @throws NotFoundError if mentee not found
+   */
   async updateMentee(
     menteeId: number,
     learningGoals?: string,
@@ -139,6 +170,11 @@ export class MenteeRepository {
     return updated;
   }
 
+  /**
+   * Delete a mentee profile by mentee ID
+   * @param menteeId Mentee ID
+   * @throws NotFoundError if mentee not found
+   */
   async deleteMentee(menteeId: number): Promise<void> {
     const [deleted] = await db
       .delete(mentees)
@@ -150,6 +186,11 @@ export class MenteeRepository {
     }
   }
 
+  /**
+   * Get all mentees by status
+   * @param status Mentee status
+   * @returns Array of mentee profiles
+   */
   async getMenteesByStatus(
     status: "active" | "inactive" | "matched",
   ): Promise<GetMenteeOutput[]> {

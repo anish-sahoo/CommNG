@@ -8,13 +8,14 @@ import {
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { TitleShell } from "@/components/layouts/title-shell";
-import { useTRPC } from "@/lib/trpc";
 import {
   CreateChannelForm,
   type CreateChannelValues,
-} from "../components/channel-form";
+} from "@/app/communications/channels/components/channel-form";
+import { TitleShell } from "@/components/layouts/title-shell";
+import { useTRPC } from "@/lib/trpc";
 
+// NewChannelPage guides admins through creating a communications channel, wiring the form to TRPC mutations and cache invalidation.
 export default function NewChannelPage() {
   const trpc = useTRPC();
   const router = useRouter();

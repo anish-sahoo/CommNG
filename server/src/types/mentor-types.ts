@@ -6,7 +6,7 @@ export const mentorSchema = z.object({
   mentorshipPreferences: z.string().nullable().optional(),
   rank: z.string().nullable().optional(),
   yearsOfService: z.number().int().nonnegative().nullable().optional(),
-  eligibilityData: z.record(z.any()).nullable().optional(),
+  eligibilityData: z.record(z.string(), z.unknown()).nullable().nullish(),
   status: z.enum(["requested", "approved", "active"]),
 });
 
@@ -17,7 +17,7 @@ export const createMentorInputSchema = z.object({
   mentorshipPreferences: z.string().optional(),
   rank: z.string().optional(),
   yearsOfService: z.number().int().nonnegative().optional(),
-  eligibilityData: z.record(z.any()).optional(),
+  eligibilityData: z.record(z.string(), z.unknown()).nullish(),
   status: z
     .enum(["requested", "approved", "active"])
     .optional()

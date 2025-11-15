@@ -6,7 +6,14 @@ import { Cache } from "../../utils/cache.js";
 import { files } from "../db/schema.js";
 import { db } from "../db/sql.js";
 
+/**
+ * Repository for file storage and retrieval operations
+ */
 export class FileRepository {
+  /**
+   * Insert a new file record into the database
+   * @param record File record object
+   */
   public async insertFile(record: FileRecord): Promise<void> {
     await db.insert(files).values({
       fileId: record.fileId,
@@ -16,10 +23,20 @@ export class FileRepository {
     });
   }
 
+  /**
+   * Delete a file record by file ID
+   * @param fileId File ID
+   */
   public async deleteFile(fileId: string): Promise<void> {
     await db.delete(files).where(eq(files.fileId, fileId));
   }
 
+  /**
+   * Get a file record by file ID
+   * @param fileId File ID
+   * @returns File record object
+   * @throws NotFoundError if file not found
+   */
   @Cache((fileId) => `file:${fileId}:data`, 60 * 60 * 2)
   public async getFile(fileId: string): Promise<FileRecord> {
     const [file] = await db

@@ -270,6 +270,7 @@ function createContext(
         updatedAt: now,
       },
     },
+    roles: new Set(),
   };
 }
 
@@ -312,6 +313,11 @@ vi.mock("../src/trpc/app_router.js", () => {
       }>;
       getChannelMembers(input: {
         channelId: number;
+        metadata: {
+          name: string;
+          description?: string;
+          postingPermissions?: "admin" | "everyone" | "custom";
+        };
       }): Promise<MockChannelMember[]>;
       getAllChannels(): Promise<MockChannel[]>;
       createChannel(input: {
@@ -913,7 +919,7 @@ describe("commsRouter.createPost", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
     await expect(
       caller.comms.createPost({ channelId, content: "Nope" }),
     ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -1065,7 +1071,7 @@ describe("commsRouter.getChannelMessages", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
     await expect(
       caller.comms.getChannelMessages({ channelId }),
     ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -1175,7 +1181,7 @@ describe("commsRouter.toggleMessageReaction", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
     await expect(
       caller.comms.toggleMessageReaction({
         channelId,
@@ -1279,7 +1285,7 @@ describe("commsRouter.editPost", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
     await expect(
       caller.comms.editPost({
         channelId,
@@ -1467,7 +1473,7 @@ describe("commsRouter.deletePost", () => {
 
   it("throws UNAUTHORIZED if no user in context", async () => {
     const post = await createAuthorPost("Unauthorized delete target");
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
 
     await expect(
       caller.comms.deletePost({
@@ -1599,7 +1605,7 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("createSubscription", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ auth: null });
+      const caller = appRouter.createCaller({ auth: null, roles: null });
       await expect(
         caller.comms.createSubscription({
           channelId,
@@ -1650,7 +1656,7 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("deleteSubscription", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ auth: null });
+      const caller = appRouter.createCaller({ auth: null, roles: null });
       await expect(
         caller.comms.deleteSubscription({ subscriptionId: 1 }),
       ).rejects.toThrow(/UNAUTHORIZED/i);
@@ -1688,7 +1694,7 @@ describe("commsRouter subscription endpoints", () => {
 
   describe("getUserSubscriptions", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ auth: null });
+      const caller = appRouter.createCaller({ auth: null, roles: null });
       await expect(caller.comms.getUserSubscriptions()).rejects.toThrow(
         /UNAUTHORIZED/i,
       );
@@ -1761,16 +1767,22 @@ describe("commsRouter.getChannelMembers", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
-    await expect(caller.comms.getChannelMembers({ channelId })).rejects.toThrow(
-      /UNAUTHORIZED/i,
-    );
+    const caller = appRouter.createCaller({ auth: null, roles: null });
+    await expect(
+      caller.comms.getChannelMembers({
+        channelId,
+        metadata: { name: "test" },
+      }),
+    ).rejects.toThrow(/UNAUTHORIZED/i);
   });
 
   it("throws NOT_FOUND for missing channel", async () => {
     const caller = appRouter.createCaller(createContext(memberA));
     await expect(
-      caller.comms.getChannelMembers({ channelId: 9999999 }),
+      caller.comms.getChannelMembers({
+        channelId: 9999999,
+        metadata: { name: "test" },
+      }),
     ).rejects.toThrow(/NOT_FOUND/i);
   });
 
@@ -1778,6 +1790,7 @@ describe("commsRouter.getChannelMembers", () => {
     const caller = appRouter.createCaller(createContext(memberA));
     const members = await caller.comms.getChannelMembers({
       channelId,
+      metadata: { name: "test" },
     });
 
     expect(Array.isArray(members)).toBe(true);
@@ -1805,7 +1818,7 @@ describe("commsRouter.getAllChannels", () => {
   });
 
   it("throws UNAUTHORIZED if no user in context", async () => {
-    const caller = appRouter.createCaller({ auth: null });
+    const caller = appRouter.createCaller({ auth: null, roles: null });
     await expect(caller.comms.getAllChannels()).rejects.toThrow(
       /UNAUTHORIZED/i,
     );
@@ -1847,7 +1860,7 @@ describe("commsRouter.createChannel", () => {
 
   describe("createChannel", () => {
     it("throws UNAUTHORIZED if no user in context", async () => {
-      const caller = appRouter.createCaller({ auth: null });
+      const caller = appRouter.createCaller({ auth: null, roles: null });
       await expect(
         caller.comms.createChannel({
           name: "test-channel",

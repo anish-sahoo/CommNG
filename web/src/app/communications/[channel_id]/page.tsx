@@ -1,4 +1,4 @@
-import ChannelView from "../components/channel-view";
+import ChannelView from "@/app/communications/components/channel-view";
 
 type ChannelPageProps = {
   params: Promise<{
@@ -6,6 +6,7 @@ type ChannelPageProps = {
   }>;
 };
 
+// Dynamic channel route that resolves the slug server-side, then hands off rendering to the richer ChannelView client component.
 export default async function ChannelPage({ params }: ChannelPageProps) {
   const resolvedParams = await params;
   return <ChannelView channelId={resolvedParams.channel_id} />;

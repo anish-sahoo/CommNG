@@ -1,19 +1,19 @@
 import { MenteeRepository } from "../data/repository/mentee-repo.js";
 import { MatchingService } from "../service/matching-service.js";
-import { procedure, router } from "../trpc/trpc.js";
+import { protectedProcedure, router } from "../trpc/trpc.js";
 import { createMenteeInputSchema } from "../types/mentee-types.js";
 import log from "../utils/logger.js";
 
 const menteeRepo = new MenteeRepository();
 const matchingService = new MatchingService();
 
-const createMentee = procedure
+const createMentee = protectedProcedure
   .input(createMenteeInputSchema)
   .mutation(async ({ input }) => {
-    log.debug("createMentee", { userId: input.userId });
+    log.debug({ userId: input.userId }, "createMentee");
 
     const mentee = await menteeRepo.createMentee(
-      input.userId.toString(), // Convert number to string to match schema
+      input.userId,
       input.learningGoals,
       input.experienceLevel,
       input.preferredMentorType,
@@ -22,17 +22,19 @@ const createMentee = procedure
 
     // Trigger matching process
     try {
-      await matchingService.triggerMatchingForNewMentee(
-        input.userId.toString(),
+      await matchingService.triggerMatchingForNewMentee(input.userId);
+      log.info(
+        { menteeId: mentee.menteeId },
+        "Matching process triggered successfully for new mentee",
       );
-      log.info("Matching process triggered successfully for new mentee", {
-        menteeId: mentee.menteeId,
-      });
     } catch (error) {
-      log.error("Failed to trigger matching process for new mentee", {
-        menteeId: mentee.menteeId,
-        error: error instanceof Error ? error.message : String(error),
-      });
+      log.error(
+        {
+          menteeId: mentee.menteeId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "Failed to trigger matching process for new mentee",
+      );
     }
 
     return mentee;

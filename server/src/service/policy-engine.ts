@@ -1,6 +1,13 @@
 import pLimit from "p-limit";
 import { getRedisClientInstance } from "../data/db/redis.js";
+import type { RoleNamespace } from "../data/db/schema.js";
 import { AuthRepository } from "../data/repository/auth-repo.js";
+import { hasAnyPermission, hasPermission } from "../data/role-hierarchy.js";
+import {
+  type ChannelRoleKey,
+  GLOBAL_ADMIN_KEY,
+  type RoleKey,
+} from "../data/roles.js";
 import { BadRequestError } from "../types/errors.js";
 import log from "../utils/logger.js";
 
@@ -16,9 +23,27 @@ export class PolicyEngine {
   }
 
   /**
-   * Populates redis with `limit` amount of role data for quick permission lookup
-   * @param ttlSec time to live for cache
-   * @param limit number of items to cache, adjust according to system memory
+   * Validates if a user has permission for any of the required roles.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
+   * Global admins bypass all checks.
+   *
+   * @param availableRoles Set of roles the user has
+   * @param requiredRoles Array of roles, user needs at least one
+   * @returns true if user has permission
+   */
+  static validateList(availableRoles: Set<RoleKey>, requiredRoles: RoleKey[]) {
+    if (availableRoles.has(GLOBAL_ADMIN_KEY)) {
+      return true;
+    }
+
+    // Check if user has any required role, accounting for hierarchy
+    return hasAnyPermission(availableRoles, requiredRoles);
+  }
+
+  /**
+   * Populate redis cache with role data for quick permission lookup
+   * @param ttlSec Time to live for cache (default: 8 hours)
+   * @param limit Number of items to cache (default: 5000)
    */
   async populateCache(ttlSec: number = this.DEFAULT_TTL, limit: number = 5000) {
     try {
@@ -31,67 +56,68 @@ export class PolicyEngine {
   }
 
   /**
-   * Validates if a user has permission to access a resource or not
-   * @param userId userId
-   * @param roleKey roleKey, for example `channel:1:read`
-   * @returns `true` or `false`
+   * Validate if a user has permission to access a resource.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
+   * Global admins bypass all checks.
+   *
+   * @param userId User ID
+   * @param roleKey Role key (e.g., `channel:1:read`)
+   * @returns True if user has permission, false otherwise
    */
-  async validate(userId: string, roleKey: string) {
+  async validate(userId: string, roleKey: RoleKey) {
     log.debug({ userId, roleKey }, "Validate perms");
     if (roleKey.length === 0) {
       return false;
     }
 
-    const roleId = await this.authRepository.getRoleId(roleKey);
+    const roleSet = await this.authRepository.getRolesForUser(userId);
 
-    // Check Redis cache first if the role exists
-    if (roleId !== -1) {
-      const redisResult = await getRedisClientInstance().sIsMember(
-        `role:${roleKey}:users`,
-        `${userId}`,
-      );
-      if (redisResult === 1) {
-        return true;
-      }
+    if (roleSet.has(GLOBAL_ADMIN_KEY)) {
+      return true;
     }
 
-    // Get all roles for the user from the database
-    const rolesForUser = await this.authRepository.getRolesForUser(userId);
-    const roleSet = new Set(rolesForUser);
-
-    const adminRoleKey = `${roleKey.substring(0, roleKey.lastIndexOf(":"))}:admin`;
-    const hasPermission =
-      roleSet.has("global:admin") ||
-      roleSet.has(roleKey) ||
-      roleSet.has(adminRoleKey);
-
-    log.debug(
-      {
-        userId,
-        roleKey,
-        roleId,
-        rolesForUser: Array.from(roleSet),
-        adminRoleKey,
-        hasPermission,
-      },
-      "Permission validation",
-    );
-
-    return hasPermission;
+    // Check if user has the required role (accounting for hierarchy)
+    return hasPermission(roleSet, roleKey);
   }
 
   /**
-   * Grant new permission to `targetUserId`. Someone with admin permissions would call this role to grant permissions.
-   * @param userId userId of the granter
-   * @param targetUserId userId that is getting assigned the permission
-   * @param roleKey roleKey getting assigned
-   * @param ttlSec time to live, optional
-   * @returns
+   * Validates if a user has permission for ANY of the provided roles.
+   * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
+   * More efficient than calling validate() multiple times.
+   * Global admins bypass all checks.
+   *
+   * @param userId userId
+   * @param roleKeys array of roleKeys to check
+   * @returns `true` if user has ANY of the roles, `false` otherwise
+   */
+  async validateAny(userId: string, roleKeys: RoleKey[]) {
+    if (roleKeys.length === 0) {
+      return false;
+    }
+
+    const roleSet = await this.authRepository.getRolesForUser(userId);
+
+    if (roleSet.has(GLOBAL_ADMIN_KEY)) {
+      return true;
+    }
+
+    // Check if user has any of the required roles (accounting for hierarchy)
+    return hasAnyPermission(roleSet, roleKeys);
+  }
+
+  /**
+   * Grant new permission to a target user
+   * @param userId User ID of the granter (must have admin permissions)
+   * @param targetUserId User ID receiving the permission
+   * @param roleKey Role key to assign
+   * @param ttlSec Time to live for cache (default: 8 hours)
+   * @returns True if successful, false otherwise
+   * @throws BadRequestError if role or user not found
    */
   async addNewPermission(
     userId: string,
     targetUserId: string,
-    roleKey: string,
+    roleKey: RoleKey,
     ttlSec: number = this.DEFAULT_TTL,
   ) {
     const roleId = await this.authRepository.getRoleId(roleKey);
@@ -118,29 +144,29 @@ export class PolicyEngine {
 
   /**
    * Create a role and assign it to a user in one transaction
-   * @param userId userId creating/assigning the role
-   * @param targetUserId userId that will receive the role
-   * @param roleKey roleKey to create (e.g., 'channel:1:admin')
-   * @param action action for the role (e.g., 'admin', 'post', 'read')
-   * @param namespace namespace for the role ('channel', 'global', etc.)
-   * @param channelId optional channelId for channel-scoped roles
-   * @param ttlSec time to live for cache, optional
-   * @returns
+   * @param assigningUserId User ID creating/assigning the role
+   * @param targetUserId User ID that will receive the role
+   * @param roleKey Role key to create (e.g., 'channel:1:admin')
+   * @param action Action for the role (e.g., 'admin', 'post', 'read')
+   * @param namespace Namespace for the role ('channel', 'global', etc.)
+   * @param channelId Optional channel ID for channel-scoped roles
+   * @param ttlSec Time to live for cache (default: 8 hours)
+   * @returns True if successful, false otherwise
+   * @throws BadRequestError if role creation fails or user not found
    */
-  async createRoleAndAssign(
-    userId: string,
+  async createAndAssignChannelRole(
+    assigningUserId: string,
     targetUserId: string,
-    roleKey: string,
+    roleKey: ChannelRoleKey,
     action: string,
-    namespace: "global" | "channel" | "mentor" | "feature",
-    channelId?: number | null,
-    ttlSec: number = this.DEFAULT_TTL,
+    namespace: RoleNamespace,
+    channelId: number,
   ) {
     // Check if role already exists
     let roleId = await this.authRepository.getRoleId(roleKey);
 
     // If role doesn't exist, create it
-    if (roleId === -1) {
+    if (roleId === null) {
       const subjectId = channelId ? channelId.toString() : null;
       const newRole = await this.authRepository.createRole(
         roleKey,
@@ -154,7 +180,7 @@ export class PolicyEngine {
         // Role creation failed, possibly due to race condition
         // Try to get the role ID again in case it was created by another process
         roleId = await this.authRepository.getRoleId(roleKey);
-        if (roleId === -1) {
+        if (roleId === null) {
           throw new BadRequestError("Failed to create role");
         }
       } else {
@@ -169,29 +195,29 @@ export class PolicyEngine {
     }
 
     const result = await this.authRepository.grantAccess(
-      userId,
+      assigningUserId,
       targetUserId,
       roleId,
       roleKey,
     );
 
     if (result) {
-      await this.cacheRoleKeys([roleKey], ttlSec);
+      await this.cacheRoleKeys([roleKey], this.DEFAULT_TTL);
       log.debug(
-        { userId, targetUserId, roleKey, roleId },
+        { userId: assigningUserId, targetUserId, roleKey, roleId },
         "Successfully created and assigned role",
       );
       return true;
     }
     log.warn(
-      { userId, targetUserId, roleKey, roleId },
+      { userId: assigningUserId, targetUserId, roleKey, roleId },
       "Failed to assign role",
     );
     return false;
   }
 
   private async cacheRoleKeys(
-    roleKeys: string[],
+    roleKeys: RoleKey[],
     ttlSec: number = this.DEFAULT_TTL,
   ) {
     const threadLimit = pLimit(10);

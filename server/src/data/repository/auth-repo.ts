@@ -2,11 +2,20 @@ import { count, eq } from "drizzle-orm";
 import { Cache } from "../../utils/cache.js";
 import log from "../../utils/logger.js";
 import { getRedisClientInstance } from "../db/redis.js";
-import { roles, userRoles, users } from "../db/schema.js";
+import { type RoleNamespace, roles, userRoles, users } from "../db/schema.js";
 import { db } from "../db/sql.js";
+import type { RoleKey } from "../roles.js";
 
+/**
+ * Repository for authentication and role management operations
+ */
 export class AuthRepository {
-  async getUserIdsForRole(roleKey: string) {
+  /**
+   * Get all user IDs assigned to a specific role
+   * @param roleKey Role key
+   * @returns Array of user IDs
+   */
+  async getUserIdsForRole(roleKey: RoleKey) {
     const rows = await db
       .select({ userId: userRoles.userId })
       .from(roles)
@@ -16,6 +25,11 @@ export class AuthRepository {
   }
 
   @Cache((userId: string) => `roles:${userId}`, 3600)
+  /**
+   * Get all role keys assigned to a user
+   * @param userId User ID
+   * @returns Array of role keys
+   */
   async getRolesForUser(userId: string) {
     const rows = await db
       .selectDistinct({
@@ -24,12 +38,15 @@ export class AuthRepository {
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
       .where(eq(userRoles.userId, userId));
-    if (!rows) {
-      return [];
-    }
-    return rows.map((r) => r.key);
+
+    return new Set(rows.map((r) => r.key));
   }
 
+  /**
+   * Get all available role keys (limited)
+   * @param limit Maximum number of roles to return (default: 5000)
+   * @returns Array of role keys
+   */
   async getRoles(limit: number = 5000) {
     const roleData = await db
       .selectDistinct({ roleKey: roles.roleKey })
@@ -39,7 +56,12 @@ export class AuthRepository {
   }
 
   @Cache((roleKey: string) => `role:id:${roleKey}`, 3600)
-  async getRoleId(roleKey: string) {
+  /**
+   * Get the role ID for a given role key
+   * @param roleKey Role key
+   * @returns Role ID or null if not found
+   */
+  async getRoleId(roleKey: RoleKey) {
     const roleData = await db
       .selectDistinct({
         roleId: roles.roleId,
@@ -48,11 +70,16 @@ export class AuthRepository {
       .where(eq(roles.roleKey, roleKey));
     if (!roleData || roleData.length === 0) {
       log.warn(`Role ${roleKey} not found`);
-      return -1;
+      return null;
     }
-    return roleData[0]?.roleId ?? -1;
+    return roleData[0]?.roleId ?? null;
   }
 
+  /**
+   * Check if a user exists by user ID
+   * @param userId User ID
+   * @returns True if user exists, false otherwise
+   */
   async checkIfUserExists(userId: string) {
     const ct = await db
       .select({ value: count() })
@@ -61,10 +88,19 @@ export class AuthRepository {
     return ct.length > 0;
   }
 
+  /**
+   * Create a new role
+   * @param roleKey Role key
+   * @param action Action string
+   * @param namespace Role namespace
+   * @param channelId Optional channel ID
+   * @param subjectId Optional subject ID
+   * @returns Created role object or null on error
+   */
   async createRole(
-    roleKey: string,
+    roleKey: RoleKey,
     action: string,
-    namespace: "global" | "channel" | "mentor" | "feature",
+    namespace: RoleNamespace,
     channelId?: number | null,
     subjectId?: string | null,
   ) {
@@ -93,11 +129,19 @@ export class AuthRepository {
     }
   }
 
+  /**
+   * Grant a role to a user
+   * @param userId User ID granting the role
+   * @param targetUserId Target user ID to receive the role
+   * @param roleId Role ID
+   * @param roleKey Role key
+   * @returns True if granted, false otherwise
+   */
   async grantAccess(
     userId: string,
     targetUserId: string,
     roleId: number,
-    roleKey: string,
+    roleKey: RoleKey,
   ) {
     try {
       await db

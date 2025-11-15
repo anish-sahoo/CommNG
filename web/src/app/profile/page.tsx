@@ -5,6 +5,7 @@ import { TitleShell } from "@/components/layouts/title-shell";
 import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
 
+// ProfilePage stands in until real member data is wired up, showcasing how the profile card behaves with mocked session information.
 export default function ProfilePage() {
   const { data: sessionData } = authClient.useSession();
 
