@@ -50,6 +50,36 @@ resource "aws_iam_role_policy" "ecs_secrets_access" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_ecr_access" {
+  name = "${local.name_prefix}-ecs-ecr-access"
+  role = aws_iam_role.ecs_task_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage"
+        ]
+        Resource = [
+          aws_ecr_repository.server.arn,
+          aws_ecr_repository.web.arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "ecs_task" {
   name = "${local.name_prefix}-ecs-task-role"
 

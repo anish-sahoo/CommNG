@@ -13,4 +13,7 @@ locals {
 
   # Resource naming prefix
   name_prefix = "${var.environment}-${local.project_slug}"
+
+  # AWS-managed bucket ARN that stores ECR image layers in the target region
+  ecr_layer_bucket_arn = "arn:aws:s3:::prod-${var.aws_region}-starport-layer-bucket"
 }

@@ -88,6 +88,7 @@ resource "aws_vpc_endpoint" "s3" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid       = "AllowAppBucket"
         Effect    = "Allow"
         Principal = "*"
         Action = [
@@ -100,6 +101,15 @@ resource "aws_vpc_endpoint" "s3" {
           aws_s3_bucket.comm_ng_files.arn,
           "${aws_s3_bucket.comm_ng_files.arn}/*"
         ]
+      },
+      {
+        Sid       = "AllowEcrLayerBucket"
+        Effect    = "Allow"
+        Principal = "*"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "${local.ecr_layer_bucket_arn}/*"
       }
     ]
   })
@@ -136,6 +146,54 @@ resource "aws_ecr_repository" "web" {
 
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-web"
+  })
+}
+
+# ------------------------------------------------------------
+# ECR Repository Policies for ECS Task Execution Role
+# ------------------------------------------------------------
+
+resource "aws_ecr_repository_policy" "server" {
+  repository = aws_ecr_repository.server.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowECSTaskExecutionRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.ecs_task_execution.arn
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_ecr_repository_policy" "web" {
+  repository = aws_ecr_repository.web.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowECSTaskExecutionRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.ecs_task_execution.arn
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+      }
+    ]
   })
 }
 
