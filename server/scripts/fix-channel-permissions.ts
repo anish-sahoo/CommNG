@@ -18,8 +18,12 @@ import { connectRedis, disconnectRedis } from "../src/data/db/redis.js";
 import { users } from "../src/data/db/schema.js";
 import { db, shutdownPostgres } from "../src/data/db/sql.js";
 import { AuthRepository } from "../src/data/repository/auth-repo.js";
+import {
+  type ChannelActions,
+  channelRole,
+  ROLE_HIERARCHIES,
+} from "../src/data/roles.js";
 import { PolicyEngine } from "../src/service/policy-engine.js";
-import { channelRole } from "../src/data/roles.js";
 
 const channelIdArg = process.argv[2];
 const userEmailArg = process.argv[3];
@@ -56,7 +60,22 @@ async function main() {
   const policyEngine = new PolicyEngine(authRepo);
 
   const channelIdNum = Number.parseInt(channelId, 10);
-  const roleKey = channelRole(permission as any, channelIdNum);
+
+  const isChannelAction = (a: string): a is ChannelActions =>
+    (ROLE_HIERARCHIES.channel as readonly string[]).includes(a);
+
+  const perm = permission as string;
+
+  if (!isChannelAction(perm)) {
+    console.error(
+      `Invalid permission: ${permission}. Must be one of ${(
+        ROLE_HIERARCHIES.channel as readonly string[]
+      ).join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  const roleKey = channelRole(perm, channelIdNum);
 
   console.log(`Granting ${roleKey} to ${userEmail} (${user.id})`);
   try {

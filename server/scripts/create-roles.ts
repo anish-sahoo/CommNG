@@ -16,11 +16,19 @@
  * This is idempotent: existing roles are skipped.
  */
 
-import { ROLE_HIERARCHIES, broadcastRole, reportingRole, GLOBAL_ADMIN_KEY } from "../src/data/roles.js";
 import { connectRedis, disconnectRedis } from "../src/data/db/redis.js";
+import type { RoleNamespace } from "../src/data/db/schema.js";
 import { connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
 import { AuthRepository } from "../src/data/repository/auth-repo.js";
-import type { RoleNamespace } from "../src/data/db/schema.js";
+import {
+  type BroadcastActions,
+  broadcastRole,
+  GLOBAL_ADMIN_KEY,
+  type ReportingActions,
+  ROLE_HIERARCHIES,
+  type RoleKey,
+  reportingRole,
+} from "../src/data/roles.js";
 
 async function main() {
   await connectRedis();
@@ -29,7 +37,10 @@ async function main() {
 
   console.log("Starting role creation from ROLE_HIERARCHIES...");
 
-  for (const [namespaceRaw, actions] of Object.entries(ROLE_HIERARCHIES) as [RoleNamespace, readonly string[]][]) {
+  for (const [namespaceRaw, actions] of Object.entries(ROLE_HIERARCHIES) as [
+    RoleNamespace,
+    readonly string[],
+  ][]) {
     const namespace = namespaceRaw as RoleNamespace;
 
     // Skip channel-scoped roles since they require an id (e.g., channel:1:read)
@@ -50,10 +61,22 @@ async function main() {
       switch (namespace) {
         case "broadcast":
           // broadcast has only one action: "create"
-          roleKey = broadcastRole(action as any);
+          if (
+            !(ROLE_HIERARCHIES.broadcast as readonly string[]).includes(action)
+          ) {
+            console.warn(`Skipping unknown broadcast action: ${action}`);
+            continue;
+          }
+          roleKey = broadcastRole(action as BroadcastActions);
           break;
         case "reporting":
-          roleKey = reportingRole(action as any);
+          if (
+            !(ROLE_HIERARCHIES.reporting as readonly string[]).includes(action)
+          ) {
+            console.warn(`Skipping unknown reporting action: ${action}`);
+            continue;
+          }
+          roleKey = reportingRole(action as ReportingActions);
           break;
         case "global":
           roleKey = GLOBAL_ADMIN_KEY;
@@ -63,18 +86,22 @@ async function main() {
           roleKey = `${namespace}:${action}`;
       }
 
-      const existingRoleId = await authRepo.getRoleId(roleKey as any);
+      const existingRoleId = await authRepo.getRoleId(roleKey as RoleKey);
       if (existingRoleId !== null) {
-        console.log(`Role already exists: ${roleKey} (role id ${existingRoleId})`);
+        console.log(
+          `Role already exists: ${roleKey} (role id ${existingRoleId})`,
+        );
         continue;
       }
 
       const subjectId = namespace === "global" ? null : namespace;
 
-      console.log(`Creating role: ${roleKey} (namespace=${namespace}, action=${action})`);
+      console.log(
+        `Creating role: ${roleKey} (namespace=${namespace}, action=${action})`,
+      );
 
       const newRole = await authRepo.createRole(
-        roleKey as any,
+        roleKey as RoleKey,
         action,
         namespace,
         undefined,
