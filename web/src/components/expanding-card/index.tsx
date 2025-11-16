@@ -37,12 +37,12 @@ export default function CollapsibleCard({
   const [Expandable, setExpandable] = useState(false);
 
   return (
-    <Card className="w-full p-0">
+    <Card className="w-full p-0 overflow-hidden">
       <Collapsible open={Expandable} onOpenChange={setExpandable}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className={`w-full flex items-center justify-between cursor-pointer transition-colors p-4 ${
+            className={`w-full flex items-center justify-between cursor-pointer transition-all duration-300 p-4 ${
               Expandable
                 ? "bg-primary-dark text-white rounded-t-xl"
                 : "rounded-xl hover:bg-muted/50"
@@ -66,13 +66,13 @@ export default function CollapsibleCard({
               </div>
             </div>
             <ArrowRight
-              className={`h-5 w-5 transform transition-transform duration-200 ease-in-out ${
+              className={`h-5 w-5 transform transition-transform duration-300 ease-in-out ${
                 Expandable ? "rotate-90" : "rotate-0"
               }`}
             />
           </button>
         </CollapsibleTrigger>
-        <CollapsibleContent>
+        <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
           <div className="px-4 pb-4 text-sm text-muted-foreground space-y-4">
             <div className="pt-4 border-t">
               <span className="font-semibold">Location: </span> {location}

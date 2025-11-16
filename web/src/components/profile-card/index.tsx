@@ -148,7 +148,7 @@ function ProfileCardActionsDropdown({
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-secondary",
                   "data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground",
-                  "focus:bg-primary focus:text-primary-foreground",
+                  "focus:bg-primary focus:text-primary-foreground"
                 )}
               >
                 <a
@@ -173,7 +173,7 @@ function ProfileCardActionsDropdown({
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-secondary",
                 "data-[highlighted]:bg-primary data-[highlighted]:text-primary-foreground",
-                "focus:bg-primary focus:text-primary-foreground",
+                "focus:bg-primary focus:text-primary-foreground"
               )}
               disabled={action.disabled}
               onSelect={(event) => {
@@ -225,7 +225,7 @@ export default function ProfileCard({
     <section
       className={cn(
         "w-full rounded-3xl border border-border bg-card shadow-sm",
-        className,
+        className
       )}
       style={sharedStyle}
     >
@@ -367,13 +367,16 @@ export default function ProfileCard({
                     <ArrowDownIcon
                       className={cn(
                         "h-5 w-5 text-white transition-transform duration-200",
-                        aboutOpen ? "rotate-180" : "rotate-0",
+                        aboutOpen ? "rotate-180" : "rotate-0"
                       )}
                       aria-hidden="true"
                     />
                   </button>
                 </CollapsibleTrigger>
-                <CollapsibleContent id={aboutSectionId}>
+                <CollapsibleContent
+                  id={aboutSectionId}
+                  className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up"
+                >
                   <div className="profile-card__section-border border-t bg-card px-6 py-5 text-sm leading-relaxed text-secondary/90">
                     {about}
                   </div>
