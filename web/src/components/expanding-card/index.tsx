@@ -73,14 +73,14 @@ export default function CollapsibleCard({
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="p-4 pt-2 text-sm text-muted-foreground">
-            <div>
+          <div className="px-4 pb-4 text-sm text-muted-foreground space-y-4">
+            <div className="pt-4 border-t">
               <span className="font-semibold">Location: </span> {location}
             </div>
-            <div>
+            <div className="pt-4 border-t">
               <span className="font-semibold">Information: </span> {information}
             </div>
-            <div>
+            <div className="pt-4 border-t">
               <span className="font-semibold">Contact: </span> {contact}
             </div>
           </div>
