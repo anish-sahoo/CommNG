@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { RoleKey } from "../roles.js";
 
 // Enums
 export const permissionEnum = pgEnum("permission_enum", [
@@ -42,8 +43,10 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "global",
   "channel",
   "mentor",
-  "feature",
+  "broadcast",
+  "reporting",
 ]);
+export type RoleNamespace = (typeof roleNamespaceEnum.enumValues)[number];
 
 export const channelPostPermissionEnum = pgEnum(
   "channel_post_permission_enum",
@@ -161,6 +164,7 @@ export const channels = pgTable(
  * - Use subjectId to express the logical area the role controls; combine with namespace and action
  *   (and channelId when relevant) to form a stable roleKey.
  */
+
 export const roles = pgTable(
   "roles",
   {
@@ -168,7 +172,7 @@ export const roles = pgTable(
     namespace: roleNamespaceEnum("namespace").notNull(),
     subjectId: text("subject_id"),
     action: text("action").notNull(),
-    roleKey: text("role_key").notNull(),
+    roleKey: text("role_key").notNull().$type<RoleKey>(),
     channelId: integer("channel_id").references(() => channels.channelId, {
       onDelete: "cascade",
     }),

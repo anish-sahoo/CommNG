@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const menteeSchema = z.object({
-  menteeId: z.number().int().positive(),
-  userId: z.number().int().positive(),
+  menteeId: z.string(),
+  userId: z.string(),
   learningGoals: z.string().nullable().optional(),
   experienceLevel: z.string().nullable().optional(),
   preferredMentorType: z.string().nullable().optional(),
@@ -14,7 +14,7 @@ export const menteeSchema = z.object({
 export type MenteeSchema = z.infer<typeof menteeSchema>;
 
 export const createMenteeInputSchema = z.object({
-  userId: z.number().int().positive(),
+  userId: z.string(),
   learningGoals: z.string().optional(),
   experienceLevel: z.string().optional(),
   preferredMentorType: z.string().optional(),
@@ -37,7 +37,7 @@ export const getMenteeInputSchema = z.object({
 });
 
 export const getMenteesByUserInputSchema = z.object({
-  userId: z.number().int().positive(),
+  userId: z.string(),
 });
 
 export type CreateMenteeInput = z.infer<typeof createMenteeInputSchema>;

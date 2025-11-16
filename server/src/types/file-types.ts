@@ -83,7 +83,7 @@ export const uploadForChannelInputSchema = formDataLikeSchema.pipe(
     channelId: z.coerce.number().int().positive({
       message: "channelId must be a positive integer",
     }),
-    action: z.enum(["write", "admin"]),
+    // action: z.enum(["write"]),
     contentType: z.string().optional(),
   }),
 );
