@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { icons } from "@/components/icons";
 import { Card } from "@/components/ui/card";
@@ -43,15 +42,15 @@ export default function CollapsibleCard({
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className={`flex items-center justify-between cursor-pointer rounded transition-colors ${
+            className={`w-full flex items-center justify-between cursor-pointer transition-colors p-4 ${
               Expandable
-                ? "bg-primary-dark text-white p-4 rounded-xl"
-                : "p-4 hover:bg-muted/50"
+                ? "bg-primary-dark text-white rounded-t-xl"
+                : "rounded-xl hover:bg-muted/50"
             }`}
           >
             <div className="flex items-center gap-4">
               <Avatar />
-              <div>
+              <div className="text-left">
                 <div
                   className={`font-semibold ${Expandable ? "text-white" : ""}`}
                 >
@@ -73,9 +72,8 @@ export default function CollapsibleCard({
             />
           </button>
         </CollapsibleTrigger>
-
         <CollapsibleContent>
-          <div className="p-4 pt-2 text-sm text-muted-foreground ">
+          <div className="p-4 pt-2 text-sm text-muted-foreground">
             <div>
               <span className="font-semibold">Location: </span> {location}
             </div>
