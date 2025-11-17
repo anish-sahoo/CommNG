@@ -51,7 +51,6 @@ export class AuthRepository {
    */
   async getAllImpliedRolesForUser(userId: string) {
     const assignedRoles = await this.getRolesForUser(userId);
-    console.log({ assignedRoles });
     const allRoles = new Set<RoleKey>();
 
     for (const role of assignedRoles) {
