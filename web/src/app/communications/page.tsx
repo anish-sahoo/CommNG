@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import ChannelCard from "@/components/channel-card";
 import { type IconName, icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
+import { Protected } from "@/components/rbac/Protected";
 import SearchBar from "@/components/search-bar";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,15 +232,17 @@ export default function CommunicationsOverviewPage() {
               </Link>
             </Button>
 
-            <Button asChild variant="outline" className="gap-2">
-              <Link
-                href="/communications/broadcasts/new"
-                aria-label="Create a new broadcast"
-              >
-                <AddIcon className="h-5 w-5 text-accent" aria-hidden="true" />
-                Broadcast
-              </Link>
-            </Button>
+            <Protected requiredRole="broadcast:create">
+              <Button asChild variant="outline" className="gap-2">
+                <Link
+                  href="/communications/broadcasts/new"
+                  aria-label="Create a new broadcast"
+                >
+                  <AddIcon className="h-5 w-5 text-accent" aria-hidden="true" />
+                  Broadcast
+                </Link>
+              </Button>
+            </Protected>
 
             <Button
               asChild
