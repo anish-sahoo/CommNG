@@ -38,9 +38,9 @@ export const ROLE_HIERARCHIES = {
 } as const satisfies Record<RoleNamespace, readonly string[]>;
 
 // Extract action types from hierarchy for type safety
-type ChannelActions = (typeof ROLE_HIERARCHIES.channel)[number];
-type ReportingActions = (typeof ROLE_HIERARCHIES.reporting)[number];
-type BroadcastActions = (typeof ROLE_HIERARCHIES.broadcast)[number];
+export type ChannelActions = (typeof ROLE_HIERARCHIES.channel)[number];
+export type ReportingActions = (typeof ROLE_HIERARCHIES.reporting)[number];
+export type BroadcastActions = (typeof ROLE_HIERARCHIES.broadcast)[number];
 
 /**
  * Builds a role key for a channel-specific resource/action.

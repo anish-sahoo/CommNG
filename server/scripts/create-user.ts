@@ -14,10 +14,10 @@ import { shutdownPostgres } from "../src/data/db/sql.js";
 async function createUser() {
   // Edit this object to create a new user
   const userData = {
-    email: "test@test.test",
-    password: "pass1234",
-    name: "John Doe",
-    phoneNumber: "555-1234", // optional
+    email: "admin@admin.admin",
+    password: "password",
+    name: "Admin User",
+    phoneNumber: "555-123-1234", // optional
     rank: "Captain", // optional
     department: "Engineering", // optional
     branch: "Army", // optional

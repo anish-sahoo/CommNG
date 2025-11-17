@@ -1,8 +1,22 @@
+/**
+ * Script: grant-broadcast-role.ts
+ * --------------------------------
+ * Grants the `broadcast:create` permission to a user by email. This uses the
+ * role builder helper from `src/data/roles.ts` so the role key stays consistent.
+ *
+ * Example usage (loads environment from .env and runs with tsx):
+ *
+ *   npx dotenv -e .env -- tsx scripts/grant-broadcast-role.ts admin@your.company
+ *
+ * If you omit the email it will default to `admin@admin.admin` (useful for
+ * local development).
+ */
 import { eq } from "drizzle-orm";
 import { roles, userRoles, users } from "../src/data/db/schema.js";
 import { db } from "../src/data/db/sql.js";
+import { broadcastRole } from "../src/data/roles.js";
 
-const roleKey = "global:broadcast:create";
+const roleKey = broadcastRole("create");
 const userEmail = (process.argv[2] ?? "admin@admin.admin").toLowerCase();
 
 async function main() {

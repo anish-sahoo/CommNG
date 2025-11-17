@@ -1,0 +1,29 @@
+# Dev Environment Configuration
+# Override default variables for development environment
+
+# Keep scheduler enabled for dev cost savings
+enable_infrastructure_scheduler = true
+
+# Minimal resources for dev
+db_instance_class          = "db.t4g.micro"
+db_allocated_storage       = 20
+db_backup_retention_period = 0
+db_multi_az                = false
+db_deletion_protection     = false
+db_publicly_accessible     = true
+
+# Dev cache limits
+cache_max_storage_gb = 2
+cache_max_ecpu       = 1000
+
+# Minimal ECS resources for dev
+ecs_cpu           = 256
+ecs_memory        = 512
+ecs_desired_count = 1
+ecs_max_capacity  = 3
+
+# Disable expensive features in dev
+enable_container_insights = false
+
+# Short log retention for dev
+log_retention_days = 1
