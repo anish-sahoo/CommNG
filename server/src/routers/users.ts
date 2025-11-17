@@ -38,7 +38,6 @@ const checkEmailExists = procedure
 const createUserProfile = protectedProcedure
   .input(createUserProfileInputSchema)
   .meta({
-    requiresAuth: true,
     description:
       "Create user profile data (name, phone, rank, department, branch, profile picture). Users can only create their own profile.",
   })
@@ -52,7 +51,6 @@ const createUserProfile = protectedProcedure
 const updateUserProfile = protectedProcedure
   .input(updateUserProfileInputSchema)
   .meta({
-    requiresAuth: true,
     description:
       "Update user profile data (name, phone, rank, department, branch, profile picture)",
   })
