@@ -1,0 +1,10 @@
+{
+  "name": "infrastructure-scheduler",
+  "version": "1.0.0",
+  "description": "Lambda functions to shutdown and startup infrastructure on schedule",
+  "main": "shutdown.js",
+  "dependencies": {
+    "@aws-sdk/client-ecs": "^3.0.0",
+    "@aws-sdk/client-rds": "^3.0.0"
+  }
+}

@@ -20,7 +20,7 @@ const subscribe = protectedProcedure
 
 const testNotifications = protectedProcedure
   .meta({ description: "Test by sending a sample notification" })
-  .mutation(async ({ ctx }) => {
+  .mutation(async () => {
     return withErrorHandling("testNotification", async () => {
       const payload: NotificationPayload = {
         title: "Test Notification",

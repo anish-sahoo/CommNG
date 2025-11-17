@@ -1,8 +1,28 @@
+/**
+ * Script: fix-channel-permissions.ts
+ * ----------------------------------
+ * Repairs or grants a channel-specific permission (read | post | admin) on a
+ * channel to a user, by email.
+ *
+ * Example usage (with .env loaded):
+ *
+ *   npx dotenv -e .env -- tsx scripts/fix-channel-permissions.ts 31 admin@example.com admin
+ *
+ * Parameters:
+ *   1) channelId - numeric id of the channel (see channels table)
+ *   2) userEmail - the target user's email (case-insensitive)
+ *   3) permission - one of `read`, `post`, `admin`
+ */
 import { eq } from "drizzle-orm";
 import { connectRedis, disconnectRedis } from "../src/data/db/redis.js";
 import { users } from "../src/data/db/schema.js";
 import { db, shutdownPostgres } from "../src/data/db/sql.js";
 import { AuthRepository } from "../src/data/repository/auth-repo.js";
+import {
+  type ChannelActions,
+  channelRole,
+  ROLE_HIERARCHIES,
+} from "../src/data/roles.js";
 import { PolicyEngine } from "../src/service/policy-engine.js";
 
 const channelIdArg = process.argv[2];
@@ -40,7 +60,22 @@ async function main() {
   const policyEngine = new PolicyEngine(authRepo);
 
   const channelIdNum = Number.parseInt(channelId, 10);
-  const roleKey = `channel:${channelIdNum}:${permission}`;
+
+  const isChannelAction = (a: string): a is ChannelActions =>
+    (ROLE_HIERARCHIES.channel as readonly string[]).includes(a);
+
+  const perm = permission as string;
+
+  if (!isChannelAction(perm)) {
+    console.error(
+      `Invalid permission: ${permission}. Must be one of ${(
+        ROLE_HIERARCHIES.channel as readonly string[]
+      ).join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  const roleKey = channelRole(perm, channelIdNum);
 
   console.log(`Granting ${roleKey} to ${userEmail} (${user.id})`);
   try {

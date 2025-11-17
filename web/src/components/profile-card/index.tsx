@@ -241,7 +241,7 @@ export default function ProfileCard({
         </div>
 
         <div className="px-6 pb-6 sm:px-8">
-          <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:items-start sm:gap-10 lg:gap-12">
+          <div className="mt-2 flex flex-col items-center gap-4 sm:mt-6 sm:flex-row sm:items-start sm:gap-10 lg:gap-12">
             <div className="relative z-10 -mt-16 h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-card bg-neutral text-secondary shadow-lg sm:-mt-20 sm:h-32 sm:w-32">
               {avatarSrc ? (
                 <Image
@@ -260,7 +260,7 @@ export default function ProfileCard({
               )}
             </div>
 
-            <div className="relative z-10 flex flex-1 flex-col gap-3 pt-2 sm:ml-8 sm:pt-2 lg:pt-0">
+            <div className="relative z-10 flex flex-1 flex-col items-center gap-3 pt-2 text-center sm:ml-8 sm:items-start sm:text-left sm:pt-2 lg:pt-0">
               <div className="space-y-1 text-secondary sm:max-w-2xl">
                 <h2 className="text-2xl font-semibold leading-tight sm:text-3xl">
                   {name}
@@ -280,7 +280,7 @@ export default function ProfileCard({
               </div>
 
               {interests.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
                   {interests.map((interest) => (
                     <Badge
                       key={interest}
@@ -298,7 +298,7 @@ export default function ProfileCard({
               ) : null}
 
               {contactActions.length > 0 ? (
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
                   {contactActions.map((action, index) => {
                     const Icon = action.iconName
                       ? icons[action.iconName]
@@ -322,6 +322,7 @@ export default function ProfileCard({
                           asChild
                           variant={variant}
                           size="lg"
+                          className="w-full sm:w-auto"
                         >
                           <a
                             href={action.href}
@@ -343,6 +344,7 @@ export default function ProfileCard({
                         size="lg"
                         onClick={action.onClick}
                         aria-label={ariaLabel}
+                        className="w-full sm:w-auto"
                       >
                         {content}
                       </Button>
