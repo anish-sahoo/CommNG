@@ -355,10 +355,9 @@ const Components = () => {
                 Linked Card
               </h2>
             </div>
-            <LinkedCard
-              href="https://example.com"
-              content="How to Mentor Effectively: 5 Tips for Success"
-            />
+            <LinkedCard href="https://example.com">
+              How to Mentor Effectively: 5 Tips for Success
+            </LinkedCard>
           </section>
 
           <section className="space-y-6">
