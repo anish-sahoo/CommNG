@@ -74,6 +74,26 @@ export class ReportRepository {
   }
 
   /**
+   * Returns every report regardless of submitter.
+   */
+  async getAllReports() {
+    const result = await db
+      .select(BASE_REPORT_FIELDS)
+      .from(reports)
+      .orderBy(desc(reports.createdAt));
+
+    const attachmentMap = await this.getAttachmentsForReports(
+      db,
+      result.map((row) => row.reportId),
+    );
+
+    return result.map((row) => ({
+      ...row,
+      attachments: attachmentMap.get(row.reportId) ?? [],
+    }));
+  }
+
+  /**
    * Fetch a single report. Throws if not found.
    */
   /**

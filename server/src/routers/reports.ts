@@ -1,5 +1,6 @@
 import { ReportRepository } from "../data/repository/reports-repo.js";
 import { reportingRole } from "../data/roles.js";
+import { PolicyEngine } from "../service/policy-engine.js";
 import { ReportService } from "../service/reports-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
 import { roleProcedure, router } from "../trpc/trpc.js";
@@ -12,14 +13,27 @@ import {
 } from "../types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
+const ADMIN_REPORT_ROLES = [
+  reportingRole("admin"),
+  reportingRole("assign"),
+];
 
 const getReports = roleProcedure([reportingRole("read")])
   .input(getReportsSchema)
   .meta({ description: "Returns the list of reports" })
-  .mutation(({ input }) =>
-    withErrorHandling("getReports", () =>
-      reportService.getReportsForUser(input.name),
-    ),
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("getReports", () => {
+      const canViewAll = PolicyEngine.validateList(
+        ctx.roles,
+        ADMIN_REPORT_ROLES,
+      );
+
+      if (canViewAll) {
+        return reportService.getAllReports();
+      }
+
+      return reportService.getReportsForUser(input.name);
+    }),
   );
 
 const createReport = roleProcedure([reportingRole("create")])
