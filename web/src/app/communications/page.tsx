@@ -149,7 +149,7 @@ export default function CommunicationsOverviewPage() {
           variant="outline"
           size="icon"
           className={cn(
-            "relative rounded-full border border-border bg-card text-primary transition hover:bg-primary/10",
+            "relative rounded-full border border-border bg-card text-primary transition hover:bg-primary/10 shadow-none",
             triggerClassName,
           )}
           aria-label="Open create menu"
@@ -205,13 +205,13 @@ export default function CommunicationsOverviewPage() {
               asChild
               variant="ghost"
               size="icon"
-              className="relative rounded-full border border-border bg-card text-secondary shadow-sm transition hover:text-primary"
+              className="relative rounded-full border border-border bg-card text-secondary transition hover:text-primary"
             >
               <Link
                 href="/communications/broadcasts"
                 aria-label="Open broadcasts"
               >
-                <BellIcon className="h-5 w-5 text-secondary" />
+                <BellIcon className="h-5 w-5 text-primary" />
                 {hasActiveBroadcast ? (
                   <span className="absolute right-2 top-2 inline-flex h-2 w-2 rounded-full bg-error" />
                 ) : null}
@@ -251,7 +251,7 @@ export default function CommunicationsOverviewPage() {
                 href="/communications/broadcasts"
                 aria-label="Open broadcasts"
               >
-                <BellIcon className="h-5 w-5 text-secondary transition group-hover:text-background" />
+                <BellIcon className="h-5 w-5 text-primary transition group-hover:text-background" />
                 {hasActiveBroadcast ? (
                   <span className="absolute right-2 top-2 inline-flex h-2 w-2 rounded-full bg-error" />
                 ) : null}
