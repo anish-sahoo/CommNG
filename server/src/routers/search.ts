@@ -2,7 +2,6 @@ import { SearchRepository } from "../data/repository/search-repo.js";
 import { SearchService } from "../service/search-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
 import { protectedProcedure, router } from "../trpc/trpc.js";
-import { UnauthorizedError } from "../types/errors.js";
 import { typeaheadSchema } from "../types/search-types.js";
 
 const searchService = new SearchService(new SearchRepository());
@@ -15,9 +14,7 @@ const typeahead = protectedProcedure
   .query(async ({ input, ctx }) => {
     return withErrorHandling("typeahead", async () => {
       const userId = ctx.auth.user.id;
-      if (!userId) {
-        throw new UnauthorizedError("Unauthorized");
-      }
+
       return await searchService.getTypeAheadSuggestions(
         input.query,
         userId,

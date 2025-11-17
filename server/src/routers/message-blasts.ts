@@ -1,10 +1,9 @@
 import { MessageBlastRepository } from "../data/repository/message-blast-repo.js";
 import { UserRepository } from "../data/repository/user-repo.js";
+import { broadcastRole } from "../data/roles.js";
 import { MessageBlastService } from "../service/message-blast-service.js";
-import { policyEngine } from "../service/policy-engine.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
-import { protectedProcedure, router } from "../trpc/trpc.js";
-import { ForbiddenError } from "../types/errors.js";
+import { ensureHasRole, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createMessageBlastInputSchema,
   deleteMessageBlastInputSchema,
@@ -21,19 +20,7 @@ const createAndSendMessageBlast = protectedProcedure
   .input(createMessageBlastInputSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("sendMessageBlast", async () => {
-      const canCreate = await policyEngine.validate(
-        ctx.auth.user.id,
-        "global:broadcast:create",
-      );
-
-      const isFallbackAdmin =
-        ctx.auth.user.email?.toLowerCase() === "admin@admin.admin";
-
-      if (!canCreate && !isFallbackAdmin) {
-        throw new ForbiddenError(
-          "You do not have permission to create broadcasts.",
-        );
-      }
+      ensureHasRole(ctx, [broadcastRole("create")]);
 
       await messageBlastService.createMessageBlast(input, ctx.auth.user.id);
     }),
@@ -49,19 +36,7 @@ const deleteMessageBlast = protectedProcedure
   .input(deleteMessageBlastInputSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("deleteMessageBlast", async () => {
-      const canDelete = await policyEngine.validate(
-        ctx.auth.user.id,
-        "global:broadcast:create",
-      );
-
-      const isFallbackAdmin =
-        ctx.auth.user.email?.toLowerCase() === "admin@admin.admin";
-
-      if (!canDelete && !isFallbackAdmin) {
-        throw new ForbiddenError(
-          "Cannot delete broadcasts. Not enough permission.",
-        );
-      }
+      ensureHasRole(ctx, [broadcastRole("create")]);
 
       await messageBlastService.deleteMessageBlast(input.blastId);
     }),
@@ -69,10 +44,12 @@ const deleteMessageBlast = protectedProcedure
 
 const canManageBroadcasts = protectedProcedure.query(({ ctx }) =>
   withErrorHandling("canManageBroadcasts", async () => {
-    return await policyEngine.validate(
-      ctx.auth.user.id,
-      "global:broadcast:create",
-    );
+    try {
+      ensureHasRole(ctx, [broadcastRole("create")]);
+      return true;
+    } catch {
+      return false;
+    }
   }),
 );
 

@@ -1,4 +1,4 @@
-import ChannelView from "../components/channel-view";
+import ChannelView from "@/app/communications/components/channel-view";
 
 type ChannelPageProps = {
   params: Promise<{
