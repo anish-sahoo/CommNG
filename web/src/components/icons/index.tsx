@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowRightLeft,
   Bell,
   BellPlus,
   Check,
@@ -61,6 +62,7 @@ export const icons = {
   user: User,
   drag: GripVertical,
   help: CircleQuestionMark,
+  sort: ArrowRightLeft,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

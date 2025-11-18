@@ -25,6 +25,13 @@ export class ReportService {
   }
 
   /**
+   * Get every report (admin only)
+   */
+  async getAllReports() {
+    return await this.reportsRepo.getAllReports();
+  }
+
+  /**
    * Create a new report
    * @param input Report creation data
    * @returns Created report object

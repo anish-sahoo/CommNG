@@ -8,6 +8,35 @@ import { getImpliedRoles } from "../role-hierarchy.js";
 import type { RoleKey } from "../roles.js";
 
 /**
+ * Normalizes cached role data (plain arrays, serialized sets, etc.) into a Set<RoleKey>.
+ * This protects us from legacy cache entries while keeping the runtime API consistent.
+ */
+function hydrateRoleSet(value: unknown): Set<RoleKey> {
+  if (value instanceof Set) {
+    return value as Set<RoleKey>;
+  }
+
+  if (Array.isArray(value)) {
+    return new Set(
+      value.filter((role): role is RoleKey => typeof role === "string"),
+    );
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    Array.isArray((value as { values?: unknown[] }).values)
+  ) {
+    const entries = (value as { values: unknown[] }).values;
+    return new Set(
+      entries.filter((role): role is RoleKey => typeof role === "string"),
+    );
+  }
+
+  return new Set();
+}
+
+/**
  * Repository for authentication and role management operations
  */
 export class AuthRepository {
@@ -25,7 +54,9 @@ export class AuthRepository {
     return rows.map((row) => row.userId);
   }
 
-  @Cache((userId: string) => `roles:${userId}`, 3600)
+  @Cache((userId: string) => `roles:${userId}`, 3600, {
+    hydrate: hydrateRoleSet,
+  })
   /**
    * Get all role keys assigned to a user
    * @param userId User ID
@@ -43,7 +74,9 @@ export class AuthRepository {
     return new Set(rows.map((r) => r.key));
   }
 
-  @Cache((userId: string) => `roles:implied:${userId}`, 3600)
+  @Cache((userId: string) => `roles:implied:${userId}`, 3600, {
+    hydrate: hydrateRoleSet,
+  })
   /**
    * Get all role keys assigned to a user, including implied roles from hierarchy
    * @param userId User ID
