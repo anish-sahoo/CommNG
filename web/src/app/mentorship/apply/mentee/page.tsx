@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import BackgroundGradient from "@/components/background-gradients";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";

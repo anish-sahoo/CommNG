@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import BackgroundGradient from "@/components/background-gradients";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
@@ -213,7 +212,7 @@ export default function MentorshipApplyMentorPage() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [multiLineText, setMultiLineText] = useState("");
   const [selectedCareerStages, setSelectedCareerStages] = useState<string[]>(
-    []
+    [],
   );
   const [selectedMeetingFormats, setSelectedMeetingFormats] = useState<
     string[]
