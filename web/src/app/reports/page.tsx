@@ -1,9 +1,10 @@
 "use client";
 
+import type { AppRouter } from "@server/trpc/app_router";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { useMemo, useState } from "react";
 import type { inferRouterOutputs } from "@trpc/server";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import SearchBar from "@/components/search-bar";
@@ -15,10 +16,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
+import { hasAnyRole, hasRole } from "@/lib/rbac";
 import { useTRPCClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
-import type { AppRouter } from "@server/trpc/app_router";
+import type { RoleKey } from "@/types/roles";
 
 type ReportRecord =
   inferRouterOutputs<AppRouter>["reports"]["getReports"][number];
@@ -39,21 +42,23 @@ const SORT_OPTIONS = [
 type SortOption = (typeof SORT_OPTIONS)[number]["id"];
 
 function toISODate(value?: string | Date | null) {
-  if (!value) {
-    return new Date().toISOString();
-  }
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
+  const fallback = new Date();
+  if (!value) return fallback.toISOString();
+  if (value instanceof Date) return value.toISOString();
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return new Date().toISOString();
-  }
-  return parsed.toISOString();
+  return Number.isNaN(parsed.getTime())
+    ? fallback.toISOString()
+    : parsed.toISOString();
 }
 
 const AddIcon = icons.add;
 const SortIcon = icons.sort;
+
+const REPORTING_READ_ROLE = "reporting:read" as RoleKey;
+const REPORTING_ADMIN_ROLES: RoleKey[] = [
+  "reporting:admin" as RoleKey,
+  "reporting:assign" as RoleKey,
+];
 
 export default function ReportsPage() {
   const trpcClient = useTRPCClient();
@@ -61,10 +66,27 @@ export default function ReportsPage() {
   const userId = sessionData?.user?.id ?? null;
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("date-desc");
+  const statusCarouselRef = useRef<HTMLDivElement | null>(null);
+  const {
+    roles,
+    isLoading: rolesLoading,
+    isError: rolesRequestFailed,
+    refetch: refetchRoles,
+  } = useUserRoles();
+
+  const hasReportingRead = useMemo(() => {
+    if (!roles) return false;
+    return hasRole(roles, REPORTING_READ_ROLE);
+  }, [roles]);
+
+  const isReportsAdmin = useMemo(() => {
+    if (!roles) return false;
+    return hasAnyRole(roles, REPORTING_ADMIN_ROLES);
+  }, [roles]);
 
   const reportsQuery = useQuery({
     queryKey: ["reports", userId],
-    enabled: Boolean(userId),
+    enabled: Boolean(userId && hasReportingRead),
     queryFn: async () => {
       if (!userId) return [];
       const response = await trpcClient.reports.getReports.mutate({
@@ -118,7 +140,6 @@ export default function ReportsPage() {
           return left.title.localeCompare(right.title);
         case "title-desc":
           return right.title.localeCompare(left.title);
-        case "date-desc":
         default:
           return getTimestamp(right) - getTimestamp(left);
       }
@@ -143,7 +164,7 @@ export default function ReportsPage() {
             : undefined,
         issuedTo: report.assignedTo ?? undefined,
       })),
-    [sortedReports]
+    [sortedReports],
   );
 
   const activeSortLabel = useMemo(() => {
@@ -161,36 +182,45 @@ export default function ReportsPage() {
     }));
   }, [reports]);
 
-  const isReportsAdmin = useMemo(() => {
-    const user = sessionData?.user as
-      | {
-          email?: string | null;
-          role?: string | null;
-          roles?: string[] | null;
-          permissions?: string[] | null;
-        }
-      | undefined;
-    if (!user) return false;
+  const [carouselState, setCarouselState] = useState({
+    index: 0,
+    atStart: true,
+    atEnd: statusSummary.length <= 1,
+  });
 
-    const possibleRoles = [
-      user.role,
-      ...(Array.isArray(user.roles) ? user.roles : []),
-      ...(Array.isArray(user.permissions) ? user.permissions : []),
-    ];
+  useEffect(() => {
+    const container = statusCarouselRef.current;
+    if (!container) return;
 
-    if ((user.email ?? "").toLowerCase() === "admin@admin.admin") {
-      return true;
-    }
+    const handleScroll = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const maxScroll = scrollWidth - clientWidth - 1;
+      const nextIndex = Math.round(scrollLeft / Math.max(clientWidth, 1));
+      setCarouselState({
+        index: Math.min(
+          Math.max(nextIndex, 0),
+          Math.max(statusSummary.length - 1, 0),
+        ),
+        atStart: scrollLeft <= 1,
+        atEnd: scrollLeft >= maxScroll,
+      });
+    };
 
-    return possibleRoles.some((role) => {
-      if (typeof role !== "string") return false;
-      const normalized = role.toLowerCase();
-      if (normalized === "admin" || normalized === "global:admin") return true;
-      if (normalized.startsWith("reporting:admin")) return true;
-      if (normalized.startsWith("reporting:assign")) return true;
-      return false;
+    handleScroll();
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [statusSummary.length]);
+
+  useEffect(() => {
+    const container = statusCarouselRef.current;
+    if (!container) return;
+    container.scrollTo({ left: 0 });
+    setCarouselState({
+      index: 0,
+      atStart: true,
+      atEnd: statusSummary.length <= 1,
     });
-  }, [sessionData]);
+  }, [statusSummary.length]);
 
   const isLoading = reportsQuery.isLoading || reportsQuery.isFetching;
   const hasError = reportsQuery.isError;
@@ -214,7 +244,7 @@ export default function ReportsPage() {
     </div>
   );
 
-  const headerActions = (
+  const headerActions = !userId ? null : (
     <>
       <Button
         type="button"
@@ -248,23 +278,71 @@ export default function ReportsPage() {
         <section className="rounded-2xl border border-border bg-card p-6 text-secondary shadow-sm">
           Sign in to view and manage your reports.
         </section>
+      ) : rolesRequestFailed ? (
+        <section className="rounded-2xl border border-border bg-card p-6 text-secondary shadow-sm">
+          <p className="text-sm">
+            We couldn&apos;t verify your permissions just yet.
+          </p>
+          <button
+            type="button"
+            className="mt-3 text-sm font-semibold text-primary underline"
+            onClick={() => refetchRoles()}
+          >
+            Try again
+          </button>
+        </section>
+      ) : rolesLoading ? (
+        <section className="rounded-2xl border border-border bg-card p-6 text-secondary shadow-sm">
+          Checking your permissions…
+        </section>
+      ) : !hasReportingRead ? (
+        <section className="rounded-2xl border border-border bg-card p-6 text-secondary shadow-sm">
+          You don&apos;t have permission to view reports yet. Reach out to an
+          administrator if you believe this is an error.
+        </section>
       ) : (
         <>
           {isReportsAdmin ? (
-            <section className="grid gap-4 sm:grid-cols-3">
-              {statusSummary.map((summary) => (
-                <article
-                  key={summary.status}
-                  className="rounded-2xl border border-border bg-card px-4 py-5 shadow-sm"
-                >
-                  <p className="text-sm font-semibold uppercase tracking-wide text-secondary/70">
-                    {summary.status}
-                  </p>
-                  <p className="mt-2 text-3xl font-bold text-secondary">
-                    {summary.count}
-                  </p>
-                </article>
-              ))}
+            <section className="relative sm:static">
+              <div
+                id="report-status-carousel"
+                ref={statusCarouselRef}
+                className="flex gap-4 overflow-x-auto px-4 pb-1 scroll-smooth snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 sm:snap-none"
+              >
+                {statusSummary.map((summary) => (
+                  <article
+                    key={summary.status}
+                    className="w-full min-w-full shrink-0 snap-center rounded-2xl border border-border bg-card px-4 py-4 shadow-sm sm:min-w-0 sm:snap-none"
+                  >
+                    <p className="text-sm font-semibold uppercase tracking-wide text-secondary/70">
+                      {summary.status}
+                    </p>
+                    <p className="mt-2 text-3xl font-bold text-secondary">
+                      {summary.count}
+                    </p>
+                  </article>
+                ))}
+              </div>
+              {statusSummary.length > 1 ? (
+                <div className="mt-3 flex items-center justify-center gap-2 sm:hidden">
+                  {statusSummary.map((summary, index) => (
+                    <span
+                      key={`${summary.status}-indicator`}
+                      aria-hidden="true"
+                      className={cn(
+                        "h-1 rounded-full transition-all",
+                        index === carouselState.index
+                          ? "w-8 bg-primary"
+                          : "w-4 bg-border",
+                      )}
+                    />
+                  ))}
+                  <span className="sr-only">
+                    Viewing summary {carouselState.index + 1} of{" "}
+                    {statusSummary.length}
+                  </span>
+                </div>
+              ) : null}
             </section>
           ) : null}
 
@@ -300,7 +378,7 @@ export default function ReportsPage() {
                         "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
                         sortOption === option.id
                           ? "text-primary"
-                          : "text-secondary hover:text-primary"
+                          : "text-secondary hover:text-primary",
                       )}
                       onSelect={(event) => {
                         event.preventDefault();

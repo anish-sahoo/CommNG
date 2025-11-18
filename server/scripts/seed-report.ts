@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { ReportRepository } from "../src/data/repository/reports-repo.js";
 import { users } from "../src/data/db/schema.js";
 import { db, shutdownPostgres } from "../src/data/db/sql.js";
+import { ReportRepository } from "../src/data/repository/reports-repo.js";
 
 /**
  * Seeds a placeholder report for a given user email. Usage:

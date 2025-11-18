@@ -13,10 +13,7 @@ import {
 } from "../types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
-const ADMIN_REPORT_ROLES = [
-  reportingRole("admin"),
-  reportingRole("assign"),
-];
+const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
 
 const getReports = roleProcedure([reportingRole("read")])
   .input(getReportsSchema)

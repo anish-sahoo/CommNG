@@ -20,15 +20,15 @@ export class ReportService {
    * @param userId User ID
    * @returns Array of reports
    */
-  async getReportsForUser(userId: string) {
-    return await this.reportsRepo.getReportsForUser(userId);
+  getReportsForUser(userId: string) {
+    return this.reportsRepo.getReportsForUser(userId);
   }
 
   /**
    * Get every report (admin only)
    */
-  async getAllReports() {
-    return await this.reportsRepo.getAllReports();
+  getAllReports() {
+    return this.reportsRepo.getAllReports();
   }
 
   /**
@@ -36,8 +36,8 @@ export class ReportService {
    * @param input Report creation data
    * @returns Created report object
    */
-  async createReport(input: CreateReport) {
-    return await this.reportsRepo.createReport(input);
+  createReport(input: CreateReport) {
+    return this.reportsRepo.createReport(input);
   }
 
   /**
@@ -46,8 +46,8 @@ export class ReportService {
    * @param updates Update data
    * @returns Updated report object
    */
-  async updateReport(reportId: string, updates: EditReport["updates"]) {
-    return await this.reportsRepo.updateReport(reportId, updates);
+  updateReport(reportId: string, updates: EditReport["updates"]) {
+    return this.reportsRepo.updateReport(reportId, updates);
   }
 
   /**
@@ -56,9 +56,9 @@ export class ReportService {
    * @param _deletedBy User ID (reserved for future audit trail)
    * @returns Deleted report object
    */
-  async deleteReport(reportId: string, _deletedBy: string) {
+  deleteReport(reportId: string, _deletedBy: string) {
     // Future: audit trail can use deletedBy
-    return await this.reportsRepo.deleteReport(reportId);
+    return this.reportsRepo.deleteReport(reportId);
   }
 
   /**
@@ -66,7 +66,7 @@ export class ReportService {
    * @param input Assignment data
    * @returns Assignment object
    */
-  async assignReport(input: AssignReport) {
-    return await this.reportsRepo.assignReport(input);
+  assignReport(input: AssignReport) {
+    return this.reportsRepo.assignReport(input);
   }
 }

@@ -43,13 +43,7 @@ const BASE_REPORT_FIELDS = {
 /**
  * Repository to handle database queries/communication related to reports.
  */
-/**
- * Repository to handle database queries/communication related to reports.
- */
 export class ReportRepository {
-  /**
-   * Returns the reports created by a specific user.
-   */
   /**
    * Returns the reports created by a specific user.
    * @param userId User ID
@@ -94,9 +88,6 @@ export class ReportRepository {
   }
 
   /**
-   * Fetch a single report. Throws if not found.
-   */
-  /**
    * Fetch a single report by its ID.
    * @param reportId Report ID
    * @returns Report object with attachments
@@ -121,9 +112,6 @@ export class ReportRepository {
     };
   }
 
-  /**
-   * Create a new report.
-   */
   /**
    * Create a new report.
    * @param input CreateReport input object
@@ -160,9 +148,6 @@ export class ReportRepository {
     });
   }
 
-  /**
-   * Update an existing report.
-   */
   /**
    * Update an existing report.
    * @param reportId Report ID
@@ -232,9 +217,6 @@ export class ReportRepository {
     });
   }
 
-  /**
-   * Delete a report permanently.
-   */
   /**
    * Delete a report permanently.
    * @param reportId Report ID

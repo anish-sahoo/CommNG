@@ -1,4 +1,3 @@
-import { icons } from "@/components/icons";
 import {
   Table,
   TableBody,

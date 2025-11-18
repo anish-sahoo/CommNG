@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowRightLeft,
   Bell,
   BellPlus,
   Check,
@@ -29,7 +30,6 @@ import {
   UserPlus,
   Users,
   X,
-  ArrowRightLeft,
 } from "lucide-react";
 
 export const icons = {

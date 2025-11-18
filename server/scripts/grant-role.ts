@@ -48,12 +48,7 @@ async function grantRole() {
     process.exit(1);
   }
 
-  const granted = await authRepo.grantAccess(
-    user.id,
-    user.id,
-    roleId,
-    roleKey,
-  );
+  const granted = await authRepo.grantAccess(user.id, user.id, roleId, roleKey);
 
   if (granted) {
     console.log(`Granted ${roleKey} to ${email}`);
