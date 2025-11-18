@@ -1,5 +1,7 @@
 import { and, eq, gt, sql } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
+import { messageBlasts } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
 import type {
   ActiveMessageBlastsForUserQuery,
   CreateMessageBlastOutput,
@@ -8,10 +10,8 @@ import type {
   MessageBlastInsert,
   TargetAudience,
   UpdateMessageBlastOutput,
-} from "../../types/message-blast-types.js";
-import { parseTargetAudience } from "../../types/message-blast-types.js";
-import { messageBlasts } from "../db/schema.js";
-import { db } from "../db/sql.js";
+} from "@/types/message-blast-types.js";
+import { parseTargetAudience } from "@/types/message-blast-types.js";
 
 /**
  * Repository to handle database queries/communication related to message blasts.
