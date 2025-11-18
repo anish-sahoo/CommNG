@@ -1,4 +1,4 @@
-import { BadRequestError } from "../types/errors.js";
+import { BadRequestError } from "@/types/errors.js";
 
 export const ensureUsingAws = (message: string): void => {
   if (

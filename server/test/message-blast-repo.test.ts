@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import type { MessageBlastRepository } from "../src/data/repository/message-blast-repo.js";
-import type { TargetAudience } from "../src/types/message-blast-types.js";
+import type { MessageBlastRepository } from "@/data/repository/message-blast-repo.js";
+import type { TargetAudience } from "@/types/message-blast-types.js";
 
 // Mock data
 const mem: {

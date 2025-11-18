@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { NotFoundError } from "../../types/errors.js";
-import { users } from "../db/schema.js";
-import { db } from "../db/sql.js";
+import { users } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { NotFoundError } from "@/types/errors.js";
 
 /**
  * Repository to handle database queries/communication related to users

@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  deserializeCacheValue,
-  serializeCacheValue,
-} from "../src/utils/cache.js";
+import { deserializeCacheValue, serializeCacheValue } from "@/utils/cache.js";
 
 const roundTrip = (value: unknown) =>
   deserializeCacheValue(JSON.parse(JSON.stringify(serializeCacheValue(value))));

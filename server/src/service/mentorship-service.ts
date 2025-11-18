@@ -1,9 +1,9 @@
 import { eq, or } from "drizzle-orm";
-import { mentorshipMatches } from "../data/db/schema.js";
-import { db } from "../data/db/sql.js";
-import type { MenteeRepository } from "../data/repository/mentee-repo.js";
-import type { MentorRepository } from "../data/repository/mentor-repo.js";
-import type { MentorshipDataOutput } from "../types/mentorship-types.js";
+import { mentorshipMatches } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import type { MenteeRepository } from "@/data/repository/mentee-repo.js";
+import type { MentorRepository } from "@/data/repository/mentor-repo.js";
+import type { MentorshipDataOutput } from "@/types/mentorship-types.js";
 
 /**
  * Service to handle mentorship data aggregation
