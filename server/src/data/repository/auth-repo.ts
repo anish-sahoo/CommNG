@@ -4,6 +4,7 @@ import log from "../../utils/logger.js";
 import { getRedisClientInstance } from "../db/redis.js";
 import { type RoleNamespace, roles, userRoles, users } from "../db/schema.js";
 import { db } from "../db/sql.js";
+import { getImpliedRoles } from "../role-hierarchy.js";
 import type { RoleKey } from "../roles.js";
 
 /**
@@ -40,6 +41,26 @@ export class AuthRepository {
       .where(eq(userRoles.userId, userId));
 
     return new Set(rows.map((r) => r.key));
+  }
+
+  @Cache((userId: string) => `roles:implied:${userId}`, 3600)
+  /**
+   * Get all role keys assigned to a user, including implied roles from hierarchy
+   * @param userId User ID
+   * @returns Set of role keys including all implied permissions
+   */
+  async getAllImpliedRolesForUser(userId: string) {
+    const assignedRoles = await this.getRolesForUser(userId);
+    const allRoles = new Set<RoleKey>();
+
+    for (const role of assignedRoles) {
+      const implied = getImpliedRoles(role);
+      for (const impliedRole of implied) {
+        allRoles.add(impliedRole);
+      }
+    }
+
+    return allRoles;
   }
 
   /**
