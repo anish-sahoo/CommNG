@@ -1,13 +1,29 @@
 "use client";
+import { useState } from "react";
 import { icons } from "@/components/icons";
+import { Modal } from "@/components/modal/index";
 
-type ListViewItem = {
+export type ListViewItem = {
   id: string;
   name: string;
   rank: string;
   role: string;
   avatarUrl?: string;
   isCurrentUser?: boolean;
+};
+
+export type MenteeListViewItem = ListViewItem & {
+  personalInterests?: string[];
+  importantRoleModel?: string;
+  meetingFormat: string;
+  expectedCommitment: number;
+};
+
+export type MentorListViewItem = ListViewItem & {
+  personalInterests?: string[];
+  careerAdvice?: string;
+  meetingFormat: string;
+  expectedCommitment: number;
 };
 
 // mock data until we get some real users
@@ -99,9 +115,11 @@ const fallbackItems: ListViewItem[] = [
   },
 ];
 
-type ListViewProps = {
-  items?: ListViewItem[];
+type ListViewProps<T extends ListViewItem> = {
+  title?: string;
+  items?: T[];
   className?: string;
+  modalContent?: (item: T) => React.ReactNode;
 };
 
 const UserIcon = icons.user;
@@ -113,9 +131,24 @@ const Avatar = () => (
   </div>
 );
 
-const ListViewRow = ({ item }: { item: ListViewItem }) => {
+const ListViewRow = <T extends ListViewItem>({
+  item,
+  onClick,
+}: {
+  item: T;
+  onClick: () => void;
+}) => {
   return (
-    <li className="flex items-center gap-4 px-6 py-4">
+    <li
+      className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-neutral/10 transition-colors"
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <Avatar />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -136,27 +169,73 @@ const ListViewRow = ({ item }: { item: ListViewItem }) => {
   );
 };
 
-export const ListView = ({ items = fallbackItems }: ListViewProps) => {
+export function ListView<T extends ListViewItem = ListViewItem>({
+  title,
+  items = fallbackItems as T[],
+  modalContent,
+}: ListViewProps<T>) {
+  const [selectedItem, setSelectedItem] = useState<T | null>(null);
+
   if (!items.length) {
     return null;
   }
 
   return (
-    <section className="relative w-full max-w-4xl">
-      <div className="rounded-3xl bg-primary-dark px-8 py-8">
-        <div className="h-14 rounded-xl" />
-        <div className="flex flex-col gap-6 rounded-2xl bg-background px-6 py-6">
-          <div className="relative overflow-hidden rounded-xl bg-background">
-            <ul className="max-h-[28rem] overflow-y-auto divide-y divide-neutral/40 pr-4">
-              {items.map((item) => (
-                <ListViewRow key={item.id} item={item} />
-              ))}
-            </ul>
+    <>
+      <section className="relative w-full max-w-4xl">
+        <div
+          className={`rounded-3xl bg-primary-dark ${
+            title ? "px-5 py-5" : "px-8 py-8"
+          }`}
+        >
+          <div className="rounded-xl" />
+          {title ? (
+            <h2 className="mb-4 text-xl font-semibold text-white">{title}</h2>
+          ) : null}
+          <div className="flex flex-col gap-6 rounded-2xl bg-background px-6 py-6">
+            <div className="relative overflow-hidden rounded-xl bg-background">
+              <ul className="max-h-[28rem] overflow-y-auto divide-y divide-neutral/40 pr-4">
+                {items.map((item) => (
+                  <ListViewRow
+                    key={item.id}
+                    item={item}
+                    onClick={() => setSelectedItem(item)}
+                  />
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {selectedItem && (
+        <Modal
+          open={!!selectedItem}
+          onOpenChange={(open) => !open && setSelectedItem(null)}
+          title={
+            <div className="flex items-center gap-3">
+              <Avatar />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {selectedItem.name}
+                  {selectedItem.isCurrentUser && (
+                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+                      You
+                    </span>
+                  )}
+                </div>
+                <p className="truncate text-sm font-normal italic text-secondary/70">
+                  {selectedItem.rank}, {selectedItem.role}
+                </p>
+              </div>
+            </div>
+          }
+        >
+          {modalContent ? modalContent(selectedItem) : null}
+        </Modal>
+      )}
+    </>
   );
-};
+}
 
 export default ListView;
