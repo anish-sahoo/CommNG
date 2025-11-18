@@ -1,8 +1,8 @@
-import { MenteeRepository } from "../data/repository/mentee-repo.js";
-import { MatchingService } from "../service/matching-service.js";
-import { protectedProcedure, router } from "../trpc/trpc.js";
-import { createMenteeInputSchema } from "../types/mentee-types.js";
-import log from "../utils/logger.js";
+import { MenteeRepository } from "@/data/repository/mentee-repo.js";
+import { MatchingService } from "@/service/matching-service.js";
+import { protectedProcedure, router } from "@/trpc/trpc.js";
+import { createMenteeInputSchema } from "@/types/mentee-types.js";
+import log from "@/utils/logger.js";
 
 const menteeRepo = new MenteeRepository();
 const matchingService = new MatchingService();

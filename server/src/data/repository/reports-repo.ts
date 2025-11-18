@@ -1,16 +1,16 @@
 import { desc, eq, inArray } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
-import type {
-  AssignReport,
-  CreateReport,
-  EditReport,
-} from "../../types/reports-types.js";
 import {
   files,
   type NewReport,
   reportAttachments,
   reports,
-} from "../db/schema.js";
+} from "@/data/db/schema.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
+import type {
+  AssignReport,
+  CreateReport,
+  EditReport,
+} from "@/types/reports-types.js";
 import { db } from "../db/sql.js";
 
 type Transaction = Parameters<typeof db.transaction>[0] extends (

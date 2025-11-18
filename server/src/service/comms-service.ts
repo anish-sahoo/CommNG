@@ -1,18 +1,18 @@
 import { eq } from "drizzle-orm";
-import { channels } from "../data/db/schema.js";
+import { channels } from "@/data/db/schema.js";
 import type {
   CommsRepository,
   Transaction,
-} from "../data/repository/comms-repo.js";
-import { channelRole } from "../data/roles.js";
-import type { ChannelUpdateMetadata } from "../types/comms-types.js";
+} from "@/data/repository/comms-repo.js";
+import { channelRole } from "@/data/roles.js";
+import { policyEngine } from "@/service/policy-engine.js";
+import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
 import {
   BadRequestError,
   ForbiddenError,
   InternalServerError,
-} from "../types/errors.js";
-import log from "../utils/logger.js";
-import { policyEngine } from "./policy-engine.js";
+} from "@/types/errors.js";
+import log from "@/utils/logger.js";
 
 /**
  * Service for communication-related business logic (channels, messages, subscriptions)
@@ -354,7 +354,7 @@ export class CommsService {
     );
 
     if (channelData?.postPermissionLevel === "everyone") {
-      await policyEngine.createRoleAndAssign(
+      await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
         `channel:${channel_id}:post`,

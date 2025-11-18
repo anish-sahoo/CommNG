@@ -7,8 +7,8 @@ import {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from "../types/errors.js";
-import log from "../utils/logger.js";
+} from "@/types/errors.js";
+import log from "@/utils/logger.js";
 
 export function handleProcedureError(error: unknown, context: string): never {
   log.error(`${context}: ${error}`);

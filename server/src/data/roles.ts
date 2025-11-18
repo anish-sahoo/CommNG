@@ -9,7 +9,7 @@
  */
 
 import { z } from "zod";
-import type { RoleNamespace } from "./db/schema.js";
+import type { RoleNamespace } from "@/data/db/schema.js";
 
 /**
  * SINGLE SOURCE OF TRUTH: Zod schemas define all valid actions
