@@ -6,6 +6,13 @@ const CACHE_SET_MARKER = "set" as const;
 const CACHE_MAP_MARKER = "map" as const;
 
 type CacheOptions = {
+  /**
+   * Optional transformer that runs whenever a cached value is read or written.
+   * Useful when the underlying method returns complex types (e.g. classes or
+   * Dates) that need custom serialization/deserialization beyond what our
+   * Set/Map helpers provide. This lets callers supply the logic to turn the
+   * plain JSON payload back into whatever shape the consumer expects.
+   */
   hydrate?: (value: unknown) => unknown;
 };
 
@@ -73,6 +80,7 @@ export function Cache<T extends unknown[]>(
   options?: CacheOptions,
 ): MethodDecorator {
   const isTestEnv = process.env.VITEST || process.env.NODE_ENV === "test";
+  // hydrate runs on both cache hits (to rebuild shapes) and misses (to prep data before storing)
   const hydrate = options?.hydrate ?? ((value: unknown) => value);
 
   return (
