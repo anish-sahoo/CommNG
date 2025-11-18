@@ -1,15 +1,15 @@
-import { AuthRepository } from "../data/repository/auth-repo.js";
-import { InviteCodeRepository } from "../data/repository/invite-code-repo.js";
-import { GLOBAL_CREATE_INVITE_KEY } from "../data/roles.js";
-import { InviteCodeService } from "../service/invite-code-service.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, roleProcedure, router } from "../trpc/trpc.js";
+import { AuthRepository } from "@/data/repository/auth-repo.js";
+import { InviteCodeRepository } from "@/data/repository/invite-code-repo.js";
+import { GLOBAL_CREATE_INVITE_KEY } from "@/data/roles.js";
+import { InviteCodeService } from "@/service/invite-code-service.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
+import { procedure, roleProcedure, router } from "@/trpc/trpc.js";
 import {
   createInviteCodeInputSchema,
   listInviteCodesInputSchema,
   revokeInviteCodeInputSchema,
   validateInviteCodeInputSchema,
-} from "../types/invite-code-types.js";
+} from "@/types/invite-code-types.js";
 
 const inviteCodeService = new InviteCodeService(
   new InviteCodeRepository(),

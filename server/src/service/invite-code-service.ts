@@ -1,16 +1,16 @@
 import { customAlphabet } from "nanoid";
-import type { AuthRepository } from "../data/repository/auth-repo.js";
-import type { InviteCodeRepository } from "../data/repository/invite-code-repo.js";
-import { hasPermission } from "../data/role-hierarchy.js";
-import type { RoleKey } from "../data/roles.js";
-import { GLOBAL_CREATE_INVITE_KEY } from "../data/roles.js";
+import type { AuthRepository } from "@/data/repository/auth-repo.js";
+import type { InviteCodeRepository } from "@/data/repository/invite-code-repo.js";
+import { hasPermission } from "@/data/role-hierarchy.js";
+import type { RoleKey } from "@/data/roles.js";
+import { GLOBAL_CREATE_INVITE_KEY } from "@/data/roles.js";
 import {
   ForbiddenError,
   NotFoundError,
   ValidationError,
-} from "../types/errors.js";
-import type { InviteCodeStatus } from "../types/invite-code-types.js";
-import log from "../utils/logger.js";
+} from "@/types/errors.js";
+import type { InviteCodeStatus } from "@/types/invite-code-types.js";
+import log from "@/utils/logger.js";
 
 // Configuration: Default expiration time in hours
 export const INVITE_CODE_EXPIRATION_HOURS = 24;

@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ReportRepository } from "../src/data/repository/reports-repo.js";
-import { ReportService } from "../src/service/reports-service.js";
+import type { ReportRepository } from "@/data/repository/reports-repo.js";
+import { ReportService } from "@/service/reports-service.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "../src/types/reports-types.js";
+} from "@/types/reports-types.js";
 
 type ReportWithAttachments = Awaited<
   ReturnType<ReportRepository["getReportsForUser"]>

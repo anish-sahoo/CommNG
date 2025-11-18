@@ -41,7 +41,7 @@ export function SingleSelectButtonGroup({
 
   return (
     <fieldset
-      className={cn("flex-1 flex-wrap items-start gap-4 flex-wrap", className)}
+      className={cn("flex w-full flex-col items-start gap-2", className)}
     >
       <legend className="sr-only">{legend}</legend>
 
@@ -59,10 +59,10 @@ export function SingleSelectButtonGroup({
               type="button"
               variant="ghost"
               className={cn(
-                "w-full justify-start rounded-md px-3 py-2 transition-all text-left",
+                "w-full justify-start rounded-md px-3 py-2 transition-all",
                 isActive
                   ? "bg-primary/10 text-primary hover:bg-primary/20"
-                  : "text-muted-foreground hover:text-primary hover:bg-primary/5",
+                  : "text-muted-foreground hover:bg-primary/5 hover:text-primary",
               )}
               onClick={() => {
                 onChange(option.value);
@@ -82,8 +82,9 @@ export function SingleSelectButtonGroup({
               <span className="break-words">{option.label}</span>
             </Button>
 
+            {/* Child dropdown & optional "Other" text input */}
             {isActive && hasDropdown && option.dropdownOptions && (
-              <div className="w-full mt-2">
+              <div className="mt-2 flex w-full flex-col gap-2 pl-6">
                 <DropdownSelect
                   options={option.dropdownOptions}
                   value={dropdownValue}
@@ -95,6 +96,20 @@ export function SingleSelectButtonGroup({
                     onDropdownChange?.(option.value, dropdownValue);
                   }}
                 />
+
+                {dropdownValue === "other" && (
+                  <TextInput
+                    className="mt-2 bg-neutral-100"
+                    placeholder="Please specify your position"
+                    value={otherTextValues[option.value] || ""}
+                    onChange={(text) =>
+                      setOtherTextValues((prev) => ({
+                        ...prev,
+                        [option.value]: text,
+                      }))
+                    }
+                  />
+                )}
               </div>
             )}
 

@@ -42,7 +42,7 @@ export const DropdownSelect = ({
     >
       <SelectTrigger
         ref={triggerRef}
-        className="w-full text-subheader font-semibold py-3 rounded-xl bg-white border border-primary hover:bg-primary hover:text-white"
+        className="hover:data-[placeholder]:text-white data-[state=open]:rounded-b-none data-[state=open]:border-b-0 text-subheader font-semibold py-5 rounded-xl bg-white hover:bg-primary hover:text-white border-1 border-primary w-full max-w-[332px]"
       >
         <SelectValue
           placeholder={
@@ -57,7 +57,8 @@ export const DropdownSelect = ({
             position="popper"
             side="bottom"
             align="start"
-            className="w-[var(--radix-select-trigger-width)] border border-primary rounded-b-xl bg-white"
+            avoidCollisions={false}
+            className="z-[9999] rounded-b-xl rounded-t-none w-[var(--radix-select-trigger-width)] max-w-[332px] border-1 border-primary bg-white"
           >
             <SelectGroup>
               {options.map((option, idx) => (

@@ -135,7 +135,7 @@ export function MultiSelect({
                 />
                 <span
                   className={cn(
-                    "flex size-6 items-center justify-center rounded-md border-2 text-transparent transition",
+                    "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 text-transparent transition",
                     selected
                       ? "border-primary text-primary"
                       : "border-secondary/40 bg-background",

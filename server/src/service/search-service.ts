@@ -1,5 +1,5 @@
-import type { SearchRepository } from "../data/repository/search-repo.js";
-import log from "../utils/logger.js";
+import type { SearchRepository } from "@/data/repository/search-repo.js";
+import log from "@/utils/logger.js";
 
 /**
  * Service for search and typeahead functionality

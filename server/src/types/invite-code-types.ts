@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { roleKeysArraySchema } from "../data/roles.js";
+import { roleKeysArraySchema } from "@/data/roles.js";
 
 // Input schema for creating an invite code
 export const createInviteCodeInputSchema = z.object({

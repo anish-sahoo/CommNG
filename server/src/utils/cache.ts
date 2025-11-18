@@ -1,5 +1,5 @@
-import { getRedisClientInstance } from "../data/db/redis.js";
-import log from "../utils/logger.js";
+import { getRedisClientInstance } from "@/data/db/redis.js";
+import log from "@/utils/logger.js";
 
 const CACHE_TYPE_KEY = "__cacheType" as const;
 const CACHE_SET_MARKER = "set" as const;

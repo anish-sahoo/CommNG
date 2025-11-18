@@ -1,16 +1,16 @@
-import { ReportRepository } from "../data/repository/reports-repo.js";
-import { reportingRole } from "../data/roles.js";
-import { PolicyEngine } from "../service/policy-engine.js";
-import { ReportService } from "../service/reports-service.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
-import { roleProcedure, router } from "../trpc/trpc.js";
+import { ReportRepository } from "@/data/repository/reports-repo.js";
+import { reportingRole } from "@/data/roles.js";
+import { PolicyEngine } from "@/service/policy-engine.js";
+import { ReportService } from "@/service/reports-service.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
+import { roleProcedure, router } from "@/trpc/trpc.js";
 import {
   assignReportSchema,
   createReportsSchema,
   deleteReportSchema,
   editReportSchema,
   getReportsSchema,
-} from "../types/reports-types.js";
+} from "@/types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
 const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
