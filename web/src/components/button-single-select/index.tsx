@@ -50,9 +50,6 @@ export function SingleSelectButtonGroup({
         const hasDropdown = option.dropdownOptions?.length;
         const dropdownValue = dropdownValues[option.value] || "";
 
-        const shouldShowTextInput =
-          dropdownValue === "other" || option.value === "active-guard-reserve";
-
         return (
           <div key={option.value} className="flex flex-col w-full">
             <Button
@@ -84,7 +81,7 @@ export function SingleSelectButtonGroup({
 
             {/* Child dropdown & optional "Other" text input */}
             {isActive && hasDropdown && option.dropdownOptions && (
-              <div className="mt-2 flex w-full flex-col gap-2 pl-6">
+              <div className="mt-2 -mb-2 flex w-full flex-col pl-6">
                 <DropdownSelect
                   options={option.dropdownOptions}
                   value={dropdownValue}
@@ -99,7 +96,7 @@ export function SingleSelectButtonGroup({
 
                 {dropdownValue === "other" && (
                   <TextInput
-                    className="mt-2 bg-neutral-100"
+                    className="mt-2"
                     placeholder="Please specify your position"
                     value={otherTextValues[option.value] || ""}
                     onChange={(text) =>
@@ -111,20 +108,6 @@ export function SingleSelectButtonGroup({
                   />
                 )}
               </div>
-            )}
-
-            {isActive && shouldShowTextInput && (
-              <TextInput
-                className="w-full mt-2"
-                placeholder="Please specify your position"
-                value={otherTextValues[option.value] || ""}
-                onChange={(text) =>
-                  setOtherTextValues((prev) => ({
-                    ...prev,
-                    [option.value]: text,
-                  }))
-                }
-              />
             )}
           </div>
         );

@@ -193,186 +193,180 @@ export default function MentorshipApplyMenteePage() {
   const [desiredMentorHours, setDesiredMentorHours] = useState("");
 
   return (
-    <div className="flex flex-col flex-wrap w-full">
-      <div className="relative mx-4 flex w-full flex-col items-left justify-center sm:gap-16 px-8 sm:px-10 lg:px-20 py-10">
-        {/* Page Intro */}
-        <div className="flex flex-col items-left space-y-8">
-          <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl mt-4">
-            Mentee Onboarding Application
+    <div className="flex flex-col flex-wrap w-full relative items-left justify-center sm:gap-16 px-8 sm:px-10 lg:px-20 py-10 mx-4">
+      <section className="flex flex-col items-left space-y-8">
+        <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl mt-4">
+          Mentee Onboarding Application
+        </h1>
+        <h1 className="text-s sm:text-sm text-secondary mb-2">
+          Thank you for your interest in the mentorship program. Give yourself
+          20–25 minutes to thoughtfully complete this application. Your
+          responses will help us match you with a mentor who can best support
+          your goals.
+        </h1>
+        <h1 className="text-s sm:text-sm text-accent mb-6">
+          *Required Information
+        </h1>
+      </section>
+
+      <div className="flex flex-col items-start space-y-8">
+        <section>
+          <h1 className="max-w-3xl mb-1 text-left text-xs font-large text-secondary sm:text-sm">
+            1. What is your current position in the MA National Guard?*
           </h1>
-          <h1 className="text-left text-xs text-secondary sm:text-sm">
-            Thank you for your interest in the mentorship program. Give yourself
-            20–25 minutes to thoughtfully complete this application. Your
-            responses will help us match you with a mentor who can best support
-            your goals.
-          </h1>
-          <h1 className="text-left text-xs text-accent sm:text-sm -mt-4">
-            *Required Information
-          </h1>
-        </div>
-
-        <div className="flex flex-col items-start space-y-8 -mt-4">
-          <section>
-            <h1 className="max-w-3xl mb-1 text-left text-xs font-large text-secondary sm:text-sm">
-              1. What is your current position in the MA National Guard?*
-            </h1>
-            <SingleSelectButtonGroup
-              options={positionOptions}
-              value={positionSelection}
-              onChange={setPositionSelection}
-              onDropdownChange={(parent, child) => console.log(parent, child)}
-            />
-          </section>
-
-          <section>
-            <h1 className="max-w-3xl mb-1 text-left text-xs font-large text-secondary sm:text-sm">
-              2. What is your current rank in the MA National Guard?*
-            </h1>
-            <SingleSelectButtonGroup
-              options={rankOptions}
-              value={menteeRankSelection}
-              onChange={setMenteeRankSelection}
-              onDropdownChange={(parent, child) => console.log(parent, child)}
-            />
-          </section>
-
-          <section>
-            <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm mb-3">
-              3. Upload a resume to share with mentors once matched.
-            </h1>
-            <Dropzone
-              className="max-w-3xl mb-3"
-              onDrop={(files) => setFiles(files)}
-              src={files}
-              maxFiles={5}
-            >
-              <DropzoneEmptyState />
-              <DropzoneContent />
-            </Dropzone>
-          </section>
-
-          <section>
-            <span className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm">
-              4. What are your personal interests*{" "}
-              <span className="text-accent">(Select all that apply)</span>
-            </span>
-            <MultiSelect
-              name="mentorInterests"
-              helperText=" "
-              options={mentorInterestOptions}
-              value={selectedInterests}
-              onChange={setSelectedInterests}
-              maxSelections={9}
-            />
-          </section>
-
-          <section>
-            <div className="max-w-3xl mt-3 mb-3 text-left text-xs font-large text-secondary sm:text-sm">
-              5. Who has been an important role model or source of inspiration
-              for you, and why?
-            </div>
-            <TextInput
-              value={multiLineText}
-              onChange={setMultiLineText}
-              placeholder="Enter your response..."
-              multiline={true}
-              rows={6}
-              maxLength={500}
-              showCharCount={true}
-              className="border-primary bg-neutral-100"
-              counterColor="text-primary"
-            />
-          </section>
-
-          <section>
-            <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mt-3 mb-3">
-              6. What do you hope to get out of the mentorship program?*
-              <div className="italic font-normal text-secondary sm:text-sm mt-1">
-                Rank the following reasons from most important (top) to least
-                important (bottom).
-              </div>
-            </h1>
-            <DragReorderFrame
-              options={[
-                {
-                  label:
-                    "Receive guidance on career advancement and professional goals (National Guard career)",
-                  value: "career",
-                },
-                {
-                  label:
-                    "Get support discovering educational opportunities (Education)",
-                  value: "education",
-                },
-                {
-                  label:
-                    "Develop a sense of belonging in the National Guard community (Community)",
-                  value: "community",
-                },
-                {
-                  label:
-                    "Expand my professional network within the National Guard (Network)",
-                  value: "network",
-                },
-                {
-                  label:
-                    "Connect with Guardsmen with different perspectives and experiences (Diversity)",
-                  value: "diversity",
-                },
-              ]}
-              onChange={() => {}}
-            />
-          </section>
-
-          <section>
-            <span className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mb-3">
-              7. What qualities do you look for in a mentor?*{" "}
-              <span className="text-accent">(Select up to 3)</span>
-            </span>
-            <MultiSelect
-              name="mentorQualities"
-              helperText=" "
-              options={mentorQualitiesOptions}
-              value={selectedQualities}
-              onChange={setSelectedQualities}
-              maxSelections={3}
-            />
-          </section>
-
-          <section>
-            <span className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mb-3">
-              8. What meeting formats work best for you?*{" "}
-              <span className="text-accent">(Select all that apply)</span>
-            </span>
-            <MultiSelect
-              name="mentorMeetingFormats"
-              helperText=" "
-              options={mentorMeetingFormat}
-              value={selectedMeetingFormats}
-              onChange={setSelectedMeetingFormats}
-              maxSelections={3}
-            />
-          </section>
-
-          <section>
-            <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mb-3 mt-3">
-              9. How much time would you like to spend with your mentor?*
-            </h1>
-            <TextInput
-              value={desiredMentorHours}
-              onChange={setDesiredMentorHours}
-              placeholder="Hours per Month"
-              showCharCount={false}
-              className="border-neutral "
-              counterColor="#CDCDCD"
-            />
-          </section>
-
-          <SelectableButton
-            text="Submit"
-            className="mt-4 mb-4 bg-accent text-white"
+          <SingleSelectButtonGroup
+            options={positionOptions}
+            value={positionSelection}
+            onChange={setPositionSelection}
+            onDropdownChange={(parent, child) => console.log(parent, child)}
           />
-        </div>
+        </section>
+
+        <section>
+          <h1 className="max-w-3xl mb-1 text-left text-xs font-large text-secondary sm:text-sm">
+            2. What is your current rank in the MA National Guard?*
+          </h1>
+          <SingleSelectButtonGroup
+            options={rankOptions}
+            value={menteeRankSelection}
+            onChange={setMenteeRankSelection}
+            onDropdownChange={(parent, child) => console.log(parent, child)}
+          />
+        </section>
+
+        <section>
+          <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm mb-3">
+            3. Upload a resume to share with mentors once matched.
+          </h1>
+          <Dropzone
+            className="max-w-3xl mb-3"
+            onDrop={(files) => setFiles(files)}
+            src={files}
+            maxFiles={5}
+          >
+            <DropzoneEmptyState />
+            <DropzoneContent />
+          </Dropzone>
+        </section>
+
+        <section>
+          <span className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm">
+            4. What are your personal interests*{" "}
+            <span className="text-accent">(Select all that apply)</span>
+          </span>
+          <MultiSelect
+            name="mentorInterests"
+            helperText=" "
+            options={mentorInterestOptions}
+            value={selectedInterests}
+            onChange={setSelectedInterests}
+            maxSelections={9}
+          />
+        </section>
+
+        <section>
+          <div className="max-w-3xl mt-3 mb-3 text-left text-xs font-large text-secondary sm:text-sm">
+            5. Who has been an important role model or source of inspiration for
+            you, and why?
+          </div>
+          <TextInput
+            value={multiLineText}
+            onChange={setMultiLineText}
+            placeholder="Enter your response..."
+            multiline={true}
+            rows={6}
+            maxLength={500}
+            showCharCount={true}
+            className="border-primary bg-neutral-100"
+            counterColor="text-primary"
+          />
+        </section>
+
+        <section>
+          <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mt-3 mb-3">
+            6. What do you hope to get out of the mentorship program?*
+            <div className="italic font-normal text-secondary sm:text-sm mt-1">
+              Rank the following reasons from most important (top) to least
+              important (bottom).
+            </div>
+          </h1>
+          <DragReorderFrame
+            options={[
+              {
+                label:
+                  "Receive guidance on career advancement and professional goals (National Guard career)",
+                value: "career",
+              },
+              {
+                label:
+                  "Get support discovering educational opportunities (Education)",
+                value: "education",
+              },
+              {
+                label:
+                  "Develop a sense of belonging in the National Guard community (Community)",
+                value: "community",
+              },
+              {
+                label:
+                  "Expand my professional network within the National Guard (Network)",
+                value: "network",
+              },
+              {
+                label:
+                  "Connect with Guardsmen with different perspectives and experiences (Diversity)",
+                value: "diversity",
+              },
+            ]}
+            onChange={() => {}}
+          />
+        </section>
+
+        <section>
+          <span className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mb-3">
+            7. What qualities do you look for in a mentor?*{" "}
+            <span className="text-accent">(Select up to 3)</span>
+          </span>
+          <MultiSelect
+            name="mentorQualities"
+            helperText=" "
+            options={mentorQualitiesOptions}
+            value={selectedQualities}
+            onChange={setSelectedQualities}
+            maxSelections={3}
+          />
+        </section>
+
+        <section>
+          <span className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mt-3">
+            8. What meeting formats work best for you?*{" "}
+            <span className="text-accent">(Select all that apply)</span>
+          </span>
+          <MultiSelect
+            name="mentorMeetingFormats"
+            helperText=" "
+            options={mentorMeetingFormat}
+            value={selectedMeetingFormats}
+            onChange={setSelectedMeetingFormats}
+            maxSelections={3}
+          />
+        </section>
+
+        <section>
+          <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mb-3 mt-3">
+            9. How much time would you like to spend with your mentor?*
+          </h1>
+          <TextInput
+            value={desiredMentorHours}
+            onChange={setDesiredMentorHours}
+            placeholder="Hours per Month"
+            showCharCount={false}
+            className="border-neutral "
+            counterColor="#CDCDCD"
+          />
+        </section>
+
+        <SelectableButton text="Submit" className="mb-4 bg-accent text-white" />
       </div>
     </div>
   );
