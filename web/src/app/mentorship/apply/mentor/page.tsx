@@ -16,6 +16,16 @@ export default function MentorshipApplyMentorPage() {
   const [rankSelection, setRankSelection] = useState<string>("");
   const [files, setFiles] = useState<File[] | undefined>();
   const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [multiLineText, setMultiLineText] = useState("");
+  const [selectedCareerStages, setSelectedCareerStages] = useState<string[]>(
+    [],
+  );
+  const [selectedMeetingFormats, setSelectedMeetingFormats] = useState<
+    string[]
+  >([]);
+  const [desiredMentorHours, setDesiredMentorHours] = useState("");
+  const [availableMentorHours, setAvailableMentorHours] = useState("");
 
   const mentorQualityOptions: MultiSelectOption[] = [
     { label: "Adaptability", value: "adaptability" },
@@ -40,8 +50,6 @@ export default function MentorshipApplyMentorPage() {
     { label: "Open-Mindedness", value: "open-mindedness" },
   ];
 
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-
   const mentorInterestOptions: MultiSelectOption[] = [
     { label: "Music", value: "music" },
     { label: "Creative Arts", value: "creative-arts" },
@@ -57,11 +65,6 @@ export default function MentorshipApplyMentorPage() {
     { label: "Personal Fitness", value: "personal-fitness" },
   ];
 
-  const [multiLineText, setMultiLineText] = useState("");
-
-  const [selectedCareerStages, setSelectedCareerStages] = useState<string[]>(
-    [],
-  );
   const mentorCareerStageOptions: MultiSelectOption[] = [
     { label: "New soldiers/Entry Level (E-1 to E-4)", value: "new-soldiers" },
     { label: "Junior NCOs (E-5 to E-6)", value: "junior-ncos" },
@@ -75,17 +78,11 @@ export default function MentorshipApplyMentorPage() {
     { label: "No preference", value: "no-preference" },
   ];
 
-  const [selectedMeetingFormats, setSelectedMeetingFormats] = useState<
-    string[]
-  >([]);
   const mentorMeetingFormat: MultiSelectOption[] = [
     { label: "In-person", value: "in-person" },
     { label: "Online", value: "online" },
     { label: "No preference", value: "no-preference" },
   ];
-
-  const [desiredMentorHours, setDesiredMentorHours] = useState("");
-  const [availableMentorHours, setAvailableMentorHours] = useState("");
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br">
@@ -100,7 +97,7 @@ export default function MentorshipApplyMentorPage() {
         <div className="absolute -right-24 top-[46rem] h-[260px] w-[260px] sm:h-[420px] sm:w-[420px] rounded-full bg-yellow-600 opacity-20 blur-[120px]" />
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-left justify-center gap-8 px-4 py-10 sm:gap-16 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-left justify-center gap-8 px-4 pl-10 py-10 sm:gap-16 sm:px-6 sm:pl-16 lg:px-8 lg:pl-20">
         <div className="flex flex-col items-left gap-3">
           <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl">
             Mentor Onboarding Application
