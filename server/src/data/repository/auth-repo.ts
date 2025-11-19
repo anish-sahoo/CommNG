@@ -208,8 +208,12 @@ export class AuthRepository {
         .onConflictDoNothing();
 
       // Invalidate the user's roles cache
-      await getRedisClientInstance().DEL(`roles:${targetUserId}`);
-      log.debug(`[Cache INVALIDATED] roles:${targetUserId}`);
+      const redis = getRedisClientInstance();
+      await redis.DEL(`roles:${targetUserId}`);
+      await redis.DEL(`roles:implied:${targetUserId}`);
+      log.debug(
+        `[Cache INVALIDATED] roles:${targetUserId}, roles:implied:${targetUserId}`,
+      );
 
       return true;
     } catch (e) {
