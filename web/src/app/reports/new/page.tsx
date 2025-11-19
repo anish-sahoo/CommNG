@@ -31,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { hasRole } from "@/lib/rbac";
-import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { useTRPCClient } from "@/lib/trpc";
 import type { RoleKey } from "@/types/roles";
 
 const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
@@ -78,7 +78,6 @@ const createLocalId = () =>
 
 export default function CreateReportPage() {
   const router = useRouter();
-  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const { data: sessionData } = authClient.useSession();
@@ -90,10 +89,14 @@ export default function CreateReportPage() {
     refetch: refetchRoles,
   } = useUserRoles();
 
+  const normalizedRoles = useMemo<RoleKey[]>(() => {
+    return Array.isArray(roles) ? (roles as RoleKey[]) : [];
+  }, [roles]);
+
   const hasCreateAccess = useMemo(() => {
     if (!roles) return false;
-    return hasRole(roles, REPORTING_CREATE_ROLE);
-  }, [roles]);
+    return hasRole(normalizedRoles, REPORTING_CREATE_ROLE);
+  }, [roles, normalizedRoles]);
 
   const [category, setCategory] = useState<ReportCategory | null>(null);
   const [title, setTitle] = useState("");
@@ -113,7 +116,15 @@ export default function CreateReportPage() {
   const titleId = useId();
   const descriptionId = useId();
 
-  const createReport = useMutation(trpc.reports.createReport.mutationOptions());
+  type CreateReportInput = Parameters<
+    typeof trpcClient.reports.createReport.mutate
+  >[0];
+
+  const createReport = useMutation({
+    mutationFn: async (input: CreateReportInput) => {
+      return await trpcClient.reports.createReport.mutate(input);
+    },
+  });
 
   const reportsQueryKey = useMemo<QueryKey | null>(() => {
     if (!userId) return null;

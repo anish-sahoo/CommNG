@@ -74,15 +74,19 @@ export default function ReportsPage() {
     refetch: refetchRoles,
   } = useUserRoles();
 
+  const normalizedRoles = useMemo<RoleKey[]>(() => {
+    return Array.isArray(roles) ? (roles as RoleKey[]) : [];
+  }, [roles]);
+
   const hasReportingRead = useMemo(() => {
     if (!roles) return false;
-    return hasRole(roles, REPORTING_READ_ROLE);
-  }, [roles]);
+    return hasRole(normalizedRoles, REPORTING_READ_ROLE);
+  }, [roles, normalizedRoles]);
 
   const isReportsAdmin = useMemo(() => {
     if (!roles) return false;
-    return hasAnyRole(roles, REPORTING_ADMIN_ROLES);
-  }, [roles]);
+    return hasAnyRole(normalizedRoles, REPORTING_ADMIN_ROLES);
+  }, [roles, normalizedRoles]);
 
   const reportsQuery = useQuery({
     queryKey: ["reports", userId],
