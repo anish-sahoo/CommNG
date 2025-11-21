@@ -160,7 +160,7 @@ export class CommsService {
     if (existingMessage.senderId !== user_id) {
       const isAdmin = await policyEngine.validate(
         user_id,
-        `channel:${channel_id}:admin`,
+        channelRole("admin", channel_id),
       );
 
       if (!isAdmin) {
@@ -269,7 +269,7 @@ export class CommsService {
     }
     const isAdmin = await policyEngine.validate(
       user_id,
-      `channel:${channel_id}:admin`,
+      channelRole("admin", channel_id),
     );
     if (!isAdmin) {
       throw new ForbiddenError(
@@ -295,7 +295,7 @@ export class CommsService {
     await this.getChannelById(channel_id);
     const isAdmin = await policyEngine.validate(
       user_id,
-      `channel:${channel_id}:admin`,
+      channelRole("admin", channel_id),
     );
 
     if (isAdmin) {
@@ -304,6 +304,44 @@ export class CommsService {
       );
     }
     return this.commsRepo.removeUserFromChannel(user_id, channel_id);
+  }
+
+  /**
+   * Remove a user from a channel (admin only)
+   * @param user_id User ID of the requester (must be channel admin)
+   * @param channel_id Channel ID
+   * @param target_user_id User ID of the user to remove
+   * @returns Success object
+   * @throws BadRequestError if channel_id has decimal points or user tries to remove themselves
+   * @throws ForbiddenError if requester is not channel admin
+   */
+  async removeUserFromChannel(
+    user_id: string,
+    channel_id: number,
+    target_user_id: string,
+  ) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    await this.getChannelById(channel_id);
+
+    // Verify the requester is admin
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      channelRole("admin", channel_id),
+    );
+    if (!isAdmin) {
+      throw new ForbiddenError(
+        "Only channel administrators can remove members",
+      );
+    }
+
+    // Don't allow removing yourself
+    if (user_id === target_user_id) {
+      throw new BadRequestError("Cannot remove yourself from the channel");
+    }
+
+    return this.commsRepo.removeUserFromChannel(target_user_id, channel_id);
   }
 
   /**
@@ -357,10 +395,11 @@ export class CommsService {
     );
 
     if (channelData?.postPermissionLevel === "everyone") {
+      const postRoleKey = channelRole("post", channel_id);
       await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
-        `channel:${channel_id}:post`,
+        postRoleKey,
         "post",
         "channel",
         channel_id,

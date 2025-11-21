@@ -13,13 +13,14 @@ exports.handler = async (event) => {
 
   try {
     // Extract secret ARN from the event
-    const secretArn = event.detail?.requestParameters?.secretId || event.detail?.secretId;
-    
+    const secretArn =
+      event.detail?.requestParameters?.secretId || event.detail?.secretId;
+
     if (!secretArn) {
       console.error("No secret ARN found in event");
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "No secret ARN found in event" })
+        body: JSON.stringify({ error: "No secret ARN found in event" }),
       };
     }
 
@@ -33,11 +34,13 @@ exports.handler = async (event) => {
       console.error("ECS_CLUSTER_NAME or ECS_SERVICE_NAMES not configured");
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: "Lambda not properly configured" })
+        body: JSON.stringify({ error: "Lambda not properly configured" }),
       };
     }
 
-    console.log(`Restarting services in cluster ${clusterName}: ${serviceNames.join(", ")}`);
+    console.log(
+      `Restarting services in cluster ${clusterName}: ${serviceNames.join(", ")}`,
+    );
 
     // Force new deployment for each service
     const results = await Promise.allSettled(
@@ -45,23 +48,34 @@ exports.handler = async (event) => {
         const command = new UpdateServiceCommand({
           cluster: clusterName,
           service: serviceName.trim(),
-          forceNewDeployment: true
+          forceNewDeployment: true,
         });
 
         const response = await ecsClient.send(command);
-        console.log(`Successfully triggered restart for service: ${serviceName}`);
-        return { serviceName, success: true, taskDefinition: response.service?.taskDefinition };
-      })
+        console.log(
+          `Successfully triggered restart for service: ${serviceName}`,
+        );
+        return {
+          serviceName,
+          success: true,
+          taskDefinition: response.service?.taskDefinition,
+        };
+      }),
     );
 
     // Log results
-    const succeeded = results.filter(r => r.status === "fulfilled");
-    const failed = results.filter(r => r.status === "rejected");
+    const succeeded = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter((r) => r.status === "rejected");
 
-    console.log(`Restart completed: ${succeeded.length} succeeded, ${failed.length} failed`);
-    
+    console.log(
+      `Restart completed: ${succeeded.length} succeeded, ${failed.length} failed`,
+    );
+
     if (failed.length > 0) {
-      console.error("Failed services:", failed.map(f => f.reason));
+      console.error(
+        "Failed services:",
+        failed.map((f) => f.reason),
+      );
     }
 
     return {
@@ -73,19 +87,18 @@ exports.handler = async (event) => {
         results: {
           succeeded: succeeded.length,
           failed: failed.length,
-          total: results.length
-        }
-      })
+          total: results.length,
+        },
+      }),
     };
-
   } catch (error) {
     console.error("Error processing event:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({
         error: error.message,
-        stack: error.stack
-      })
+        stack: error.stack,
+      }),
     };
   }
 };

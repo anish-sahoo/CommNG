@@ -22,7 +22,7 @@ const createMentor = protectedProcedure
       input.mentorshipPreferences,
       input.rank,
       input.yearsOfService,
-      input.eligibilityData,
+      input.eligibilityData ?? undefined,
       input.status,
     );
 
