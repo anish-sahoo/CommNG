@@ -195,12 +195,19 @@ const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("updateChannel", async () => {
+      console.log("=== RECEIVED IN BACKEND ===");
+      console.log("input:", JSON.stringify(input, null, 2));
+      console.log("input.channelId:", input.channelId);
+      console.log("typeof input.channelId:", typeof input.channelId);
       ensureHasRole(ctx, [channelRole("admin", input.channelId)]);
+      /*.mutation(({ ctx, input }) =>
+        withErrorHandling("updateChannel", async () => {
+          ensureHasRole(ctx, [channelRole("admin", input.channelId)]);*/
 
       return await commsService.updateChannelSettings(
-        input.channelName,
+        input.metadata.name,
         input.channelId,
-        input.description,
+        input.metadata.description,
         input.metadata,
       );
     }),

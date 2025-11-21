@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useState } from "react";
@@ -32,6 +32,7 @@ export default function ChannelSettingsPage({
 }: ChannelSettingsPageProps) {
   const trpc = useTRPC();
   const trpcClient = useTRPCClient();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const ArrowRightIcon = icons.arrowRight;
@@ -56,15 +57,22 @@ export default function ChannelSettingsPage({
     setModalOpen(true);
   };
 
-  // Run when the user leaves the "Leave Channel" modal
+  // Run when the user clicks out of the "Leave Channel" modal
   const handleModalClose = async () => {
     setModalOpen(false);
   };
 
   /* ============ GETTING INFO FROM SUBSCRIPTION ============ */
+
+  /*
+  1. find the current subscription
+  2. return all of the fields, save somewhere?
+  3. set notifications enabled to what is currently in the database
+  */
+
   // Fetch all user subscriptions
   const { data: subscriptions } = useQuery({
-    queryKey: ["userSubscriptions"],
+    queryKey: ["channelSubscriptions"],
     queryFn: async () => {
       return await trpcClient.comms.getUserSubscriptions.query();
     },
@@ -90,6 +98,14 @@ export default function ChannelSettingsPage({
   }, [subscriptions, parsedChannelId]);
 
   /* ============ GETTING INFO FROM CHANNEL ============ */
+
+  /*
+  1. get the current channel
+  2. return all of the fields, save somewhere?
+  3. set channel name, channel description
+  */
+
+
   // Fetch all the channels this user has access to
   const { data: channels } = useQuery({
     queryKey: ["channels"],
@@ -106,11 +122,13 @@ export default function ChannelSettingsPage({
     // Set saved values
     if (channel) {
       setChannelName(channel.name || "");
-      setChannelDescription(
-        typeof channel.metadata?.description === "string"
+
+      const description = channel.description ||
+        (typeof channel.metadata?.description === 'string'
           ? channel.metadata.description
-          : "",
-      );
+          : "");
+      setChannelDescription(description);
+
       setIsAdmin(channel.userPermission === "admin");
     }
   }, [channels, parsedChannelId]);
@@ -122,7 +140,7 @@ export default function ChannelSettingsPage({
 
   const handleLeave = async () => {
     try {
-      await leaveChannelMutation.mutateAsync({ channelId: parsedChannelId });
+      //await leaveChannelMutation.mutateAsync({ channelId: parsedChannelId });
 
       // Return to the communications hub
       router.push("/communications");
@@ -133,28 +151,33 @@ export default function ChannelSettingsPage({
   };
 
   /* ============ UPDATING SETTINGS ============ */
-  const updateChannelMutation = useMutation(
-    trpc.comms.updateChannelSettings.mutationOptions(),
-  );
-
   const handleSaveChanges = async () => {
-    if (!parsedChannelId) return;
+    if (!parsedChannelId || Number.isNaN(parsedChannelId)) {
+      console.error("Invalid channel ID");
+      return;
+    }
 
     try {
       if (isAdmin) {
-        // Admin is able to change channel name, description, notif preferences
-        await updateChannelMutation.mutateAsync({
+        await trpcClient.comms.updateChannelSettings.mutate({
+          channelId: parsedChannelId,
+          metadata: {
+            name: channelName,
+            description: channelDescription,
+          },
         });
-      } else {
-        // Non-admin can only change notif preferences
-        await updateChannelMutation.mutateAsync({
+        
+        // invalidate the cache to ensure the most recent data is used
+        await queryClient.invalidateQueries({
+          queryKey: ["channels"],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["userSubscriptions"],
         });
       }
 
-      // Show successful save message
       setShowSuccessMessage(true);
 
-      // Hide after 5 seconds
       setTimeout(() => {
         setShowSuccessMessage(false);
       }, 2000);

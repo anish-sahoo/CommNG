@@ -219,7 +219,7 @@ export class CommsService {
 
     const result = await this.commsRepo.updateChannelSubscriptionSettings(user_id, subscription_id, updateData);
     if (result) {
-      return this.commsRepo.updateChannelSubscriptionSettings(user_id, channel_id, updateData);
+      return this.commsRepo.getChannelSubscriptionFromId(user_id, channel_id);
     }
     throw new InternalServerError(
       "Something went wrong updating channel settings",

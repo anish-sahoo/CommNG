@@ -51,9 +51,7 @@ export const channelUpdateMetadata = z.object({
 });
 
 export const updateChannelSchema = z.object({
-  channelName: z.string().min(1),
   channelId: z.coerce.number().int().positive(),
-  description: z.string().min(1),
   metadata: channelUpdateMetadata,
 });
 
