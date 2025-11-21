@@ -20,7 +20,6 @@ import log from "@/utils/logger.js";
 export class S3StorageAdapter extends StorageAdapter {
   private s3: S3Client;
   private bucket: string;
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used in log statement
   private publicBaseUrl: string;
 
   /**

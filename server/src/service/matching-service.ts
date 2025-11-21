@@ -8,7 +8,6 @@ import log from "@/utils/logger.js";
  */
 export class MatchingService {
   // Maximum number of match requests to fan out per trigger
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: Used in limit() calls
   private static readonly MAX_MATCH_REQUESTS = 10;
   /**
    * Trigger matching process when a mentor is created
