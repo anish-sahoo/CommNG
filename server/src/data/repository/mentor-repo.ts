@@ -134,6 +134,20 @@ export class MentorRepository {
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
+        positionType: mentors.positionType,
+        serviceType: mentors.serviceType,
+        detailedPosition: mentors.detailedPosition,
+        detailedRank: mentors.detailedRank,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
       })
       .from(mentors)
       .where(eq(mentors.mentorId, mentorId))
@@ -161,6 +175,20 @@ export class MentorRepository {
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
+        positionType: mentors.positionType,
+        serviceType: mentors.serviceType,
+        detailedPosition: mentors.detailedPosition,
+        detailedRank: mentors.detailedRank,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
       })
       .from(mentors)
       .where(eq(mentors.userId, userId))
