@@ -207,26 +207,32 @@ resource "aws_acm_certificate" "main" {
 # ALB Listeners
 # ------------------------------------------------------------
 
-# HTTP Listener - Redirect to HTTPS if certificate exists, otherwise forward
+# HTTP Listener - Always forwards traffic (works regardless of HTTPS setup)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    type = var.domain_name != "" ? "redirect" : "forward"
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web.arn
+  }
+}
 
-    dynamic "redirect" {
-      for_each = var.domain_name != "" ? [1] : []
-      content {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
+# HTTP Listener Rule for server routing
+resource "aws_lb_listener_rule" "server_http" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.server.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*", "/trpc/*"]
     }
-
-    # Only set target_group_arn when type is "forward"
-    target_group_arn = var.domain_name == "" ? aws_lb_target_group.web.arn : null
   }
 }
 
@@ -236,11 +242,15 @@ resource "aws_acm_certificate_validation" "main" {
   certificate_arn = aws_acm_certificate.main[0].arn
 
   timeouts {
-    create = "45m"
+    create = "5m"  # Short timeout - will fail fast if CNAME not added
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-# HTTPS Listener - Only created if domain_name is set and certificate is validated
+# HTTPS Listener - Only created after certificate is validated
 resource "aws_lb_listener" "https" {
   count             = var.domain_name != "" ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
@@ -257,9 +267,10 @@ resource "aws_lb_listener" "https" {
   depends_on = [aws_acm_certificate_validation.main]
 }
 
-# ALB Listener Rules for routing
-resource "aws_lb_listener_rule" "server" {
-  listener_arn = var.domain_name != "" ? aws_lb_listener.https[0].arn : aws_lb_listener.http.arn
+# HTTPS Listener Rule for server routing (only when HTTPS exists)
+resource "aws_lb_listener_rule" "server_https" {
+  count        = var.domain_name != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
   priority     = 100
 
   action {
