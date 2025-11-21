@@ -7,6 +7,7 @@ import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
 
+// ProfilePage allows users to view their information as well as edit and change the settings
 type UserProfileExtras = {
   location?: string | null;
   about?: string | null;

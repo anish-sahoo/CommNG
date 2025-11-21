@@ -2,11 +2,26 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Dropzone,
   DropzoneContent,
@@ -28,6 +43,20 @@ type UserProfileExtras = {
   interests?: string[] | null;
 };
 
+type FormStateSnapshot = {
+  name: string;
+  rank: string;
+  branch: string;
+  unit: string;
+  location: string;
+  email: string;
+  signalNumber: string;
+  interestsRaw: string;
+  about: string;
+  avatarFileId: string | null;
+};
+
+// ProfileEditPage allows user to update their profile information and communicates with backend
 export default function ProfileEditPage() {
   const router = useRouter();
   const trpc = useTRPC();
@@ -37,6 +66,7 @@ export default function ProfileEditPage() {
   const userId = sessionData?.user.id ?? null;
 
   const LockIcon = icons.lock;
+  const BackIcon = icons.arrowLeft;
 
   const sessionUser = sessionData?.user as SessionUserWithRoles | undefined;
 
@@ -60,6 +90,14 @@ export default function ProfileEditPage() {
   const [avatarStatus, setAvatarStatus] = useState<AvatarStatus>("idle");
   const [avatarFileId, setAvatarFileId] = useState<string | null>(null);
 
+  const [initialState, setInitialState] = useState<FormStateSnapshot | null>(
+    null,
+  );
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingLeaveAction, setPendingLeaveAction] = useState<
+    (() => void) | null
+  >(null);
+
   const {
     data: userData,
     isLoading,
@@ -80,20 +118,43 @@ export default function ProfileEditPage() {
 
     const profile = userData as UserProfileExtras;
 
-    setName(userData.name ?? "");
-    setEmail(userData.email ?? "");
-    setRank(userData.rank ?? "");
-    setBranch(userData.branch ?? "");
-    setUnit(userData.department ?? "");
-    setSignalNumber(userData.phoneNumber ?? "");
-    setAvatarFileId(userData.image ?? null);
+    const nextName = userData.name ?? "";
+    const nextEmail = userData.email ?? "";
+    const nextRank = userData.rank ?? "";
+    const nextBranch = userData.branch ?? "";
+    const nextUnit = userData.department ?? "";
+    const nextSignal = userData.phoneNumber ?? "";
+    const nextAvatarId = userData.image ?? null;
+    const nextLocation = profile.location ?? "";
+    const nextAbout = profile.about ?? "";
+    const nextInterestsRaw = Array.isArray(profile.interests)
+      ? profile.interests.join(", ")
+      : "";
 
-    setLocation(profile.location ?? "");
-    setAbout(profile.about ?? "");
+    setName(nextName);
+    setEmail(nextEmail);
+    setRank(nextRank);
+    setBranch(nextBranch);
+    setUnit(nextUnit);
+    setSignalNumber(nextSignal);
+    setAvatarFileId(nextAvatarId);
+    setLocation(nextLocation);
+    setAbout(nextAbout);
+    setInterestsRaw(nextInterestsRaw);
+    setPhotoFile(null);
 
-    if (Array.isArray(profile.interests)) {
-      setInterestsRaw(profile.interests.join(", "));
-    }
+    setInitialState({
+      name: nextName,
+      rank: nextRank,
+      branch: nextBranch,
+      unit: nextUnit,
+      location: nextLocation,
+      email: nextEmail,
+      signalNumber: nextSignal,
+      interestsRaw: nextInterestsRaw,
+      about: nextAbout,
+      avatarFileId: nextAvatarId,
+    });
   }, [userData]);
 
   const interests = useMemo(
@@ -104,6 +165,51 @@ export default function ProfileEditPage() {
         .filter(Boolean),
     [interestsRaw],
   );
+
+  const hasUnsavedChanges = useMemo(() => {
+    if (!initialState) return false;
+
+    return (
+      initialState.name !== name ||
+      initialState.rank !== rank ||
+      initialState.branch !== branch ||
+      initialState.unit !== unit ||
+      initialState.location !== location ||
+      initialState.email !== email ||
+      initialState.signalNumber !== signalNumber ||
+      initialState.interestsRaw !== interestsRaw ||
+      initialState.about !== about ||
+      initialState.avatarFileId !== avatarFileId ||
+      photoFile !== null
+    );
+  }, [
+    initialState,
+    name,
+    rank,
+    branch,
+    unit,
+    location,
+    email,
+    signalNumber,
+    interestsRaw,
+    about,
+    avatarFileId,
+    photoFile,
+  ]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    if (hasUnsavedChanges) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   type UpdateUserProfileVars = {
     name?: string;
@@ -174,9 +280,7 @@ export default function ProfileEditPage() {
         setAvatarStatus("error");
         setAvatarFileId(null);
         setPhotoError(
-          error instanceof Error
-            ? error.message
-            : "Something went wrong uploading your profile photo.",
+          error instanceof Error ? error.message : "Please try again.",
         );
       }
     },
@@ -194,23 +298,18 @@ export default function ProfileEditPage() {
       if (!file.type.startsWith("image/")) {
         setPhotoError("Please upload an image file.");
         setPhotoFile(null);
-        setAvatarPreviewUrl(null);
         setAvatarFileId(null);
         setAvatarStatus("error");
         return;
       }
 
       setPhotoFile(file);
-
-      const objectUrl = URL.createObjectURL(file);
-      setAvatarPreviewUrl(objectUrl);
-
       void uploadAvatar(file);
     },
     [uploadAvatar],
   );
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
     if (avatarStatus === "uploading") {
@@ -219,7 +318,7 @@ export default function ProfileEditPage() {
     }
 
     if (avatarStatus === "error") {
-      toast.error("Please fix the profile photo upload error or remove it.");
+      toast.error("Please try again.");
       return;
     }
 
@@ -241,6 +340,20 @@ export default function ProfileEditPage() {
           queryKey: ["current-user-profile", userId],
         });
 
+        setInitialState({
+          name,
+          rank,
+          branch,
+          unit,
+          location,
+          email,
+          signalNumber,
+          interestsRaw,
+          about,
+          avatarFileId,
+        });
+        setPhotoFile(null);
+
         toast.success("Profile updated", {
           description: "Your profile changes have been saved.",
         });
@@ -252,6 +365,24 @@ export default function ProfileEditPage() {
         });
       },
     });
+  };
+
+  const requestLeave = (action: () => void) => {
+    if (hasUnsavedChanges) {
+      setPendingLeaveAction(() => action);
+      setShowLeaveConfirm(true);
+      return;
+    }
+    action();
+  };
+
+  const handleCancelClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    requestLeave(() => router.push("/profile"));
+  };
+
+  const handleBackClick = () => {
+    requestLeave(() => router.push("/profile"));
   };
 
   if (!userId) {
@@ -287,18 +418,29 @@ export default function ProfileEditPage() {
         backHref="/profile"
         backAriaLabel="Back to profile"
       >
-        <p className="text-body text-destructive">
-          Something went wrong loading your profile.
-        </p>
+        <p className="text-body text-error">Please try again.</p>
       </TitleShell>
     );
   }
 
   return (
     <TitleShell
-      title="Edit profile"
-      backHref="/profile"
-      backAriaLabel="Back to profile"
+      title={
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBackClick}
+            aria-label="Back to profile"
+            className="text-accent hover:text-accent/80 transition"
+          >
+            <BackIcon className="h-6 w-6" />
+          </button>
+
+          <span className="flex items-center text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            Edit profile
+          </span>
+        </div>
+      }
     >
       <div className="flex justify-center px-4 sm:px-0">
         <form
@@ -344,7 +486,7 @@ export default function ProfileEditPage() {
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
@@ -422,7 +564,7 @@ export default function ProfileEditPage() {
                 value={unit}
                 onChange={(event) => setUnit(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
@@ -438,7 +580,7 @@ export default function ProfileEditPage() {
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
@@ -455,7 +597,7 @@ export default function ProfileEditPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
@@ -471,7 +613,7 @@ export default function ProfileEditPage() {
                 value={signalNumber}
                 onChange={(event) => setSignalNumber(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
 
@@ -487,7 +629,7 @@ export default function ProfileEditPage() {
                 value={interestsRaw}
                 onChange={(event) => setInterestsRaw(event.target.value)}
                 disabled={isSaving}
-                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
               <p className="text-xs text-secondary/70">
                 Separate interests with commas. These appear as badges on your
@@ -509,7 +651,7 @@ export default function ProfileEditPage() {
               onChange={(event) => setAbout(event.target.value)}
               rows={4}
               disabled={isSaving}
-              className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="block w-full rounded-xl border border-neutral/60 bg-white px-3 py-2 text-body text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
 
@@ -525,15 +667,49 @@ export default function ProfileEditPage() {
               type="button"
               variant="outline"
               size="lg"
-              asChild
               className="text-secondary"
               disabled={isSaving}
+              onClick={handleCancelClick}
             >
-              <a href="/profile">Cancel</a>
+              Cancel
             </Button>
           </div>
         </form>
       </div>
+
+      <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved changes</DialogTitle>
+            <DialogDescription>
+              You have unsaved changes. Are you sure you&apos;d like to
+              continue? Your edits will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowLeaveConfirm(false);
+                setPendingLeaveAction(null);
+              }}
+            >
+              Keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const action = pendingLeaveAction;
+                setShowLeaveConfirm(false);
+                setPendingLeaveAction(null);
+                action?.();
+              }}
+            >
+              Discard changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TitleShell>
   );
 }
