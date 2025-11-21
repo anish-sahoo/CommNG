@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { mentorshipEmbeddings } from "@/data/db/schema.js";
 import { db } from "@/data/db/sql.js";
 import { ConflictError, NotFoundError } from "@/types/errors.js";
@@ -265,4 +265,3 @@ export class MentorshipEmbeddingRepository {
       .where(eq(mentorshipEmbeddings.userId, userId));
   }
 }
-

@@ -407,9 +407,7 @@ export const mentors = pgTable(
     }),
     strengths: jsonb("strengths").$type<string[]>().default([]), // Up to 5 strengths
     personalInterests: text("personal_interests"),
-    whyInterestedResponses: jsonb("why_interested_responses").$type<
-      string[]
-    >(), // Ordered responses
+    whyInterestedResponses: jsonb("why_interested_responses").$type<string[]>(), // Ordered responses
     careerAdvice: text("career_advice"), // Text response to advice question
     preferredMenteeCareerStages: jsonb("preferred_mentee_career_stages").$type<
       string[]

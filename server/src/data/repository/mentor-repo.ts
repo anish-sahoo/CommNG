@@ -51,7 +51,11 @@ export class MentorRepository {
     whyInterestedResponses?: string[],
     careerAdvice?: string,
     preferredMenteeCareerStages?: string[],
-    preferredMeetingFormat?: "in-person" | "virtual" | "hybrid" | "no-preference",
+    preferredMeetingFormat?:
+      | "in-person"
+      | "virtual"
+      | "hybrid"
+      | "no-preference",
     hoursPerMonthCommitment?: number,
   ): Promise<CreateMentorOutput> {
     // Check if mentor already exists for this user

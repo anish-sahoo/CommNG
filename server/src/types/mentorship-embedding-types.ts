@@ -80,4 +80,3 @@ export type UpdateMentorshipEmbeddingOutput = {
   createdAt: Date;
   updatedAt: Date;
 };
-
