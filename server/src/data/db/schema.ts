@@ -67,6 +67,9 @@ export const users = pgTable(
     rank: text("rank"),
     department: text("department"),
     branch: text("branch"),
+    location: text("location"),
+    about: text("about"),
+    interests: jsonb("interests"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
