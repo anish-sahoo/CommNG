@@ -1,4 +1,3 @@
-import { icons } from "@/components/icons";
 import {
   Table,
   TableBody,
@@ -91,17 +90,12 @@ const fallbackReports: Report[] = [
   },
 ];
 
-const EllipsisIcon = icons.ellipsis;
-
 export function ReportsTable({
   items = fallbackReports,
   isAdmin = false,
 }: ReportsTableProps) {
-  const reports = [...items].sort(
-    (a, b) =>
-      new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime(),
-  );
-  const lastColumnLabel = isAdmin ? "Issued To" : "Comments";
+  const reports = items;
+  const lastColumnLabel = "Issued To";
   const fillerRowKeys = Array.from(
     { length: Math.max(0, 4 - reports.length) },
     (_, index) => `empty-row-${index}`,
@@ -122,9 +116,11 @@ export function ReportsTable({
               <TableHead className="md:w-[16%] py-3 text-sm font-semibold uppercase tracking-wide text-text-background">
                 Status
               </TableHead>
-              <TableHead className="md:w-[16%] rounded-tr-2xl py-3 text-sm font-semibold uppercase tracking-wide text-background">
-                {lastColumnLabel}
-              </TableHead>
+              {isAdmin ? (
+                <TableHead className="md:w-[16%] rounded-tr-2xl py-3 text-sm font-semibold uppercase tracking-wide text-background">
+                  {lastColumnLabel}
+                </TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody className="bg-background text-secondary [&_tr]:last:border-b-0">
@@ -144,32 +140,20 @@ export function ReportsTable({
                 <TableCell className="md:w-[16%] py-4 align-top text-sm font-semibold">
                   {report.status}
                 </TableCell>
-                <TableCell className="relative md:w-[16%] whitespace-normal py-4 align-top">
-                  {isAdmin ? (
+                {isAdmin ? (
+                  <TableCell className="md:w-[16%] whitespace-normal py-4 align-top">
                     <div className="pr-8 text-sm font-semibold text-secondary">
                       <span className="block whitespace-normal leading-snug hyphens-auto md:hyphens-auto md:whitespace-pre-wrap md:break-normal">
                         {report.issuedTo ?? "Unassigned"}
                       </span>
                     </div>
-                  ) : (
-                    <div className="pr-8 text-sm text-secondary">
-                      <p className="whitespace-normal break-normal leading-snug md:truncate md:whitespace-nowrap md:pt-0.5">
-                        {report.comments ?? "No comments yet"}
-                      </p>
-                    </div>
-                  )}
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 md:top-4 md:-translate-y-0">
-                    <EllipsisIcon
-                      aria-hidden="true"
-                      className="h-5 w-5 text-accent"
-                    />
-                  </div>
-                </TableCell>
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))}
             {fillerRowKeys.map((key) => (
               <TableRow key={key} className="h-16">
-                <TableCell colSpan={4} />
+                <TableCell colSpan={isAdmin ? 4 : 3} />
               </TableRow>
             ))}
           </TableBody>

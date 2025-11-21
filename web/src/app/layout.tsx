@@ -23,8 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn(openSans.variable, "antialiased")}>
-      <body>
+    <html lang="en" className={cn(openSans.variable, "antialiased h-full")}>
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1"
+        />
+      </head>
+      <body className="min-h-screen w-full max-w-full overflow-x-hidden">
         <QueryProvider>{children}</QueryProvider>
         <Toaster />
       </body>

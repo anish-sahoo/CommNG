@@ -1,15 +1,15 @@
 import pLimit from "p-limit";
-import { getRedisClientInstance } from "../data/db/redis.js";
-import type { RoleNamespace } from "../data/db/schema.js";
-import { AuthRepository } from "../data/repository/auth-repo.js";
-import { hasAnyPermission, hasPermission } from "../data/role-hierarchy.js";
+import { getRedisClientInstance } from "@/data/db/redis.js";
+import type { RoleNamespace } from "@/data/db/schema.js";
+import { AuthRepository } from "@/data/repository/auth-repo.js";
+import { hasAnyPermission, hasPermission } from "@/data/role-hierarchy.js";
 import {
   type ChannelRoleKey,
   GLOBAL_ADMIN_KEY,
   type RoleKey,
-} from "../data/roles.js";
-import { BadRequestError } from "../types/errors.js";
-import log from "../utils/logger.js";
+} from "@/data/roles.js";
+import { BadRequestError } from "@/types/errors.js";
+import log from "@/utils/logger.js";
 
 /**
  * Policy Engine that handles everything related to access control (checking access, granting access, etc.)

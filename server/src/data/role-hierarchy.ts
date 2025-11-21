@@ -1,7 +1,7 @@
-import log from "../utils/logger.js";
-import type { RoleNamespace } from "./db/schema.js";
-import type { RoleKey } from "./roles.js";
-import { ROLE_HIERARCHIES } from "./roles.js";
+import type { RoleNamespace } from "@/data/db/schema.js";
+import type { RoleKey } from "@/data/roles.js";
+import { ROLE_HIERARCHIES } from "@/data/roles.js";
+import log from "@/utils/logger.js";
 
 /**
  * Role Hierarchy System

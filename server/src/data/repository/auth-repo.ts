@@ -1,10 +1,45 @@
 import { count, eq } from "drizzle-orm";
-import { Cache } from "../../utils/cache.js";
-import log from "../../utils/logger.js";
-import { getRedisClientInstance } from "../db/redis.js";
-import { type RoleNamespace, roles, userRoles, users } from "../db/schema.js";
-import { db } from "../db/sql.js";
-import type { RoleKey } from "../roles.js";
+import { getRedisClientInstance } from "@/data/db/redis.js";
+import {
+  type RoleNamespace,
+  roles,
+  userRoles,
+  users,
+} from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { getImpliedRoles } from "@/data/role-hierarchy.js";
+import type { RoleKey } from "@/data/roles.js";
+import { Cache } from "@/utils/cache.js";
+import log from "@/utils/logger.js";
+
+/**
+ * Normalizes cached role data (plain arrays, serialized sets, etc.) into a Set<RoleKey>.
+ * This protects us from legacy cache entries while keeping the runtime API consistent.
+ */
+function hydrateRoleSet(value: unknown): Set<RoleKey> {
+  if (value instanceof Set) {
+    return value as Set<RoleKey>;
+  }
+
+  if (Array.isArray(value)) {
+    return new Set(
+      value.filter((role): role is RoleKey => typeof role === "string"),
+    );
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    Array.isArray((value as { values?: unknown[] }).values)
+  ) {
+    const entries = (value as { values: unknown[] }).values;
+    return new Set(
+      entries.filter((role): role is RoleKey => typeof role === "string"),
+    );
+  }
+
+  return new Set();
+}
 
 /**
  * Repository for authentication and role management operations
@@ -24,7 +59,9 @@ export class AuthRepository {
     return rows.map((row) => row.userId);
   }
 
-  @Cache((userId: string) => `roles:${userId}`, 3600)
+  @Cache((userId: string) => `roles:${userId}`, 3600, {
+    hydrate: hydrateRoleSet,
+  })
   /**
    * Get all role keys assigned to a user
    * @param userId User ID
@@ -40,6 +77,28 @@ export class AuthRepository {
       .where(eq(userRoles.userId, userId));
 
     return new Set(rows.map((r) => r.key));
+  }
+
+  @Cache((userId: string) => `roles:implied:${userId}`, 3600, {
+    hydrate: hydrateRoleSet,
+  })
+  /**
+   * Get all role keys assigned to a user, including implied roles from hierarchy
+   * @param userId User ID
+   * @returns Set of role keys including all implied permissions
+   */
+  async getAllImpliedRolesForUser(userId: string) {
+    const assignedRoles = await this.getRolesForUser(userId);
+    const allRoles = new Set<RoleKey>();
+
+    for (const role of assignedRoles) {
+      const implied = getImpliedRoles(role);
+      for (const impliedRole of implied) {
+        allRoles.add(impliedRole);
+      }
+    }
+
+    return allRoles;
   }
 
   /**
@@ -154,13 +213,100 @@ export class AuthRepository {
         .onConflictDoNothing();
 
       // Invalidate the user's roles cache
-      await getRedisClientInstance().DEL(`roles:${targetUserId}`);
-      log.debug(`[Cache INVALIDATED] roles:${targetUserId}`);
+      const redis = getRedisClientInstance();
+      await redis.DEL(`roles:${targetUserId}`);
+      await redis.DEL(`roles:implied:${targetUserId}`);
+      log.debug(
+        `[Cache INVALIDATED] roles:${targetUserId}, roles:implied:${targetUserId}`,
+      );
 
       return true;
     } catch (e) {
       log.error(e, `Error granting ${roleKey} to ${targetUserId}`);
     }
     return false;
+  }
+
+  /**
+   * Grant multiple roles to a user in bulk
+   * @param userId User ID granting the roles
+   * @param targetUserId Target user ID to receive the roles
+   * @param roleKeys Array of role keys to assign
+   * @returns Object with successful and failed role assignments
+   */
+  async grantAccessBulk(
+    userId: string,
+    targetUserId: string,
+    roleKeys: RoleKey[],
+  ) {
+    const results: {
+      roleKey: RoleKey;
+      success: boolean;
+      roleId?: number;
+      error?: unknown;
+      reason?: string;
+    }[] = [];
+
+    // Get all role IDs first
+    const roleIdMap = new Map<RoleKey, number>();
+    for (const roleKey of roleKeys) {
+      const roleId = await this.getRoleId(roleKey);
+      if (roleId) {
+        roleIdMap.set(roleKey, roleId);
+      } else {
+        log.warn(`Role ${roleKey} not found in database, skipping assignment`);
+        results.push({
+          roleKey,
+          success: false,
+          reason: "Role not found",
+        });
+      }
+    }
+
+    // Prepare bulk insert values
+    const insertValues = Array.from(roleIdMap.entries()).map(
+      ([_roleKey, roleId]) => ({
+        userId: targetUserId,
+        roleId,
+        assignedBy: userId,
+      }),
+    );
+
+    // Bulk insert
+    if (insertValues.length > 0) {
+      try {
+        await db.insert(userRoles).values(insertValues).onConflictDoNothing();
+
+        // Add successful results
+        for (const [roleKey, roleId] of roleIdMap.entries()) {
+          results.push({
+            roleKey,
+            roleId,
+            success: true,
+          });
+        }
+
+        // Invalidate the user's roles cache once
+        await getRedisClientInstance().DEL(`roles:${targetUserId}`);
+        await getRedisClientInstance().DEL(`roles:implied:${targetUserId}`);
+        log.debug(`[Cache INVALIDATED] roles:${targetUserId}`);
+      } catch (e) {
+        log.error(e, `Error bulk granting roles to ${targetUserId}`);
+        // Mark all as failed if bulk insert fails
+        for (const [roleKey] of roleIdMap.entries()) {
+          results.push({
+            roleKey,
+            success: false,
+            error: e,
+          });
+        }
+      }
+    }
+
+    return {
+      successful: results.filter((r) => r.success).map((r) => r.roleKey),
+      failed: results.filter((r) => !r.success).map((r) => r.roleKey),
+      results,
+    };
   }
 }

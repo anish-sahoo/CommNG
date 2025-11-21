@@ -115,6 +115,8 @@ export type DropzoneContentProps = {
 };
 
 const maxLabelItems = 3;
+const truncateFileName = (name: string, maxLength = 30) =>
+  name.length > maxLength ? `${name.slice(0, maxLength)}…` : name;
 
 export const DropzoneContent = ({
   children,
@@ -130,19 +132,26 @@ export const DropzoneContent = ({
     return children;
   }
 
+  const displayNames =
+    src.length > maxLabelItems
+      ? `${new Intl.ListFormat("en").format(
+          src
+            .slice(0, maxLabelItems)
+            .map((file) => truncateFileName(file.name)),
+        )} and ${src.length - maxLabelItems} more`
+      : new Intl.ListFormat("en").format(
+          src.map((file) => truncateFileName(file.name)),
+        );
+
   return (
     <div className={cn("flex flex-col items-center justify-center", className)}>
       <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <UploadIcon size={16} />
       </div>
-      <p className="my-2 w-full truncate font-medium text-sm">
-        {src.length > maxLabelItems
-          ? `${new Intl.ListFormat("en").format(
-              src.slice(0, maxLabelItems).map((file) => file.name),
-            )} and ${src.length - maxLabelItems} more`
-          : new Intl.ListFormat("en").format(src.map((file) => file.name))}
+      <p className="my-2 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center font-medium text-sm">
+        {displayNames}
       </p>
-      <p className="w-full text-wrap text-muted-foreground text-xs">
+      <p className="w-full text-center text-muted-foreground text-xs">
         Drag and drop or click to replace
       </p>
     </div>
@@ -188,14 +197,14 @@ export const DropzoneEmptyState = ({
       <div className="flex size-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <UploadIcon size={16} />
       </div>
-      <p className="my-2 w-full truncate text-wrap font-medium text-sm">
+      <p className="my-2 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center font-medium text-sm">
         Upload {maxFiles === 1 ? "a file" : "files"}
       </p>
-      <p className="w-full truncate text-wrap text-muted-foreground text-xs">
+      <p className="w-full text-center text-muted-foreground text-xs">
         Drag and drop or click to upload
       </p>
       {caption && (
-        <p className="text-wrap text-muted-foreground text-xs">{caption}.</p>
+        <p className="text-center text-muted-foreground text-xs">{caption}.</p>
       )}
     </div>
   );

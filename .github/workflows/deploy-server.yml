@@ -20,7 +20,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: comm-ng-server
+  ECR_REPOSITORY: comm_ng-server
   ECS_SERVICE: dev-comm-ng-server-service
   ECS_CLUSTER: dev-comm-ng-cluster
   ECS_TASK_DEFINITION: dev-comm-ng-server

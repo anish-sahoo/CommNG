@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import log from "../../utils/logger.js";
+import log from "@/utils/logger.js";
 
 export const pool = new Pool({
   host: process.env.POSTGRES_HOST ?? "localhost",

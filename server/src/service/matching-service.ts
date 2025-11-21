@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
-import { mentees, mentorMatchingRequests, mentors } from "../data/db/schema.js";
-import { db } from "../data/db/sql.js";
-import log from "../utils/logger.js";
+import { mentees, mentorMatchingRequests, mentors } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import log from "@/utils/logger.js";
 
 /**
  * Service to handle mentorship matching logic

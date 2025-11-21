@@ -6,13 +6,13 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { ForbiddenError } from "../types/errors.js";
-import log from "../utils/logger.js";
 import {
   type FileInputStreamOptions,
   type FilePath,
   StorageAdapter,
-} from "./storage-adapter.js";
+} from "@/storage/storage-adapter.js";
+import { ForbiddenError } from "@/types/errors.js";
+import log from "@/utils/logger.js";
 
 /**
  * Storage adapter for AWS S3 operations with presigned URL support

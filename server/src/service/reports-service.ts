@@ -1,9 +1,9 @@
-import type { ReportRepository } from "../data/repository/reports-repo.js";
+import type { ReportRepository } from "@/data/repository/reports-repo.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "../types/reports-types.js";
+} from "@/types/reports-types.js";
 
 /**
  * Service for managing reports (create, edit, delete, assign)
@@ -22,6 +22,13 @@ export class ReportService {
    */
   async getReportsForUser(userId: string) {
     return await this.reportsRepo.getReportsForUser(userId);
+  }
+
+  /**
+   * Get every report (admin only)
+   */
+  async getAllReports() {
+    return await this.reportsRepo.getAllReports();
   }
 
   /**

@@ -1,8 +1,5 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { QueryResult } from "pg";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
-import { fileMetadataSchema } from "../../types/file-types.js";
-import log from "../../utils/logger.js";
 import {
   channelSubscriptions,
   channels,
@@ -13,8 +10,11 @@ import {
   roles,
   userRoles,
   users,
-} from "../db/schema.js";
-import { db } from "../db/sql.js";
+} from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
+import { fileMetadataSchema } from "@/types/file-types.js";
+import log from "@/utils/logger.js";
 
 export type Transaction = Parameters<typeof db.transaction>[0] extends (
   arg: infer T,

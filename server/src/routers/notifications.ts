@@ -1,10 +1,10 @@
-import notificationService from "../service/notification-service.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
-import { protectedProcedure, router } from "../trpc/trpc.js";
+import notificationService from "@/service/notification-service.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
+import { protectedProcedure, router } from "@/trpc/trpc.js";
 import {
   type NotificationPayload,
   subscribeInputSchema,
-} from "../types/notification-types.js";
+} from "@/types/notification-types.js";
 
 const subscribe = protectedProcedure
   .input(subscribeInputSchema)
@@ -20,7 +20,7 @@ const subscribe = protectedProcedure
 
 const testNotifications = protectedProcedure
   .meta({ description: "Test by sending a sample notification" })
-  .mutation(async ({ ctx }) => {
+  .mutation(async () => {
     return withErrorHandling("testNotification", async () => {
       const payload: NotificationPayload = {
         title: "Test Notification",

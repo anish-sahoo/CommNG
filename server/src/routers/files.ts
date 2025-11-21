@@ -1,16 +1,16 @@
-import { FileRepository } from "../data/repository/file-repo.js";
-import { channelRole } from "../data/roles.js";
-import { FileService } from "../service/file-service.js";
-import { S3StorageAdapter } from "../storage/s3-adapter.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
+import { FileRepository } from "@/data/repository/file-repo.js";
+import { channelRole } from "@/data/roles.js";
+import { FileService } from "@/service/file-service.js";
+import { S3StorageAdapter } from "@/storage/s3-adapter.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
 import {
   ensureHasRole,
   procedure,
   protectedProcedure,
   router,
-} from "../trpc/trpc.js";
-import { InternalServerError } from "../types/errors.js";
-import type { FileDownloadPayload } from "../types/file-types.js";
+} from "@/trpc/trpc.js";
+import { InternalServerError } from "@/types/errors.js";
+import type { FileDownloadPayload } from "@/types/file-types.js";
 import {
   confirmUploadInputSchema,
   createPresignedUploadInputSchema,
@@ -18,9 +18,9 @@ import {
   getFileInputSchema,
   uploadForChannelInputSchema,
   uploadForUserInputSchema,
-} from "../types/file-types.js";
-import { ensureNOTUsingAws, ensureUsingAws } from "../utils/aws.js";
-import log from "../utils/logger.js";
+} from "@/types/file-types.js";
+import { ensureNOTUsingAws, ensureUsingAws } from "@/utils/aws.js";
+import log from "@/utils/logger.js";
 
 if (
   !(process.env.S3_BUCKET_NAME && process.env.USE_PRESIGNED_UPLOADS === "true")

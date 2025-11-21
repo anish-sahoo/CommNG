@@ -8,39 +8,55 @@
  * Role key functions generate strongly typed string role keys. Types are exported for reference.
  */
 
-import type { RoleNamespace } from "./db/schema.js";
+import { z } from "zod";
+import type { RoleNamespace } from "@/data/db/schema.js";
 
 /**
- * Role hierarchy configuration - the source of truth for action types and their privilege levels.
+ * SINGLE SOURCE OF TRUTH: Zod schemas define all valid actions
+ * Everything else derives from these schemas
+ */
+
+// Define valid actions as Zod enums (ordered from highest to lowest privilege)
+const channelActionsEnum = z.enum(["admin", "post", "read"]);
+const reportingActionsEnum = z.enum([
+  "admin",
+  "assign",
+  "delete",
+  "update",
+  "create",
+  "read",
+]);
+const broadcastActionsEnum = z.enum(["create"]);
+const globalActionsEnum = z.enum(["admin", "create-invite"]);
+
+export type ChannelActions = z.infer<typeof channelActionsEnum>;
+export type ReportingActions = z.infer<typeof reportingActionsEnum>;
+export type BroadcastActions = z.infer<typeof broadcastActionsEnum>;
+export type GlobalActions = z.infer<typeof globalActionsEnum>;
+
+/**
+ * Role hierarchy configuration derived from Zod schemas.
  * Each array is ordered from highest privilege to lowest.
  * Higher roles automatically grant all lower role permissions.
  *
- * This configuration is used for:
- * 1. Type-safe role builder functions
- * 2. Runtime permission hierarchy checks
- * 3. Ensuring consistency between role definitions and permission logic
+ * This configuration is used for runtime permission hierarchy checks.
  */
 export const ROLE_HIERARCHIES = {
   // Channel permissions: admin can post and read, post can read
-  channel: ["admin", "post", "read"],
+  channel: channelActionsEnum.options,
 
   // Reporting permissions: Full hierarchy
   // admin > assign/delete/update/create > read
-  reporting: ["admin", "assign", "delete", "update", "create", "read"],
+  reporting: reportingActionsEnum.options,
 
-  broadcast: ["create"],
+  broadcast: broadcastActionsEnum.options,
 
   // Mentor namespace: No hierarchy yet
   mentor: [],
 
-  // Global namespace has no hierarchy (admin is all-powerful via separate logic)
-  global: ["admin"],
+  // Global permissions: admin > create-invite
+  global: globalActionsEnum.options,
 } as const satisfies Record<RoleNamespace, readonly string[]>;
-
-// Extract action types from hierarchy for type safety
-type ChannelActions = (typeof ROLE_HIERARCHIES.channel)[number];
-type ReportingActions = (typeof ROLE_HIERARCHIES.reporting)[number];
-type BroadcastActions = (typeof ROLE_HIERARCHIES.broadcast)[number];
 
 /**
  * Builds a role key for a channel-specific resource/action.
@@ -96,6 +112,14 @@ export const GLOBAL_ADMIN_KEY = `global:admin` as const;
 type GlobalAdminKey = typeof GLOBAL_ADMIN_KEY;
 
 /**
+ * The global create-invite role key.
+ * Grants permission to create and manage invite codes.
+ */
+export const GLOBAL_CREATE_INVITE_KEY = `global:create-invite` as const;
+/** The type for the global create-invite role key string */
+type GlobalCreateInviteKey = typeof GLOBAL_CREATE_INVITE_KEY;
+
+/**
  * All allowable role key types in the application.
  * Used for type safety and permission checks.
  *
@@ -103,9 +127,85 @@ type GlobalAdminKey = typeof GLOBAL_ADMIN_KEY;
  * - BroadcastRoleKey: broadcast (mass messaging) actions
  * - ReportingRoleKey: reporting/analytics related actions
  * - GlobalAdminKey: superuser powers everywhere
+ * - GlobalCreateInviteKey: permission to create and manage invite codes
  */
 export type RoleKey =
   | ChannelRoleKey
   | BroadcastRoleKey
   | ReportingRoleKey
-  | GlobalAdminKey;
+  | GlobalAdminKey
+  | GlobalCreateInviteKey;
+
+/**
+ * Zod schemas for validating role keys at runtime
+ * All derived from the action enums above (single source of truth)
+ */
+
+/**
+ * Validates a channel role key pattern: "channel:<number>:<action>"
+ * Dynamically builds regex from channelActionsEnum
+ */
+const channelActionsPattern = channelActionsEnum.options.join("|");
+export const channelRoleKeySchema = z
+  .string()
+  .regex(
+    new RegExp(`^channel:\\d+:(${channelActionsPattern})$`),
+    `Channel role must be in format 'channel:<id>:<action>' where action is ${channelActionsEnum.options.join(", ")}`,
+  )
+  .transform((val) => val as ChannelRoleKey);
+
+/**
+ * Validates a broadcast role key pattern: "broadcast:<action>"
+ * Dynamically builds regex from broadcastActionsEnum
+ */
+const broadcastActionsPattern = broadcastActionsEnum.options.join("|");
+export const broadcastRoleKeySchema = z
+  .string()
+  .regex(
+    new RegExp(`^broadcast:(${broadcastActionsPattern})$`),
+    `Broadcast role must be in format 'broadcast:<action>' where action is ${broadcastActionsEnum.options.join(", ")}`,
+  )
+  .transform((val) => val as BroadcastRoleKey);
+
+/**
+ * Validates a reporting role key pattern: "reporting:<action>"
+ * Dynamically builds regex from reportingActionsEnum
+ */
+const reportingActionsPattern = reportingActionsEnum.options.join("|");
+export const reportingRoleKeySchema = z
+  .string()
+  .regex(
+    new RegExp(`^reporting:(${reportingActionsPattern})$`),
+    `Reporting role must be in format 'reporting:<action>' where action is ${reportingActionsEnum.options.join(", ")}`,
+  )
+  .transform((val) => val as ReportingRoleKey);
+
+/**
+ * Validates the global admin role key: "global:admin"
+ * Dynamically builds from globalActionsEnum
+ */
+const globalActionsPattern = globalActionsEnum.options.join("|");
+export const globalAdminKeySchema = z
+  .string()
+  .regex(
+    new RegExp(`^global:(${globalActionsPattern})$`),
+    `Global role must be in format 'global:<action>' where action is ${globalActionsEnum.options.join(", ")}`,
+  )
+  .transform((val) => val as GlobalAdminKey);
+
+/**
+ * Master role key schema that validates any valid role key
+ */
+export const roleKeySchema = z.union([
+  channelRoleKeySchema,
+  broadcastRoleKeySchema,
+  reportingRoleKeySchema,
+  globalAdminKeySchema,
+]);
+
+/**
+ * Schema for an array of role keys
+ */
+export const roleKeysArraySchema = z
+  .array(roleKeySchema)
+  .min(1, "At least one role must be provided");

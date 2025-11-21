@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { GetMenteeOutput } from "./mentee-types.js";
-import type { GetMentorOutput } from "./mentor-types.js";
+import type { GetMenteeOutput } from "@/types/mentee-types.js";
+import type { GetMentorOutput } from "@/types/mentor-types.js";
 
 export type MentorshipMatch = {
   matchId: number;
