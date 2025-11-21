@@ -1,12 +1,26 @@
 import { z } from "zod";
 
 export const menteeSchema = z.object({
-  menteeId: z.string(),
+  menteeId: z.number().int().positive(),
   userId: z.string(),
   learningGoals: z.string().nullable().optional(),
   experienceLevel: z.string().nullable().optional(),
   preferredMentorType: z.string().nullable().optional(),
   status: z.enum(["active", "inactive", "matched"]),
+  positionType: z.enum(["active", "guard", "reserve"]).nullable().optional(),
+  serviceType: z.enum(["enlisted", "officer"]).nullable().optional(),
+  detailedPosition: z.string().nullable().optional(),
+  detailedRank: z.string().nullable().optional(),
+  resumeFileId: z.string().uuid().nullable().optional(),
+  personalInterests: z.string().nullable().optional(),
+  roleModelInspiration: z.string().nullable().optional(),
+  hopeToGainResponses: z.array(z.string()).nullable().optional(),
+  mentorQualities: z.array(z.string()).nullable().optional(),
+  preferredMeetingFormat: z
+    .enum(["in-person", "virtual", "hybrid", "no-preference"])
+    .nullable()
+    .optional(),
+  hoursPerMonthCommitment: z.number().int().positive().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
