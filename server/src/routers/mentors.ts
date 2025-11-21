@@ -22,8 +22,20 @@ const createMentor = protectedProcedure
       input.mentorshipPreferences,
       input.rank,
       input.yearsOfService,
-      input.eligibilityData,
+      input.eligibilityData ?? undefined,
       input.status,
+      input.positionType,
+      input.serviceType,
+      input.detailedPosition,
+      input.detailedRank,
+      input.resumeFileId,
+      input.strengths,
+      input.personalInterests,
+      input.whyInterestedResponses,
+      input.careerAdvice,
+      input.preferredMenteeCareerStages,
+      input.preferredMeetingFormat,
+      input.hoursPerMonthCommitment,
     );
 
     // Trigger matching process
