@@ -123,8 +123,16 @@ export default function ChannelSettingsPage({
   /* ============ LEAVING THE CHANNEL ============ */
   const handleLeave = async () => {
     try {
-      await trpcClient.comms.leaveChannel.mutate({ channelId: parsedChannelId });
-
+      if (isAdmin) { // Delete the channel
+        await trpcClient.comms.deleteChannel.mutate({
+          channelId: parsedChannelId
+        });
+      } else { // Leave the channel
+        await trpcClient.comms.leaveChannel.mutate({
+          channelId: parsedChannelId
+        });
+      }
+      
       // Invalidate cache so channel list updates
       await queryClient.invalidateQueries({
         queryKey: ["channels"],
@@ -308,7 +316,7 @@ export default function ChannelSettingsPage({
           Save Changes
         </Button>
 
-        {/* Leave Channel Button */}
+        {/* Leave/Delete Channel Button */}
         <Button
           type="button"
           variant="outline"
@@ -316,7 +324,7 @@ export default function ChannelSettingsPage({
           className="text-neutral text-base font-semibold bg-transparent hover:border-primary ml-4"
           onClick={handleSelect}
         >
-          Leave Channel
+          {isAdmin ? "Delete Channel" : "Leave Channel"}
         </Button>
       </div>
 
