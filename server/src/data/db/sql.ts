@@ -1,4 +1,4 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool, type PoolConfig } from "pg";
 import log from "@/utils/logger.js";
 import { secretsManager } from "@/utils/secrets-manager.js";
@@ -11,9 +11,7 @@ type ConnectionCredentials = {
 /**
  * Get database configuration from environment or Secrets Manager
  */
-function getPoolConfig(
-  overrides?: Partial<ConnectionCredentials>,
-): PoolConfig {
+function getPoolConfig(overrides?: Partial<ConnectionCredentials>): PoolConfig {
   const config: PoolConfig = {
     host: process.env.POSTGRES_HOST ?? "localhost",
     port: Number(process.env.POSTGRES_PORT ?? 5432),
@@ -41,7 +39,7 @@ const initialPoolConfig = getPoolConfig();
 const initialPassword =
   typeof initialPoolConfig.password === "function"
     ? ""
-    : initialPoolConfig.password ?? "";
+    : (initialPoolConfig.password ?? "");
 
 let activeCredentials: ConnectionCredentials = {
   user: initialPoolConfig.user ?? "",
@@ -56,21 +54,18 @@ pool.on("error", (err) => {
 
 // keep a stable exported object reference for consumers (like better-auth)
 // so that swapping the underlying connection doesn't break references.
-let internalDb = drizzle(pool);
+let internalDb: NodePgDatabase = drizzle(pool);
 
-export const db: any = new Proxy(
-  {},
-  {
-    get(_target, prop) {
-      // forward property access to the current internalDb
-      const v = (internalDb as any)[prop];
-      if (typeof v === "function") {
-        return (...args: any[]) => v.apply(internalDb, args);
-      }
-      return v;
-    },
+export const db: NodePgDatabase = new Proxy(internalDb, {
+  get(_target, prop) {
+    // forward property access to the current internalDb
+    const v = (internalDb as unknown as Record<string | symbol, unknown>)[prop];
+    if (typeof v === "function") {
+      return (...args: unknown[]) => v.apply(internalDb, args);
+    }
+    return v;
   },
-);
+});
 
 function credentialsChanged(next: ConnectionCredentials): boolean {
   return (
