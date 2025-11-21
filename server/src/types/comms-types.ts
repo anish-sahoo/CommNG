@@ -100,7 +100,6 @@ export const joinChannelSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
 
-
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
 export type updateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>;

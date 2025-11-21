@@ -264,13 +264,12 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
 
 const updateSubscriptionSettings = protectedProcedure
   .input(updateSubscriptionSchema)
-  .mutation(({ ctx, input }) =>
+  .mutation(({ input }) =>
     withErrorHandling("updateSubscription", async () => {
-
       return await commsService.updateSubscriptionSettings(
         input.channelId,
         input.userId,
-        input.notificationsEnabled
+        input.notificationsEnabled,
       );
     }),
   );

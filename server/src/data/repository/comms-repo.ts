@@ -395,7 +395,8 @@ export class CommsRepository {
       .where(
         and(
           eq(channelSubscriptions.channelId, channelId),
-          eq(channelSubscriptions.userId, userId))
+          eq(channelSubscriptions.userId, userId),
+        ),
       )
       .limit(1);
     return result;
@@ -443,21 +444,23 @@ export class CommsRepository {
   async updateChannelSubscriptionSettings(
     userId: string,
     channelId: number,
-    updateData: Partial<typeof channelSubscriptions.$inferInsert>) {
+    updateData: Partial<typeof channelSubscriptions.$inferInsert>,
+  ) {
     const [updated] = await db
       .update(channelSubscriptions)
       .set(updateData)
       .where(
         and(
           eq(channelSubscriptions.userId, userId),
-          eq(channelSubscriptions.channelId, channelId))
+          eq(channelSubscriptions.channelId, channelId),
+        ),
       )
       .returning({
         subscriptionId: channelSubscriptions.subscriptionId,
         userId: channelSubscriptions.userId,
         channelId: channelSubscriptions.channelId,
         notificationsEnabled: channelSubscriptions.notificationsEnabled,
-        createdAt: channelSubscriptions.createdAt
+        createdAt: channelSubscriptions.createdAt,
       });
 
     return updated;
@@ -810,7 +813,10 @@ export class CommsRepository {
    * @param listOfUpdates Array of update functions (transaction)
    * @returns True if successful, false on error
    */
-  async updateChannelSettings(channelId: number, updateData: Partial<typeof channels.$inferInsert>) {
+  async updateChannelSettings(
+    channelId: number,
+    updateData: Partial<typeof channels.$inferInsert>,
+  ) {
     const [updated] = await db
       .update(channels)
       .set(updateData)

@@ -1,18 +1,18 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useState } from "react";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
-import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
 import { DeleteChannelModal } from "@/components/modal/delete-channel-modal";
+import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
-import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { authClient } from "@/lib/auth-client";
+import { useTRPCClient } from "@/lib/trpc";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -32,7 +32,6 @@ function parseChannelId(channelId: string): number | null {
 export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
-  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -111,8 +110,9 @@ export default function ChannelSettingsPage({
     if (channel) {
       setChannelName(channel.name || "");
 
-      const description = channel.description ||
-        (typeof channel.metadata?.description === 'string'
+      const description =
+        channel.description ||
+        (typeof channel.metadata?.description === "string"
           ? channel.metadata.description
           : "");
       setChannelDescription(description);
@@ -124,13 +124,15 @@ export default function ChannelSettingsPage({
   /* ============ LEAVING THE CHANNEL ============ */
   const handleLeave = async () => {
     try {
-      if (isAdmin) { // Delete the channel
+      if (isAdmin) {
+        // Delete the channel
         await trpcClient.comms.deleteChannel.mutate({
-          channelId: parsedChannelId
+          channelId: parsedChannelId,
         });
-      } else { // Leave the channel
+      } else {
+        // Leave the channel
         await trpcClient.comms.leaveChannel.mutate({
-          channelId: parsedChannelId
+          channelId: parsedChannelId,
         });
       }
 
@@ -358,7 +360,7 @@ export default function ChannelSettingsPage({
           }}
         />
       )}
-      
+
       {/* Success message */}
       {showSuccessMessage && (
         <div className="text-sm font-medium text-center text-primary">

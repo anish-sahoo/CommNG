@@ -1,9 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { channelSubscriptions, channels } from "@/data/db/schema.js";
-import type {
-  CommsRepository,
-  Transaction,
-} from "@/data/repository/comms-repo.js";
+import type { channelSubscriptions, channels } from "@/data/db/schema.js";
+import type { CommsRepository } from "@/data/repository/comms-repo.js";
 import { channelRole } from "@/data/roles.js";
 import { policyEngine } from "@/service/policy-engine.js";
 import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
@@ -13,7 +9,6 @@ import {
   InternalServerError,
 } from "@/types/errors.js";
 import log from "@/utils/logger.js";
-import { not } from "drizzle-orm/gel-core/expressions";
 
 /**
  * Service for communication-related business logic (channels, messages, subscriptions)
@@ -207,13 +202,18 @@ export class CommsService {
   async updateSubscriptionSettings(
     channel_id: number,
     user_id: string,
-    notifications_enabled: boolean
+    notifications_enabled: boolean,
   ) {
-    const updateData: Partial<typeof channelSubscriptions.$inferInsert> = {}
+    const updateData: Partial<typeof channelSubscriptions.$inferInsert> = {};
 
-    if (notifications_enabled !== undefined) updateData.notificationsEnabled = notifications_enabled;
+    if (notifications_enabled !== undefined)
+      updateData.notificationsEnabled = notifications_enabled;
 
-    const result = await this.commsRepo.updateChannelSubscriptionSettings(user_id, channel_id, updateData);
+    const result = await this.commsRepo.updateChannelSubscriptionSettings(
+      user_id,
+      channel_id,
+      updateData,
+    );
     if (result) {
       return this.commsRepo.getChannelSubscriptionFromId(user_id, channel_id);
     }
@@ -236,13 +236,17 @@ export class CommsService {
     metadata?: ChannelUpdateMetadata,
   ) {
     const updateData: Partial<typeof channels.$inferInsert> = {
-      name: channel_name
+      name: channel_name,
     };
 
-    if (channel_description !== undefined) updateData.description = channel_description;
+    if (channel_description !== undefined)
+      updateData.description = channel_description;
     if (metadata !== undefined) updateData.metadata = metadata;
 
-    const result = await this.commsRepo.updateChannelSettings(channel_id, updateData);
+    const result = await this.commsRepo.updateChannelSettings(
+      channel_id,
+      updateData,
+    );
     if (result) {
       return this.commsRepo.getChannelDataByID(channel_id);
     }
@@ -324,8 +328,8 @@ export class CommsService {
     // Check if channel is public (default is public if not specified)
     const channelType =
       channelData?.metadata &&
-        typeof channelData.metadata === "object" &&
-        "type" in channelData.metadata
+      typeof channelData.metadata === "object" &&
+      "type" in channelData.metadata
         ? channelData.metadata.type
         : "public";
 
