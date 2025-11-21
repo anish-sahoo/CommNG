@@ -1,27 +1,112 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TitleShell } from "@/components/layouts/title-shell";
 import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
+import { useTRPCClient } from "@/lib/trpc";
 
-// ProfilePage stands in until real member data is wired up, showcasing how the profile card behaves with mocked session information.
+// ProfilePage allows users to view their information as well as edit and change the settings
+type UserProfileExtras = {
+  location?: string | null;
+  about?: string | null;
+  interests?: string[] | null;
+};
+
 export default function ProfilePage() {
+  const trpcClient = useTRPCClient();
   const { data: sessionData } = authClient.useSession();
+  const userId = sessionData?.user.id ?? null;
 
-  const placeholderName = sessionData?.user.name ?? "Staff Sgt. Placeholder";
-  const placeholderEmail = sessionData?.user.email ?? "placeholder@example.com";
-  const placeholderSignalNumber = "(978) 555-0181";
+  const {
+    data: userData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["current-user-profile", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) {
+        throw new Error("User ID is missing");
+      }
+      return trpcClient.user.getUserData.query({ user_id: userId });
+    },
+  });
+
+  if (!userId) {
+    return (
+      <TitleShell
+        title={
+          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            My Profile
+          </span>
+        }
+      >
+        <p className="text-body text-secondary/80">
+          You must be signed in to view your profile.
+        </p>
+      </TitleShell>
+    );
+  }
+
+  if (isLoading && !userData) {
+    return (
+      <TitleShell
+        title={
+          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            My Profile
+          </span>
+        }
+      >
+        <p className="text-body text-secondary/80">Loading profile…</p>
+      </TitleShell>
+    );
+  }
+
+  if (isError || !userData) {
+    return (
+      <TitleShell
+        title={
+          <span className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            My Profile
+          </span>
+        }
+      >
+        <p className="text-body text-destructive">
+          Something went wrong loading your profile.
+        </p>
+      </TitleShell>
+    );
+  }
+
+  const profile = userData as UserProfileExtras;
+
+  const name = userData.name ?? sessionData?.user.name ?? "Name not set";
+  const email = userData.email ?? sessionData?.user.email ?? "";
+  const rank = userData.rank ?? "";
+  const branch = userData.branch ?? "";
+  const unit = userData.department ?? "";
+  const signalNumber = userData.phoneNumber ?? "";
+  const image = userData.image ?? undefined;
+
+  const location = profile.location ?? "";
+  const about = profile.about ?? "";
+
+  const interests: string[] = Array.isArray(profile.interests)
+    ? (profile.interests ?? [])
+    : [];
+
   const renderSignalContactText = () => (
     <span className="text-sm font-medium text-secondary">
-      Signal contact: {placeholderSignalNumber}
+      Signal contact: {signalNumber}
     </span>
   );
 
   const handleSignalClick = async () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       try {
-        await navigator.clipboard.writeText(placeholderSignalNumber);
+        await navigator.clipboard.writeText(signalNumber);
         toast.success("Signal number copied", {
           description: renderSignalContactText(),
         });
@@ -43,37 +128,42 @@ export default function ProfilePage() {
     });
   };
 
+  const contactActions: ProfileCardProps["contactActions"] = [];
+
+  if (signalNumber.trim()) {
+    contactActions.push({
+      label: "Signal",
+      ariaLabel: "Copy Signal number",
+      onClick: () => {
+        void handleSignalClick();
+      },
+    });
+  }
+
+  if (email.trim()) {
+    contactActions.push({
+      label: "Email",
+      ariaLabel: "Send an email",
+      href: `mailto:${email}`,
+    });
+  }
+
   const profileCardProps: ProfileCardProps = {
-    name: placeholderName,
-    rank: "E-3 Private",
-    branch: "default",
-    unit: "1st Battalion, 181st Infantry Regiment",
-    location: "Worcester, MA",
-    interests: ["Firefighter", "Football", "Mentoring", "Frisbee Golf"],
-    about:
-      "I've been serving in the Massachusetts National Guard for 5 years. By day I work as a firefighter and by weekend I am a proud guard member.",
-    contactActions: [
-      {
-        label: "Signal",
-        ariaLabel: "Copy Signal number",
-        onClick: () => {
-          void handleSignalClick();
-        },
-      },
-      {
-        label: "Email",
-        ariaLabel: "Send an email",
-        href: `mailto:${placeholderEmail}`,
-      },
-    ],
+    name,
+    rank,
+    branch,
+    unit,
+    location,
+    interests,
+    about,
+    image,
+    contactActions,
     headerActions: [
       {
         label: "Edit profile",
         iconName: "edit",
         ariaLabel: "Edit profile",
-        onClick: () => {
-          toast.info("Profile editing is coming soon.");
-        },
+        href: "/profile/edit",
       },
       {
         label: "Profile settings",
