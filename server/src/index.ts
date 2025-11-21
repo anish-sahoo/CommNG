@@ -2,7 +2,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
-import { auth } from "@/auth";
+import { auth } from "@/auth.js";
 import { connectRedis } from "@/data/db/redis.js";
 import { connectPostgres } from "@/data/db/sql.js";
 import { policyEngine } from "@/service/policy-engine.js";
