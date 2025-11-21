@@ -82,6 +82,12 @@ export const deleteSubscriptionSchema = z.object({
   subscriptionId: z.coerce.number().int().positive(),
 });
 
+export const updateSubscriptionSchema = z.object({
+  channelId: z.coerce.number().int().positive(),
+  userId: z.coerce.string().min(1),
+  notificationsEnabled: z.boolean().default(true),
+});
+
 export const deleteChannelSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
@@ -94,8 +100,10 @@ export const joinChannelSchema = z.object({
   channelId: z.coerce.number().int().positive(),
 });
 
+
 export type CreateSubscriptionInput = z.infer<typeof createSubscriptionSchema>;
 export type DeleteSubscriptionInput = z.infer<typeof deleteSubscriptionSchema>;
+export type updateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>;
 export type DeleteChannelInput = z.infer<typeof deleteChannelSchema>;
 export type LeaveChannelInput = z.infer<typeof leaveChannelSchema>;
 export type JoinChannelInput = z.infer<typeof joinChannelSchema>;
@@ -106,16 +114,3 @@ export type GetChannelMembersInput = z.infer<typeof getChannelMembersSchema>;
 export type UpdateChannelInput = z.infer<typeof updateChannelSchema>;
 export type CreateChannelInput = z.infer<typeof createChannelSchema>;
 export type ChannelUpdateMetadata = z.infer<typeof channelUpdateMetadata>;
-
-export type UpdateChannelSettingsOutput = {
-  name: string,
-  channel_id: number,
-  description?: string,
-  metadata?: ChannelUpdateMetadata,
-};
-
-export type UpdateSubscriptionSettingOutput = {
-  channelId: number,
-  userId: string,
-  notificationsEnabled: boolean
-};

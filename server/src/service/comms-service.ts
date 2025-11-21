@@ -205,19 +205,15 @@ export class CommsService {
   }
 
   async updateSubscriptionSettings(
-    subscription_id: number,
     channel_id: number,
     user_id: string,
     notifications_enabled: boolean
   ) {
-    const updateData: Partial<typeof channelSubscriptions.$inferInsert> = {
-      channelId: channel_id,
-      userId: user_id,
-    }
+    const updateData: Partial<typeof channelSubscriptions.$inferInsert> = {}
 
     if (notifications_enabled !== undefined) updateData.notificationsEnabled = notifications_enabled;
 
-    const result = await this.commsRepo.updateChannelSubscriptionSettings(user_id, subscription_id, updateData);
+    const result = await this.commsRepo.updateChannelSubscriptionSettings(user_id, channel_id, updateData);
     if (result) {
       return this.commsRepo.getChannelSubscriptionFromId(user_id, channel_id);
     }

@@ -19,6 +19,7 @@ import {
   postPostSchema,
   toggleReactionSchema,
   updateChannelSchema,
+  updateSubscriptionSchema,
 } from "@/types/comms-types.js";
 import { ForbiddenError, InternalServerError } from "@/types/errors.js";
 import log from "@/utils/logger.js";
@@ -195,14 +196,7 @@ const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("updateChannel", async () => {
-      console.log("=== RECEIVED IN BACKEND ===");
-      console.log("input:", JSON.stringify(input, null, 2));
-      console.log("input.channelId:", input.channelId);
-      console.log("typeof input.channelId:", typeof input.channelId);
       ensureHasRole(ctx, [channelRole("admin", input.channelId)]);
-      /*.mutation(({ ctx, input }) =>
-        withErrorHandling("updateChannel", async () => {
-          ensureHasRole(ctx, [channelRole("admin", input.channelId)]);*/
 
       return await commsService.updateChannelSettings(
         input.metadata.name,
@@ -268,6 +262,19 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
   }),
 );
 
+const updateSubscriptionSettings = protectedProcedure
+  .input(updateSubscriptionSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("updateSubscription", async () => {
+
+      return await commsService.updateSubscriptionSettings(
+        input.channelId,
+        input.userId,
+        input.notificationsEnabled
+      );
+    }),
+  );
+
 // Delete channel endpoint (admin only)
 const deleteChannel = protectedProcedure
   .input(deleteChannelSchema)
@@ -321,6 +328,7 @@ export const commsRouter = router({
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,
+  updateSubscriptionSettings,
   deleteChannel,
   leaveChannel,
   joinChannel,

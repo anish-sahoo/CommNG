@@ -11,6 +11,7 @@ import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { authClient } from "@/lib/auth-client";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -41,6 +42,9 @@ export default function ChannelSettingsPage({
   const { channel_id: channelId } = use(params);
   const parsedChannelId = parseChannelId(channelId);
 
+  const { data: sessionData } = authClient.useSession();
+  const userId = sessionData?.user?.id;
+
   const [channelName, setChannelName] = useState("");
   const [channelDescription, setChannelDescription] = useState("");
   const [notificationSetting, setNotificationSetting] = useState("option2");
@@ -63,12 +67,6 @@ export default function ChannelSettingsPage({
   };
 
   /* ============ GETTING INFO FROM SUBSCRIPTION ============ */
-
-  /*
-  1. find the current subscription
-  2. return all of the fields, save somewhere?
-  3. set notifications enabled to what is currently in the database
-  */
 
   // Fetch all user subscriptions
   const { data: subscriptions } = useQuery({
@@ -98,13 +96,6 @@ export default function ChannelSettingsPage({
   }, [subscriptions, parsedChannelId]);
 
   /* ============ GETTING INFO FROM CHANNEL ============ */
-
-  /*
-  1. get the current channel
-  2. return all of the fields, save somewhere?
-  3. set channel name, channel description
-  */
-
 
   // Fetch all the channels this user has access to
   const { data: channels } = useQuery({
@@ -158,23 +149,27 @@ export default function ChannelSettingsPage({
     }
 
     try {
-      if (isAdmin) {
-        await trpcClient.comms.updateChannelSettings.mutate({
-          channelId: parsedChannelId,
-          metadata: {
-            name: channelName,
-            description: channelDescription,
-          },
-        });
-        
-        // invalidate the cache to ensure the most recent data is used
-        await queryClient.invalidateQueries({
-          queryKey: ["channels"],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["userSubscriptions"],
-        });
-      }
+      await trpcClient.comms.updateChannelSettings.mutate({
+        channelId: parsedChannelId,
+        metadata: {
+          name: channelName,
+          description: channelDescription,
+        },
+      });
+
+      await trpcClient.comms.updateSubscriptionSettings.mutate({
+        channelId: parsedChannelId,
+        userId: userId,
+        notificationsEnabled: notificationSetting === "option2",
+      });
+
+      // invalidate the cache to ensure the most recent data is used
+      await queryClient.invalidateQueries({
+        queryKey: ["channels"],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["channelSubscriptions"],
+      });
 
       setShowSuccessMessage(true);
 
