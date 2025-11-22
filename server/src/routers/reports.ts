@@ -18,7 +18,7 @@ const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
 const getReports = roleProcedure([reportingRole("read")])
   .input(getReportsSchema)
   .meta({ description: "Returns the list of reports" })
-  .mutation(({ ctx, input }) =>
+  .query(({ ctx, input }) =>
     withErrorHandling("getReports", () => {
       const roleSet = ctx.roles ?? new Set();
       const canViewAll = PolicyEngine.validateList(roleSet, ADMIN_REPORT_ROLES);
