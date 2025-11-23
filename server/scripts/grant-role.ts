@@ -24,7 +24,7 @@ async function grantRole() {
 
   if (!emailArg || !roleKeyArg) {
     console.error(
-      "Usage: tsx scripts/grant-role.ts <user-email> <role-key>\nExample: tsx scripts/grant-role.ts admin@admin.admin reporting:admin"
+      "Usage: tsx scripts/grant-role.ts <user-email> <role-key>\nExample: tsx scripts/grant-role.ts admin@admin.admin reporting:admin",
     );
     process.exit(1);
   }
@@ -50,7 +50,7 @@ async function grantRole() {
   const roleId = await authRepo.getRoleId(roleKey);
   if (!roleId) {
     console.error(
-      `Role ${roleKey} was not found. Run scripts/create-roles.ts first.`
+      `Role ${roleKey} was not found. Run scripts/create-roles.ts first.`,
     );
     process.exit(1);
   }

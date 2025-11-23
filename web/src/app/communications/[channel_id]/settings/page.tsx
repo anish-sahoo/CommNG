@@ -57,8 +57,9 @@ export default function ChannelSettingsPage({
   const [initialChannelDescription, setInitialChannelDescription] = useState<
     string | null
   >(null);
-  const [initialNotificationSetting, setInitialNotificationSetting] =
-    useState<string | null>(null);
+  const [initialNotificationSetting, setInitialNotificationSetting] = useState<
+    string | null
+  >(null);
 
   const nameFieldId = useId();
   const descFieldId = useId();
@@ -94,8 +95,10 @@ export default function ChannelSettingsPage({
         setNotificationSetting(
           channelSubscription.notificationsEnabled ? "option2" : "option1",
         );
-        setInitialNotificationSetting((prev) =>
-          prev ?? (channelSubscription.notificationsEnabled ? "option2" : "option1"),
+        setInitialNotificationSetting(
+          (prev) =>
+            prev ??
+            (channelSubscription.notificationsEnabled ? "option2" : "option1"),
         );
       } else {
         console.log("No subscription found for channel ID:", parsedChannelId);

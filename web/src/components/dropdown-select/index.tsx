@@ -54,10 +54,7 @@ export const DropdownSelect = ({
         ref={triggerRef}
         disabled={disabled}
         id={id}
-        className={cn(
-          "w-full sm:w-auto sm:min-w-64",
-          className,
-        )}
+        className={cn("w-full sm:w-auto sm:min-w-64", className)}
         aria-label={ariaLabel}
       >
         <SelectValue

@@ -471,8 +471,7 @@ export class CommsRepository {
         .values({
           userId,
           channelId,
-          notificationsEnabled:
-            updateData.notificationsEnabled ?? true,
+          notificationsEnabled: updateData.notificationsEnabled ?? true,
         })
         .onConflictDoNothing({
           target: [channelSubscriptions.userId, channelSubscriptions.channelId],
