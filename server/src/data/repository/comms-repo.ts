@@ -446,24 +446,66 @@ export class CommsRepository {
     channelId: number,
     updateData: Partial<typeof channelSubscriptions.$inferInsert>,
   ) {
-    const [updated] = await db
-      .update(channelSubscriptions)
-      .set(updateData)
-      .where(
-        and(
-          eq(channelSubscriptions.userId, userId),
-          eq(channelSubscriptions.channelId, channelId),
-        ),
-      )
-      .returning({
-        subscriptionId: channelSubscriptions.subscriptionId,
-        userId: channelSubscriptions.userId,
-        channelId: channelSubscriptions.channelId,
-        notificationsEnabled: channelSubscriptions.notificationsEnabled,
-        createdAt: channelSubscriptions.createdAt,
-      });
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(channelSubscriptions)
+        .set(updateData)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .returning({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        });
 
-    return updated;
+      if (updated) return updated;
+
+      const [inserted] = await tx
+        .insert(channelSubscriptions)
+        .values({
+          userId,
+          channelId,
+          notificationsEnabled:
+            updateData.notificationsEnabled ?? true,
+        })
+        .onConflictDoNothing({
+          target: [channelSubscriptions.userId, channelSubscriptions.channelId],
+        })
+        .returning({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        });
+
+      if (inserted) return inserted;
+
+      const [fetched] = await tx
+        .select({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        })
+        .from(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .limit(1);
+
+      return fetched ?? null;
+    });
   }
 
   /**

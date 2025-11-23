@@ -8,6 +8,13 @@ import type { RoleKey } from "../src/data/roles.js";
 /**
  * Usage:
  *   npx dotenv -e .env -- tsx scripts/grant-role.ts admin@admin.admin reporting:admin
+ *
+ * Codes:
+ * Broadcast: broadcast:create
+ * Reporting: reporting:admin, reporting:assign, reporting:delete, reporting:update, reporting:create, reporting:read
+ * Global: global:admin, global:create-invite
+ * Channel-scoped (need a channel id): channel:<id>:admin, channel:<id>:post, channel:<id>:read (replace <id> with the channelId, e.g., channel:1:admin)
+ *
  * The script ensures the role exists and adds it to the user.
  */
 
@@ -17,7 +24,7 @@ async function grantRole() {
 
   if (!emailArg || !roleKeyArg) {
     console.error(
-      "Usage: tsx scripts/grant-role.ts <user-email> <role-key>\nExample: tsx scripts/grant-role.ts admin@admin.admin reporting:admin",
+      "Usage: tsx scripts/grant-role.ts <user-email> <role-key>\nExample: tsx scripts/grant-role.ts admin@admin.admin reporting:admin"
     );
     process.exit(1);
   }
@@ -43,7 +50,7 @@ async function grantRole() {
   const roleId = await authRepo.getRoleId(roleKey);
   if (!roleId) {
     console.error(
-      `Role ${roleKey} was not found. Run scripts/create-roles.ts first.`,
+      `Role ${roleKey} was not found. Run scripts/create-roles.ts first.`
     );
     process.exit(1);
   }
