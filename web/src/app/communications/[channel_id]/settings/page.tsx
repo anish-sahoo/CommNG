@@ -4,9 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useState } from "react";
+import { toast } from "sonner";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
+import { Modal } from "@/components/modal";
 import { DeleteChannelModal } from "@/components/modal/delete-channel-modal";
 import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
 import { TextInput } from "@/components/text-input";
@@ -50,7 +52,6 @@ export default function ChannelSettingsPage({
   const [notificationSetting, setNotificationSetting] = useState("option2");
   const [modalOpen, setModalOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [initialChannelName, setInitialChannelName] = useState<string | null>(
     null,
   );
@@ -64,6 +65,8 @@ export default function ChannelSettingsPage({
   const nameFieldId = useId();
   const descFieldId = useId();
   const notifFieldId = useId();
+  const backHref = `/communications/${channelId}` as const;
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
   // Run when the user clicks the "Leave Channel" button
   const handleSelect = () => setModalOpen(true);
@@ -209,14 +212,10 @@ export default function ChannelSettingsPage({
       await queryClient.invalidateQueries({
         queryKey: ["channelSubscriptions"],
       });
-
-      setShowSuccessMessage(true);
-
-      setTimeout(() => {
-        setShowSuccessMessage(false);
-      }, 2000);
+      toast.success("Changes saved");
     } catch (error) {
       console.error("Failed to save settings: ", error);
+      toast.error("Could not save settings. Please try again.");
     }
   };
 
@@ -224,7 +223,14 @@ export default function ChannelSettingsPage({
   return (
     <TitleShell
       title="Settings"
-      backHref={`/communications/${channelId}`}
+      backHref={backHref}
+      onBackClick={() => {
+        if (isDirty) {
+          setShowUnsavedModal(true);
+        } else {
+          router.push(backHref);
+        }
+      }}
       backAriaLabel="Back to channel"
     >
       <div className="flex flex-col divide-y divide-border">
@@ -400,12 +406,37 @@ export default function ChannelSettingsPage({
         />
       )}
 
-      {/* Success message */}
-      {showSuccessMessage && (
-        <div className="text-sm font-medium text-center text-primary">
-          Changes successfully saved
-        </div>
-      )}
+      <Modal
+        open={showUnsavedModal}
+        onOpenChange={setShowUnsavedModal}
+        title="Unsaved changes"
+        description="You have unsaved changes. Are you sure you want to leave this page?"
+        className="max-w-[92vw] w-[420px] p-6 pt-8 sm:p-7 sm:pt-10 space-y-6 [&>div:first-child]:space-y-3 [&>div:first-child>h2]:text-2xl [&>div:first-child>h2]:leading-snug [&>div:first-child>p]:leading-relaxed [&>div:first-child>p]:text-base"
+        footer={
+          <div className="flex w-full flex-col-reverse gap-4 sm:flex-row sm:justify-end sm:gap-5 mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              onClick={() => setShowUnsavedModal(false)}
+              aria-label="Stay on this page"
+            >
+              Stay on page
+            </Button>
+            <Button
+              type="button"
+              className="h-11"
+              onClick={() => {
+                setShowUnsavedModal(false);
+                router.push(backHref);
+              }}
+              aria-label="Leave without saving"
+            >
+              Leave without saving
+            </Button>
+          </div>
+        }
+      />
     </TitleShell>
   );
 }
