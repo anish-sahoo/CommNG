@@ -93,6 +93,14 @@ resource "aws_ecs_task_definition" "server" {
           value = var.aws_region
         },
         {
+          name  = "DB_SECRET_ID"
+          value = aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
+        },
+        {
+          name  = "DB_SECRET_REFRESH_INTERVAL_MS"
+          value = "300000"
+        },
+        {
           name  = "BACKEND_URL"
           value = "http://${aws_lb.main.dns_name}"
         }
