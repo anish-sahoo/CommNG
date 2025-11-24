@@ -62,7 +62,7 @@ const Navigation = ({
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0",
         )}
-        inert={mobileOpen ? undefined : ""}
+        inert={mobileOpen ? undefined : true}
       >
         <button
           type="button"

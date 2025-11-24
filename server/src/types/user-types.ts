@@ -11,6 +11,9 @@ export const userSchema = z.object({
   branch: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type UserSchema = z.infer<typeof userSchema>;
@@ -34,6 +37,9 @@ export const createUserProfileInputSchema = z.object({
   department: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
   imageFileId: z.string().uuid().nullable().optional(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type CreateUserProfileInput = z.infer<
@@ -47,6 +53,9 @@ export const updateUserProfileInputSchema = z.object({
   department: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
   image: z.string().uuid().nullable().optional(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type UpdateUserProfileInput = z.infer<
