@@ -7,10 +7,6 @@ export const menteeSchema = z.object({
   experienceLevel: z.string().nullable().optional(),
   preferredMentorType: z.string().nullable().optional(),
   status: z.enum(["active", "inactive", "matched"]),
-  positionType: z.enum(["active", "guard", "reserve"]).nullable().optional(),
-  serviceType: z.enum(["enlisted", "officer"]).nullable().optional(),
-  detailedPosition: z.string().nullable().optional(),
-  detailedRank: z.string().nullable().optional(),
   resumeFileId: z.string().uuid().nullable().optional(),
   personalInterests: z.string().nullable().optional(),
   roleModelInspiration: z.string().nullable().optional(),
@@ -36,10 +32,6 @@ export const createMenteeInputSchema = z.object({
     .enum(["active", "inactive", "matched"])
     .optional()
     .default("active"),
-  positionType: z.enum(["active", "guard", "reserve"]).optional(),
-  serviceType: z.enum(["enlisted", "officer"]).optional(),
-  detailedPosition: z.string().optional(),
-  detailedRank: z.string().optional(),
   resumeFileId: z.string().uuid().optional(),
   personalInterests: z.string().optional(),
   roleModelInspiration: z.string().optional(),
@@ -79,10 +71,6 @@ export type CreateMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
-  positionType?: "active" | "guard" | "reserve" | null;
-  serviceType?: "enlisted" | "officer" | null;
-  detailedPosition?: string | null;
-  detailedRank?: string | null;
   resumeFileId?: string | null;
   personalInterests?: string | null;
   roleModelInspiration?: string | null;
@@ -106,10 +94,6 @@ export type GetMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
-  positionType?: "active" | "guard" | "reserve" | null;
-  serviceType?: "enlisted" | "officer" | null;
-  detailedPosition?: string | null;
-  detailedRank?: string | null;
   resumeFileId?: string | null;
   personalInterests?: string | null;
   roleModelInspiration?: string | null;
@@ -133,10 +117,6 @@ export type UpdateMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
-  positionType?: "active" | "guard" | "reserve" | null;
-  serviceType?: "enlisted" | "officer" | null;
-  detailedPosition?: string | null;
-  detailedRank?: string | null;
   resumeFileId?: string | null;
   personalInterests?: string | null;
   roleModelInspiration?: string | null;

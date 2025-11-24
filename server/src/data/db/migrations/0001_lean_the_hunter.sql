@@ -78,10 +78,6 @@ ALTER TABLE "reports" ALTER COLUMN "report_id" SET DATA TYPE uuid;--> statement-
 ALTER TABLE "reports" ALTER COLUMN "report_id" SET DEFAULT gen_random_uuid();--> statement-breakpoint
 ALTER TABLE "reports" ALTER COLUMN "report_id" DROP IDENTITY;--> statement-breakpoint
 ALTER TABLE "channel_subscriptions" ADD COLUMN "created_at" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "mentees" ADD COLUMN "position_type" "position_type_enum";--> statement-breakpoint
-ALTER TABLE "mentees" ADD COLUMN "service_type" "service_type_enum";--> statement-breakpoint
-ALTER TABLE "mentees" ADD COLUMN "detailed_position" text;--> statement-breakpoint
-ALTER TABLE "mentees" ADD COLUMN "detailed_rank" text;--> statement-breakpoint
 ALTER TABLE "mentees" ADD COLUMN "resume_file_id" uuid;--> statement-breakpoint
 ALTER TABLE "mentees" ADD COLUMN "personal_interests" text;--> statement-breakpoint
 ALTER TABLE "mentees" ADD COLUMN "role_model_inspiration" text;--> statement-breakpoint
@@ -89,10 +85,6 @@ ALTER TABLE "mentees" ADD COLUMN "hope_to_gain_responses" jsonb;--> statement-br
 ALTER TABLE "mentees" ADD COLUMN "mentor_qualities" jsonb;--> statement-breakpoint
 ALTER TABLE "mentees" ADD COLUMN "preferred_meeting_format" "meeting_format_enum";--> statement-breakpoint
 ALTER TABLE "mentees" ADD COLUMN "hours_per_month_commitment" integer;--> statement-breakpoint
-ALTER TABLE "mentors" ADD COLUMN "position_type" "position_type_enum";--> statement-breakpoint
-ALTER TABLE "mentors" ADD COLUMN "service_type" "service_type_enum";--> statement-breakpoint
-ALTER TABLE "mentors" ADD COLUMN "detailed_position" text;--> statement-breakpoint
-ALTER TABLE "mentors" ADD COLUMN "detailed_rank" text;--> statement-breakpoint
 ALTER TABLE "mentors" ADD COLUMN "resume_file_id" uuid;--> statement-breakpoint
 ALTER TABLE "mentors" ADD COLUMN "strengths" jsonb DEFAULT '[]'::jsonb;--> statement-breakpoint
 ALTER TABLE "mentors" ADD COLUMN "personal_interests" text;--> statement-breakpoint
@@ -111,6 +103,10 @@ ALTER TABLE "reports" ADD COLUMN "assigned_to" text;--> statement-breakpoint
 ALTER TABLE "reports" ADD COLUMN "assigned_by" text;--> statement-breakpoint
 ALTER TABLE "reports" ADD COLUMN "resolved" timestamp;--> statement-breakpoint
 ALTER TABLE "user" ADD COLUMN "rank" text;--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN "position_type" "position_type_enum";--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN "service_type" "service_type_enum";--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN "detailed_position" text;--> statement-breakpoint
+ALTER TABLE "user" ADD COLUMN "detailed_rank" text;--> statement-breakpoint
 ALTER TABLE "invite_codes" ADD CONSTRAINT "invite_codes_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invite_codes" ADD CONSTRAINT "invite_codes_used_by_user_id_fk" FOREIGN KEY ("used_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invite_codes" ADD CONSTRAINT "invite_codes_revoked_by_user_id_fk" FOREIGN KEY ("revoked_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

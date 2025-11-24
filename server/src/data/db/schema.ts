@@ -110,6 +110,10 @@ export const users = pgTable(
     rank: text("rank"),
     department: text("department"),
     branch: text("branch"),
+    positionType: positionTypeEnum("position_type"),
+    serviceType: serviceTypeEnum("service_type"),
+    detailedPosition: text("detailed_position"),
+    detailedRank: text("detailed_rank"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -391,17 +395,12 @@ export const mentors = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     mentorshipPreferences: text("mentorship_preferences"),
-    rank: text("rank"),
     yearsOfService: integer("years_of_service"),
     eligibilityData: jsonb("eligibility_data").$type<
       Record<string, unknown> | null | undefined
     >(),
     status: mentorStatusEnum("status").default("requested").notNull(),
     // New application fields
-    positionType: positionTypeEnum("position_type"),
-    serviceType: serviceTypeEnum("service_type"),
-    detailedPosition: text("detailed_position"),
-    detailedRank: text("detailed_rank"),
     resumeFileId: uuid("resume_file_id").references(() => files.fileId, {
       onDelete: "set null",
     }),
@@ -508,10 +507,6 @@ export const mentees = pgTable(
     preferredMentorType: text("preferred_mentor_type"),
     status: menteeStatusEnum("status").default("active").notNull(),
     // New application fields
-    positionType: positionTypeEnum("position_type"),
-    serviceType: serviceTypeEnum("service_type"),
-    detailedPosition: text("detailed_position"),
-    detailedRank: text("detailed_rank"),
     resumeFileId: uuid("resume_file_id").references(() => files.fileId, {
       onDelete: "set null",
     }),

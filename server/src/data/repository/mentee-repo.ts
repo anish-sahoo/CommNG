@@ -19,10 +19,6 @@ export class MenteeRepository {
    * @param experienceLevel Optional experience level
    * @param preferredMentorType Optional preferred mentor type
    * @param status Mentee status (default: "active")
-   * @param positionType Optional position type (active, guard, reserve)
-   * @param serviceType Optional service type (enlisted, officer)
-   * @param detailedPosition Optional detailed position name
-   * @param detailedRank Optional detailed rank
    * @param resumeFileId Optional resume file ID
    * @param personalInterests Optional personal interests
    * @param roleModelInspiration Optional text response to role model question
@@ -39,10 +35,6 @@ export class MenteeRepository {
     experienceLevel?: string,
     preferredMentorType?: string,
     status: "active" | "inactive" | "matched" = "active",
-    positionType?: "active" | "guard" | "reserve",
-    serviceType?: "enlisted" | "officer",
-    detailedPosition?: string,
-    detailedRank?: string,
     resumeFileId?: string,
     personalInterests?: string,
     roleModelInspiration?: string,
@@ -74,10 +66,6 @@ export class MenteeRepository {
         experienceLevel,
         preferredMentorType,
         status,
-        positionType,
-        serviceType,
-        detailedPosition,
-        detailedRank,
         resumeFileId,
         personalInterests,
         roleModelInspiration,
@@ -93,10 +81,6 @@ export class MenteeRepository {
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
         status: mentees.status,
-        positionType: mentees.positionType,
-        serviceType: mentees.serviceType,
-        detailedPosition: mentees.detailedPosition,
-        detailedRank: mentees.detailedRank,
         resumeFileId: mentees.resumeFileId,
         personalInterests: mentees.personalInterests,
         roleModelInspiration: mentees.roleModelInspiration,
@@ -130,10 +114,6 @@ export class MenteeRepository {
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
         status: mentees.status,
-        positionType: mentees.positionType,
-        serviceType: mentees.serviceType,
-        detailedPosition: mentees.detailedPosition,
-        detailedRank: mentees.detailedRank,
         resumeFileId: mentees.resumeFileId,
         personalInterests: mentees.personalInterests,
         roleModelInspiration: mentees.roleModelInspiration,
@@ -169,10 +149,6 @@ export class MenteeRepository {
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
         status: mentees.status,
-        positionType: mentees.positionType,
-        serviceType: mentees.serviceType,
-        detailedPosition: mentees.detailedPosition,
-        detailedRank: mentees.detailedRank,
         resumeFileId: mentees.resumeFileId,
         personalInterests: mentees.personalInterests,
         roleModelInspiration: mentees.roleModelInspiration,
@@ -197,10 +173,6 @@ export class MenteeRepository {
    * @param experienceLevel Optional experience level
    * @param preferredMentorType Optional preferred mentor type
    * @param status Optional mentee status
-   * @param positionType Optional position type
-   * @param serviceType Optional service type
-   * @param detailedPosition Optional detailed position
-   * @param detailedRank Optional detailed rank
    * @param resumeFileId Optional resume file ID
    * @param personalInterests Optional personal interests
    * @param roleModelInspiration Optional role model inspiration
@@ -217,10 +189,6 @@ export class MenteeRepository {
     experienceLevel?: string,
     preferredMentorType?: string,
     status?: "active" | "inactive" | "matched",
-    positionType?: "active" | "guard" | "reserve",
-    serviceType?: "enlisted" | "officer",
-    detailedPosition?: string,
-    detailedRank?: string,
     resumeFileId?: string,
     personalInterests?: string,
     roleModelInspiration?: string,
@@ -243,11 +211,6 @@ export class MenteeRepository {
     if (preferredMentorType !== undefined)
       updateData.preferredMentorType = preferredMentorType;
     if (status !== undefined) updateData.status = status;
-    if (positionType !== undefined) updateData.positionType = positionType;
-    if (serviceType !== undefined) updateData.serviceType = serviceType;
-    if (detailedPosition !== undefined)
-      updateData.detailedPosition = detailedPosition;
-    if (detailedRank !== undefined) updateData.detailedRank = detailedRank;
     if (resumeFileId !== undefined) updateData.resumeFileId = resumeFileId;
     if (personalInterests !== undefined)
       updateData.personalInterests = personalInterests;
@@ -273,10 +236,6 @@ export class MenteeRepository {
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
         status: mentees.status,
-        positionType: mentees.positionType,
-        serviceType: mentees.serviceType,
-        detailedPosition: mentees.detailedPosition,
-        detailedRank: mentees.detailedRank,
         resumeFileId: mentees.resumeFileId,
         personalInterests: mentees.personalInterests,
         roleModelInspiration: mentees.roleModelInspiration,
@@ -327,10 +286,6 @@ export class MenteeRepository {
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
         status: mentees.status,
-        positionType: mentees.positionType,
-        serviceType: mentees.serviceType,
-        detailedPosition: mentees.detailedPosition,
-        detailedRank: mentees.detailedRank,
         resumeFileId: mentees.resumeFileId,
         personalInterests: mentees.personalInterests,
         roleModelInspiration: mentees.roleModelInspiration,

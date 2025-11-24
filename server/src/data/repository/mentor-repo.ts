@@ -15,14 +15,9 @@ export class MentorRepository {
    * Create a new mentor profile for a user
    * @param userId User ID
    * @param mentorshipPreferences Optional mentorship preferences
-   * @param rank Optional rank
    * @param yearsOfService Optional years of service
    * @param eligibilityData Optional eligibility data
    * @param status Mentor status (default: "requested")
-   * @param positionType Optional position type (active, guard, reserve)
-   * @param serviceType Optional service type (enlisted, officer)
-   * @param detailedPosition Optional detailed position name
-   * @param detailedRank Optional detailed rank
    * @param resumeFileId Optional resume file ID
    * @param strengths Optional array of up to 5 strengths
    * @param personalInterests Optional personal interests
@@ -37,14 +32,9 @@ export class MentorRepository {
   async createMentor(
     userId: string,
     mentorshipPreferences?: string,
-    rank?: string,
     yearsOfService?: number,
     eligibilityData?: Record<string, unknown>,
     status: "requested" | "approved" | "active" = "requested",
-    positionType?: "active" | "guard" | "reserve",
-    serviceType?: "enlisted" | "officer",
-    detailedPosition?: string,
-    detailedRank?: string,
     resumeFileId?: string,
     strengths?: string[],
     personalInterests?: string,
@@ -74,14 +64,9 @@ export class MentorRepository {
       .values({
         userId,
         mentorshipPreferences,
-        rank,
         yearsOfService,
         eligibilityData,
         status,
-        positionType,
-        serviceType,
-        detailedPosition,
-        detailedRank,
         resumeFileId,
         strengths,
         personalInterests,
@@ -95,14 +80,9 @@ export class MentorRepository {
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
-        positionType: mentors.positionType,
-        serviceType: mentors.serviceType,
-        detailedPosition: mentors.detailedPosition,
-        detailedRank: mentors.detailedRank,
         resumeFileId: mentors.resumeFileId,
         strengths: mentors.strengths,
         personalInterests: mentors.personalInterests,
@@ -134,14 +114,9 @@ export class MentorRepository {
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
-        positionType: mentors.positionType,
-        serviceType: mentors.serviceType,
-        detailedPosition: mentors.detailedPosition,
-        detailedRank: mentors.detailedRank,
         resumeFileId: mentors.resumeFileId,
         strengths: mentors.strengths,
         personalInterests: mentors.personalInterests,
@@ -175,14 +150,9 @@ export class MentorRepository {
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
-        positionType: mentors.positionType,
-        serviceType: mentors.serviceType,
-        detailedPosition: mentors.detailedPosition,
-        detailedRank: mentors.detailedRank,
         resumeFileId: mentors.resumeFileId,
         strengths: mentors.strengths,
         personalInterests: mentors.personalInterests,
