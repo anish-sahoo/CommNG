@@ -1,14 +1,17 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ReportCategory } from "@server/types/reports-types";
 import { use, useId, useState, useEffect } from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
+import { Modal } from "@/components/modal";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import { useTRPCClient } from "@/lib/trpc";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -43,6 +46,8 @@ export default function EditReportPage({
     params,
 }: EditReportPageProps) {
     const trpcClient = useTRPCClient();
+    const queryClient = useQueryClient();
+    const router = useRouter();
 
     const { report_id: reportId } = use(params);
     const { data: sessionData } = authClient.useSession();
@@ -56,6 +61,8 @@ export default function EditReportPage({
     const categoryLabelId = useId();
     const titleId = useId();
     const descriptionId = useId();
+    const backHref = `/reports` as const;
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
     const pageTitle = (
         <span className="block truncate text-[1.5rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
@@ -83,7 +90,7 @@ export default function EditReportPage({
 
             const report = reports.find(
                 (rep) => {
-                    console.log("Comparing:", rep.id, "===", reportId, "?", rep.id === reportId);
+                    console.log("Comparing:", reportId, "===", reportId, "?", rep.id === reportId);
                     return rep.reportId === reportId;
                 }
             );
@@ -100,13 +107,51 @@ export default function EditReportPage({
         }
     }, [reports, reportId]);
 
+    const isDirty = null;
+        // Check category, title, description, attachments
+        /*(initialChannelName !== null && channelName !== initialChannelName) ||
+        (initialChannelDescription !== null &&
+            channelDescription !== initialChannelDescription) ||
+        (initialNotificationSetting !== null &&
+            notificationSetting !== initialNotificationSetting);*/
+
+    /* ============ UPDATING REPORTS ============ */
+
+    const handleSaveChanges = async () => {
+        if (!isDirty) return;
+        try {
+            // Update changes
+
+            // Invalidate the cache to ensure the most recent data is used
+            await queryClient.invalidateQueries({
+                queryKey: ["reports"],
+            });
+            toast.success("Changes saved");
+        } catch (error) {
+            console.error("Failed to save settings: ", error);
+            toast.error("Could not save settings. Please try again.");
+        }
+    };
+
+    /* ============ CANCEL CHANGES TO REPORTS ============ */
+    const handleCancel = async () => {
+
+    }
+
 
     /* ============ CREATING THE EDIT REPORTS PAGE ============ */
 
     return (
         <TitleShell
             title={pageTitle}
-            backHref="/reports"
+            backHref={backHref}
+            /*onBackClick={() => {
+                if (isDirty) {
+                    setShowUnsavedModal(true);
+                } else {
+                    router.push(backHref);
+                }
+            }}*/
             backAriaLabel="Back to reports"
             scrollableContent={false}
         >
@@ -210,14 +255,54 @@ export default function EditReportPage({
                         </div>
 
                         <div className="flex flex-wrap justify-end gap-3">
-                            <Button type="submit">Update Report</Button>
-                            <Button type="button" variant="outline">
+                            <Button
+                                type="submit"
+                                onClick={handleSaveChanges}
+                                disabled={!isDirty}
+                            >
+                                Update Report</Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCancel}
+                            >
                                 Cancel
                             </Button>
                         </div>
                     </form>
                 </div>
             </section>
+            <Modal
+                open={showUnsavedModal}
+                onOpenChange={setShowUnsavedModal}
+                title="Unsaved changes"
+                description="You have unsaved changes. Are you sure you want to leave this page?"
+                className="max-w-[92vw] w-[420px] p-6 pt-8 sm:p-7 sm:pt-10 space-y-6 [&>div:first-child]:space-y-3 [&>div:first-child>h2]:text-2xl [&>div:first-child>h2]:leading-snug [&>div:first-child>p]:leading-relaxed [&>div:first-child>p]:text-base"
+                footer={
+                    <div className="flex w-full flex-col-reverse gap-4 sm:flex-row sm:justify-end sm:gap-5 mt-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11"
+                            onClick={() => setShowUnsavedModal(false)}
+                            aria-label="Stay on this page"
+                        >
+                            Stay on page
+                        </Button>
+                        <Button
+                            type="button"
+                            className="h-11"
+                            onClick={() => {
+                                setShowUnsavedModal(false);
+                                router.push(backHref);
+                            }}
+                            aria-label="Leave without saving"
+                        >
+                            Leave without saving
+                        </Button>
+                    </div>
+                }
+            />
         </TitleShell>
     );
 }
