@@ -56,6 +56,13 @@ export default function EditReportPage({
     const [category, setCategory] = useState<ReportCategory | null>(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
+    const [initialCategory, setInitialCategory] = useState<ReportCategory | null>(null);
+    const [initialTitle, setInitialTitle] = useState<
+        string | null
+    >(null);
+    const [initialDescription, setInitialDescription] = useState<
+        string | null
+    >(null);
 
     const categoryId = useId();
     const categoryLabelId = useId();
@@ -101,26 +108,42 @@ export default function EditReportPage({
                 setTitle(report.title || "");
                 setDescription(report.description || "");
                 setCategory(report.category || null);
+
+                setInitialTitle((prev) => prev ?? (report.title || ""));
+                setInitialDescription((prev) => prev ?? (report.description || ""));
+                setInitialCategory((prev) => prev ?? (report.category || null));
             } else {
                 console.log("No report found!");
             }
         }
     }, [reports, reportId]);
 
-    const isDirty = null;
-        // Check category, title, description, attachments
-        /*(initialChannelName !== null && channelName !== initialChannelName) ||
-        (initialChannelDescription !== null &&
-            channelDescription !== initialChannelDescription) ||
-        (initialNotificationSetting !== null &&
-            notificationSetting !== initialNotificationSetting);*/
+    const isDirty =
+    // Check category, title, description, attachments
+    (initialTitle !== null && title !== initialTitle) ||
+    (initialDescription !== null && description !== initialDescription) ||
+    (initialCategory !== null && category !== initialCategory);
 
     /* ============ UPDATING REPORTS ============ */
 
     const handleSaveChanges = async () => {
-        if (!isDirty) return;
+        console.log("eheheh");
+        if (!isDirty) {
+            console.log("YOLO");
+            return;
+        }
         try {
             // Update changes
+            await trpcClient.reports.updateReport.mutate({
+                reportId: reportId,
+                updates: {
+                    category: category, // TODO: this is part of an enum!
+                    title: title,
+                    description: description,
+                    attachments: null, //TODO
+                }
+
+            });
 
             // Invalidate the cache to ensure the most recent data is used
             await queryClient.invalidateQueries({
@@ -134,8 +157,10 @@ export default function EditReportPage({
     };
 
     /* ============ CANCEL CHANGES TO REPORTS ============ */
-    const handleCancel = async () => {
 
+    const handleCancel = async () => {
+        // Return to the main reports page
+        router.push(backHref);
     }
 
 
@@ -256,7 +281,7 @@ export default function EditReportPage({
 
                         <div className="flex flex-wrap justify-end gap-3">
                             <Button
-                                type="submit"
+                                type="button"
                                 onClick={handleSaveChanges}
                                 disabled={!isDirty}
                             >
