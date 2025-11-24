@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { channelSubscriptions, channels, users } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import type { SearchResult } from "@/types/search-types.js";
+import { channelSubscriptions, channels, users } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import type { SearchResult } from "../../types/search-types.js";
 
 const UNIVERSITIES = [
   "UMass Amherst",

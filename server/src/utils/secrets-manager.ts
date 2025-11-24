@@ -2,7 +2,7 @@ import {
   GetSecretValueCommand,
   SecretsManagerClient,
 } from "@aws-sdk/client-secrets-manager";
-import log from "@/utils/logger.js";
+import log from "../utils/logger.js";
 
 interface DatabaseCredentials {
   username: string;

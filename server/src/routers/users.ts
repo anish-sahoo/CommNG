@@ -1,15 +1,15 @@
-import { AuthRepository } from "@/data/repository/auth-repo.js";
-import { UserRepository } from "@/data/repository/user-repo.js";
-import { UserService } from "@/service/user-service.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { procedure, protectedProcedure, router } from "@/trpc/trpc.js";
+import { AuthRepository } from "../data/repository/auth-repo.js";
+import { UserRepository } from "../data/repository/user-repo.js";
+import { UserService } from "../service/user-service.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   checkEmailExistsInputSchema,
   createUserProfileInputSchema,
   getUserDataInputSchema,
   updateUserProfileInputSchema,
   updateUserVisibilityInputSchema,
-} from "@/types/user-types.js";
+} from "../types/user-types.js";
 
 const userService = new UserService(new UserRepository());
 const authRepository = new AuthRepository();

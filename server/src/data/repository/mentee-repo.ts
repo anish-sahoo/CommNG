@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
-import { mentees } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { ConflictError, NotFoundError } from "@/types/errors.js";
+import { mentees } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
   CreateMenteeOutput,
   GetMenteeOutput,
   UpdateMenteeOutput,
-} from "@/types/mentee-types.js";
+} from "../../types/mentee-types.js";
 
 /**
  * Repository to handle database queries/communication related to mentees

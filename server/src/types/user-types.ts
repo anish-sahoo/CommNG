@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { RoleNamespace } from "@/data/db/schema.js";
+import type { RoleNamespace } from "../data/db/schema.js";
 
 export const userSchema = z.object({
   userId: z.number().int().positive(),

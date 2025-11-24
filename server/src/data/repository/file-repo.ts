@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
-import { files } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { NotFoundError } from "@/types/errors.js";
-import type { FileMetadata, FileRecord } from "@/types/file-types.js";
-import { fileMetadataSchema } from "@/types/file-types.js";
-// import { Cache } from "@/utils/cache.js";
+import { files } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { NotFoundError } from "../../types/errors.js";
+import type { FileMetadata, FileRecord } from "../../types/file-types.js";
+import { fileMetadataSchema } from "../../types/file-types.js";
+// import { Cache } from "../../utils/cache.js";
 
 /**
  * Repository for file storage and retrieval operations

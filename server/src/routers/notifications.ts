@@ -1,10 +1,10 @@
-import notificationService from "@/service/notification-service.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { protectedProcedure, router } from "@/trpc/trpc.js";
+import notificationService from "../service/notification-service.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { protectedProcedure, router } from "../trpc/trpc.js";
 import {
   type NotificationPayload,
   subscribeInputSchema,
-} from "@/types/notification-types.js";
+} from "../types/notification-types.js";
 
 const subscribe = protectedProcedure
   .input(subscribeInputSchema)

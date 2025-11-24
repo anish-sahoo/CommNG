@@ -1,10 +1,10 @@
-import { getRedisClientInstance } from "@/data/db/redis.js";
-import { FileRepository } from "@/data/repository/file-repo.js";
-import type { UserRepository } from "@/data/repository/user-repo.js";
-import { NotFoundError } from "@/types/errors.js";
+import { getRedisClientInstance } from "../data/db/redis.js";
+import { FileRepository } from "../data/repository/file-repo.js";
+import type { UserRepository } from "../data/repository/user-repo.js";
+import { NotFoundError } from "../types/errors.js";
 // import { Cache } from "@/utils/cache.js";
-import type { UpdateUserVisibilityInput } from "@/types/user-types.js";
-import log from "@/utils/logger.js";
+import type { UpdateUserVisibilityInput } from "../types/user-types.js";
+import log from "../utils/logger.js";
 
 const USER_CACHE_TTL_SECONDS = 60 * 60; // keep in sync with Cache decorator default
 

@@ -24,11 +24,11 @@
     "lib": ["es2022"],
 
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": true
 
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "baseUrl": "."
+    // "paths": {
+    //   "@/*": ["./src/*"]
+    // },
+    // "baseUrl": "."
   }
 }

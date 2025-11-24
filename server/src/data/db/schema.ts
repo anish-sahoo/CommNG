@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { RoleKey } from "@/data/roles.js";
+import type { RoleKey } from "../../data/roles.js";
 
 // Enums
 export const permissionEnum = pgEnum("permission_enum", [
