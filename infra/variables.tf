@@ -30,7 +30,7 @@ variable "project_name" {
 variable "enable_infrastructure_scheduler" {
   description = "Enable automatic shutdown/startup of infrastructure (6 PM - 8 AM EST)"
   type        = bool
-  default     = true # Set to false to disable the scheduler
+  default     = false # Set to false to disable the scheduler
 }
 
 # ------------------------------------------------------------
@@ -130,6 +130,12 @@ variable "db_publicly_accessible" {
   description = "Make RDS publicly accessible"
   type        = bool
   default     = true # true for dev (easier access), false for prod
+}
+
+variable "domain_name" {
+  description = "Domain name for the application (e.g., dev.example.com)"
+  type        = string
+  default     = "" # Set this in terraform.tfvars
 }
 
 # ------------------------------------------------------------

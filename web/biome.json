@@ -2,6 +2,9 @@
   "$schema": "https://biomejs.dev/schemas/2.2.5/schema.json",
   "root": false,
   "extends": "//",
+  "files": {
+    "experimentalScannerIgnores": ["src/app/globals.css"]
+  },
   "linter": {
     "domains": {
       "next": "recommended",

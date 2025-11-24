@@ -50,6 +50,9 @@ export class UserService {
       department?: string | null;
       branch?: string | null;
       imageFileId?: string | null;
+      location?: string | null;
+      about?: string | null;
+      interests?: string[] | null;
     },
   ) {
     // Validate file exists if imageFileId is provided
@@ -73,6 +76,9 @@ export class UserService {
       department: profileData.department,
       branch: profileData.branch,
       image: profileData.imageFileId ?? null,
+      location: profileData.location ?? null,
+      about: profileData.about ?? null,
+      interests: profileData.interests ?? null,
     });
 
     // Refresh cache for this user (best effort - don't fail if Redis is unavailable)
@@ -100,6 +106,9 @@ export class UserService {
       department?: string | null;
       branch?: string | null;
       image?: string | null;
+      location?: string | null;
+      about?: string | null;
+      interests?: string[] | null;
     },
   ) {
     const updated = await this.usersRepo.updateUserProfile(userId, updateData);

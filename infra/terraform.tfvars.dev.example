@@ -2,7 +2,7 @@
 # Override default variables for development environment
 
 # Keep scheduler enabled for dev cost savings
-enable_infrastructure_scheduler = true
+enable_infrastructure_scheduler = false
 
 # Minimal resources for dev
 db_instance_class          = "db.t4g.micro"
@@ -27,3 +27,6 @@ enable_container_insights = false
 
 # Short log retention for dev
 log_retention_days = 1
+
+# domain name
+domain_name = "abc.software.dev"

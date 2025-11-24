@@ -15,6 +15,7 @@
   <a href="#common-commands">Commands</a> •
   <a href="#github-actions">GitHub Actions</a> •
   <a href="#key-infrastructure-details">Infra Details</a> •
+  <a href="#secret-rotation">Secret Rotation</a> •
   <a href="#auto-scaling-settings">Auto-scaling</a> •
   <a href="#task-resources">Resources</a> •
   <a href="#health-checks">Health Checks</a> •
@@ -111,6 +112,23 @@ docker push <ecr-url>:latest
 | Web ECR | comm-ng-web |
 | Server Port | 3000 |
 | Web Port | 3001 |
+
+## Secret Rotation
+
+Database credentials are automatically rotated without downtime:
+
+```bash
+# Manually rotate database password
+aws secretsmanager rotate-secret --secret-id $(terraform output -raw db_master_password_secret_arn)
+
+# Check rotation status
+aws secretsmanager describe-secret --secret-id $(terraform output -raw db_master_password_secret_arn) --query 'RotationEnabled'
+
+# View application logs during rotation
+aws logs tail /ecs/dev-comm-ng-server --follow --filter-pattern "rotation"
+```
+
+The application checks for new credentials every 5 minutes and reconnects automatically. See [DATABASE-SECRET-ROTATION.md](DATABASE-SECRET-ROTATION.md) for details.
 
 ## Auto-scaling Settings
 

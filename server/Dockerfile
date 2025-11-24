@@ -31,6 +31,8 @@ RUN npm ci --only=production
 
 # Copy built application from builder stage
 COPY --from=builder /app/src ./src
+# Copy tsconfig so runtime alias resolvers (tsx) can read path mappings
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 # If you have a build step, copy the build output instead:
 # COPY --from=builder /app/dist ./dist
 

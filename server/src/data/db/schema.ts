@@ -114,6 +114,9 @@ export const users = pgTable(
     serviceType: serviceTypeEnum("service_type"),
     detailedPosition: text("detailed_position"),
     detailedRank: text("detailed_rank"),
+    location: text("location"),
+    about: text("about"),
+    interests: jsonb("interests"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

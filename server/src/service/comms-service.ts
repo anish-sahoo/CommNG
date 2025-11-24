@@ -1,9 +1,5 @@
-import { eq } from "drizzle-orm";
-import { channels } from "@/data/db/schema.js";
-import type {
-  CommsRepository,
-  Transaction,
-} from "@/data/repository/comms-repo.js";
+import type { channelSubscriptions, channels } from "@/data/db/schema.js";
+import type { CommsRepository } from "@/data/repository/comms-repo.js";
 import { channelRole } from "@/data/roles.js";
 import { policyEngine } from "@/service/policy-engine.js";
 import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
@@ -164,7 +160,7 @@ export class CommsService {
     if (existingMessage.senderId !== user_id) {
       const isAdmin = await policyEngine.validate(
         user_id,
-        `channel:${channel_id}:admin`,
+        channelRole("admin", channel_id),
       );
 
       if (!isAdmin) {
@@ -203,6 +199,29 @@ export class CommsService {
     return this.commsRepo.getChannelDataByID(channel_id);
   }
 
+  async updateSubscriptionSettings(
+    channel_id: number,
+    user_id: string,
+    notifications_enabled: boolean,
+  ) {
+    const updateData: Partial<typeof channelSubscriptions.$inferInsert> = {};
+
+    if (notifications_enabled !== undefined)
+      updateData.notificationsEnabled = notifications_enabled;
+
+    const result = await this.commsRepo.updateChannelSubscriptionSettings(
+      user_id,
+      channel_id,
+      updateData,
+    );
+    if (result) {
+      return this.commsRepo.getChannelSubscriptionFromId(user_id, channel_id);
+    }
+    throw new InternalServerError(
+      "Something went wrong updating channel settings",
+    );
+  }
+
   /**
    * Update channel settings (name, posting permissions, description)
    * @param channel_id Channel ID
@@ -211,39 +230,23 @@ export class CommsService {
    * @throws InternalServerError if update fails
    */
   async updateChannelSettings(
+    channel_name: string,
     channel_id: number,
-    metadata: ChannelUpdateMetadata,
+    channel_description?: string,
+    metadata?: ChannelUpdateMetadata,
   ) {
-    await this.getChannelById(channel_id);
-    const updates: ((tx: Transaction) => Promise<unknown>)[] = [];
+    const updateData: Partial<typeof channels.$inferInsert> = {
+      name: channel_name,
+    };
 
-    if (metadata.name) {
-      updates.push((tx: Transaction) =>
-        tx
-          .update(channels)
-          .set({ name: metadata.name })
-          .where(eq(channels.channelId, channel_id)),
-      );
-    }
+    if (channel_description !== undefined)
+      updateData.description = channel_description;
+    if (metadata !== undefined) updateData.metadata = metadata;
 
-    if (metadata.postingPermissions) {
-      updates.push((tx) =>
-        tx
-          .update(channels)
-          .set({ postPermissionLevel: metadata.postingPermissions })
-          .where(eq(channels.channelId, channel_id)),
-      );
-    }
-
-    if (metadata.description) {
-      updates.push((tx) =>
-        tx
-          .update(channels)
-          .set({ description: metadata.description })
-          .where(eq(channels.channelId, channel_id)),
-      );
-    }
-    const result = await this.commsRepo.updateChannelSettings(updates);
+    const result = await this.commsRepo.updateChannelSettings(
+      channel_id,
+      updateData,
+    );
     if (result) {
       return this.commsRepo.getChannelDataByID(channel_id);
     }
@@ -266,7 +269,7 @@ export class CommsService {
     }
     const isAdmin = await policyEngine.validate(
       user_id,
-      `channel:${channel_id}:admin`,
+      channelRole("admin", channel_id),
     );
     if (!isAdmin) {
       throw new ForbiddenError(
@@ -292,7 +295,7 @@ export class CommsService {
     await this.getChannelById(channel_id);
     const isAdmin = await policyEngine.validate(
       user_id,
-      `channel:${channel_id}:admin`,
+      channelRole("admin", channel_id),
     );
 
     if (isAdmin) {
@@ -301,6 +304,44 @@ export class CommsService {
       );
     }
     return this.commsRepo.removeUserFromChannel(user_id, channel_id);
+  }
+
+  /**
+   * Remove a user from a channel (admin only)
+   * @param user_id User ID of the requester (must be channel admin)
+   * @param channel_id Channel ID
+   * @param target_user_id User ID of the user to remove
+   * @returns Success object
+   * @throws BadRequestError if channel_id has decimal points or user tries to remove themselves
+   * @throws ForbiddenError if requester is not channel admin
+   */
+  async removeUserFromChannel(
+    user_id: string,
+    channel_id: number,
+    target_user_id: string,
+  ) {
+    if (channel_id !== Math.trunc(channel_id)) {
+      throw new BadRequestError("Cannot have decimal points in Channel ID");
+    }
+    await this.getChannelById(channel_id);
+
+    // Verify the requester is admin
+    const isAdmin = await policyEngine.validate(
+      user_id,
+      channelRole("admin", channel_id),
+    );
+    if (!isAdmin) {
+      throw new ForbiddenError(
+        "Only channel administrators can remove members",
+      );
+    }
+
+    // Don't allow removing yourself
+    if (user_id === target_user_id) {
+      throw new BadRequestError("Cannot remove yourself from the channel");
+    }
+
+    return this.commsRepo.removeUserFromChannel(target_user_id, channel_id);
   }
 
   /**
@@ -354,10 +395,11 @@ export class CommsService {
     );
 
     if (channelData?.postPermissionLevel === "everyone") {
+      const postRoleKey = channelRole("post", channel_id);
       await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
-        `channel:${channel_id}:post`,
+        postRoleKey,
         "post",
         "channel",
         channel_id,
