@@ -8,6 +8,13 @@ import type { RoleKey } from "../src/data/roles.js";
 /**
  * Usage:
  *   npx dotenv -e .env -- tsx scripts/grant-role.ts admin@admin.admin reporting:admin
+ *
+ * Codes:
+ * Broadcast: broadcast:create
+ * Reporting: reporting:admin, reporting:assign, reporting:delete, reporting:update, reporting:create, reporting:read
+ * Global: global:admin, global:create-invite
+ * Channel-scoped (need a channel id): channel:<id>:admin, channel:<id>:post, channel:<id>:read (replace <id> with the channelId, e.g., channel:1:admin)
+ *
  * The script ensures the role exists and adds it to the user.
  */
 

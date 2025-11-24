@@ -20,6 +20,7 @@ import {
   removeMemberSchema,
   toggleReactionSchema,
   updateChannelSchema,
+  updateSubscriptionSchema,
 } from "@/types/comms-types.js";
 import { ForbiddenError, InternalServerError } from "@/types/errors.js";
 import log from "@/utils/logger.js";
@@ -191,16 +192,6 @@ const createChannel = protectedProcedure
     }),
   );
 
-// get channel settings
-/*const getChannelSettings = protectedProcedure
-  .input(updateChannelSchema)
-  .query(({ input }) =>
-    withErrorHandling("getChannelSettings", async () => {
-      log.debug({ channelId: input.channelId }, "getChannelSettings");
-      return await commsRepo.getChannelSettings(input.channelId);
-    }),
-  );*/
-
 // update channel settings
 const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
@@ -208,7 +199,9 @@ const updateChannelSettings = protectedProcedure
     withErrorHandling("updateChannel", async () => {
       ensureHasRole(ctx, [channelRole("admin", input.channelId)]);
       return await commsService.updateChannelSettings(
+        input.metadata.name,
         input.channelId,
+        input.metadata.description,
         input.metadata,
       );
     }),
@@ -268,6 +261,18 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
     return await commsRepo.getUserSubscriptions(userId);
   }),
 );
+
+const updateSubscriptionSettings = protectedProcedure
+  .input(updateSubscriptionSchema)
+  .mutation(({ input }) =>
+    withErrorHandling("updateSubscription", async () => {
+      return await commsService.updateSubscriptionSettings(
+        input.channelId,
+        input.userId,
+        input.notificationsEnabled,
+      );
+    }),
+  );
 
 // Delete channel endpoint (admin only)
 const deleteChannel = protectedProcedure
@@ -337,11 +342,11 @@ export const commsRouter = router({
   deletePost,
   createChannel,
   updateChannelSettings,
-  // getChannelSettings,
   getChannelMembers,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,
+  updateSubscriptionSettings,
   deleteChannel,
   leaveChannel,
   joinChannel,
