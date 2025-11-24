@@ -93,7 +93,7 @@ export default function ReportsPage() {
     enabled: Boolean(userId && hasReportingRead),
     queryFn: async () => {
       if (!userId) return [];
-      const response = await trpcClient.reports.getReports.mutate({
+      const response = await trpcClient.reports.getReports.query({
         name: userId,
       });
       return Array.isArray(response) ? response : [];
