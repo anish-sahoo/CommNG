@@ -46,6 +46,9 @@ export const roleNamespaceEnum = pgEnum("role_namespace_enum", [
   "broadcast",
   "reporting",
 ]);
+
+export const visibilityEnum = pgEnum("visibility_enum", ["private", "public"]);
+
 export type RoleNamespace = (typeof roleNamespaceEnum.enumValues)[number];
 
 export const channelPostPermissionEnum = pgEnum(
@@ -70,6 +73,14 @@ export const users = pgTable(
     location: text("location"),
     about: text("about"),
     interests: jsonb("interests"),
+
+    signalVisibility: visibilityEnum("signal_visibility")
+      .notNull()
+      .default("private"),
+    emailVisibility: visibilityEnum("email_visibility")
+      .notNull()
+      .default("private"),
+
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -482,13 +493,6 @@ export const messageBlasts = pgTable(
     index("ix_message_blasts_valid_until").on(table.validUntil),
   ],
 );
-
-// const roleKeys = await db
-//   .select({ roleKey: roles.roleKey })
-//   .from(userRoles)
-//   .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
-//   .where(eq(userRoles.userId, userId));
-// engine.hasAccess(roleKeys, `channel:${channelId}:read`);
 
 // Reports
 export const reportStatusEnum = pgEnum("report_status_enum", [

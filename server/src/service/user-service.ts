@@ -3,6 +3,7 @@ import { FileRepository } from "@/data/repository/file-repo.js";
 import type { UserRepository } from "@/data/repository/user-repo.js";
 import { NotFoundError } from "@/types/errors.js";
 // import { Cache } from "@/utils/cache.js";
+import type { UpdateUserVisibilityInput } from "@/types/user-types.js";
 import log from "@/utils/logger.js";
 
 const USER_CACHE_TTL_SECONDS = 60 * 60; // keep in sync with Cache decorator default
@@ -124,6 +125,28 @@ export class UserService {
       log.warn(
         { error, cacheKey, userId },
         "Failed to update user cache after profile update",
+      );
+    }
+
+    return updated;
+  }
+
+  // Update visibility settings for the current users signal and email
+  async updateUserVisibility(userId: string, input: UpdateUserVisibilityInput) {
+    const updated = await this.usersRepo.updateUserProfile(userId, {
+      signalVisibility: input.signal_visibility,
+      emailVisibility: input.email_visibility,
+    });
+
+    const cacheKey = `user:${userId}:data`;
+    try {
+      await getRedisClientInstance().set(cacheKey, JSON.stringify(updated), {
+        EX: USER_CACHE_TTL_SECONDS,
+      });
+    } catch (error) {
+      log.warn(
+        { error, cacheKey, userId },
+        "Failed to update user cache after visibility update",
       );
     }
 

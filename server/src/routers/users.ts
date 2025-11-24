@@ -8,6 +8,7 @@ import {
   createUserProfileInputSchema,
   getUserDataInputSchema,
   updateUserProfileInputSchema,
+  updateUserVisibilityInputSchema,
 } from "@/types/user-types.js";
 
 const userService = new UserService(new UserRepository());
@@ -61,6 +62,19 @@ const updateUserProfile = protectedProcedure
     });
   });
 
+const updateUserVisibility = protectedProcedure
+  .input(updateUserVisibilityInputSchema)
+  .meta({
+    description:
+      "Update user profile visibility settings (signal/email visibility). Users can only update their own settings.",
+  })
+  .mutation(async ({ ctx, input }) => {
+    return withErrorHandling("updateUserVisibility", async () => {
+      const userId = ctx.auth.user.id;
+      return await userService.updateUserVisibility(userId, input);
+    });
+  });
+
 const getUserRoles = protectedProcedure
   .meta({
     description:
@@ -79,5 +93,6 @@ export const userRouter = router({
   checkEmailExists,
   createUserProfile,
   updateUserProfile,
+  updateUserVisibility, // ⬅️ NEW
   getUserRoles,
 });

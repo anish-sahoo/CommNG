@@ -1,6 +1,12 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
@@ -16,12 +22,49 @@ export default function HelpPage() {
   const MenuIcon = icons.menu;
   const CommunicationsIcon = icons.communications;
   const MoveRightIcon = icons.moveRight;
-  const UserIcon = icons.user;
   const AddIcon = icons.add;
-  const AnnounceIcon = icons.addAlert;
   const AcknowledgeIcon = icons.done;
   const BellIcon = icons.bell;
   const ArrowRightIcon = icons.arrowRight;
+  const ArrowLeftIcon = icons.arrowLeft;
+  const ReportsIcon = icons.reports;
+  const SortIcon = icons.sort;
+  const SearchIcon = icons.search;
+  const tabsOrder = ["communications", "mentorship", "reports"] as const;
+  const [activeTab, setActiveTab] =
+    useState<(typeof tabsOrder)[number]>("communications");
+  const tabsScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const getTabId = useCallback(
+    (value: (typeof tabsOrder)[number]) => `help-tab-${value}`,
+    [],
+  );
+
+  const scrollTabIntoView = useCallback(
+    (value: (typeof tabsOrder)[number]) => {
+      const trigger = document.getElementById(getTabId(value));
+      const container = tabsScrollRef.current;
+      if (!trigger) return;
+      trigger.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+      if (container) {
+        // Ensure the container itself can scroll if scrollIntoView targets body
+        const { offsetLeft, offsetWidth } = trigger as HTMLElement;
+        container.scrollTo({
+          left: offsetLeft - container.clientWidth / 2 + offsetWidth / 2,
+          behavior: "smooth",
+        });
+      }
+    },
+    [getTabId],
+  );
+
+  useEffect(() => {
+    scrollTabIntoView(activeTab);
+  }, [activeTab, scrollTabIntoView]);
 
   const cueClass =
     "mt-2 inline-flex items-center gap-2 rounded-full bg-background/70 px-3 py-2 text-xs text-secondary shadow-sm ring-1 ring-border/60";
@@ -29,21 +72,28 @@ export default function HelpPage() {
 
   type CueDisplayProps = {
     leadingIcon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    leadingIconClassName?: string;
     buttonLabel: string;
     buttonIcon?: React.ComponentType<React.SVGProps<SVGSVGElement>> | null;
+    buttonIconClassName?: string;
     buttonVariant?: React.ComponentProps<typeof Button>["variant"];
     buttonClassName?: string;
   };
 
   const CueDisplay = ({
     leadingIcon: LeadingIcon,
+    leadingIconClassName,
     buttonIcon: ButtonIcon,
     buttonLabel,
+    buttonIconClassName,
     buttonVariant = "outline",
     buttonClassName,
   }: CueDisplayProps) => (
     <div className={cueClass}>
-      <LeadingIcon className={cueIconClass} aria-hidden="true" />
+      <LeadingIcon
+        className={cn(cueIconClass, leadingIconClassName)}
+        aria-hidden="true"
+      />
       <MoveRightIcon className="h-4 w-4 text-accent" aria-hidden="true" />
       <Button
         type="button"
@@ -52,7 +102,10 @@ export default function HelpPage() {
         className={cn(ButtonIcon ? "gap-2" : "px-4", buttonClassName)}
       >
         {ButtonIcon ? (
-          <ButtonIcon className="h-4 w-4" aria-hidden="true" />
+          <ButtonIcon
+            className={cn("h-4 w-4", buttonIconClassName)}
+            aria-hidden="true"
+          />
         ) : null}
         {buttonLabel}
       </Button>
@@ -68,9 +121,9 @@ export default function HelpPage() {
       title: "Open Communications",
       description: (
         <>
-          Use the round app switcher on the left rail and select{" "}
-          <span className="font-semibold">Communications</span> to land on the
-          channel overview.
+          Use the menu in the left rail and select{" "}
+          <span className="font-semibold">Communications</span> to reach the
+          channel overview and broadcasts.
         </>
       ),
       cue: (
@@ -82,19 +135,23 @@ export default function HelpPage() {
       ),
     },
     {
-      title: "Check your profile",
+      title: "Scan for broadcasts",
       description: (
         <>
-          Select the <span className="font-semibold">Profile</span> shortcut on
-          the rail to confirm your name and email appear correctly. Update
-          requests can be sent to your administrator.
+          In the communications header, the{" "}
+          <span className="font-semibold">bell icon</span> shows a red dot when
+          there is an active broadcast. Click it to open{" "}
+          <span className="font-semibold">Broadcasts</span>; any message you
+          have not acknowledged will open automatically. The bell opens your
+          active broadcast list, while the modal appears automatically when a
+          new alert needs acknowledgment.
         </>
       ),
       cue: (
         <CueDisplay
-          leadingIcon={UserIcon}
-          buttonIcon={UserIcon}
-          buttonLabel="Profile"
+          leadingIcon={BellIcon}
+          buttonIcon={BellIcon}
+          buttonLabel="Broadcasts"
         />
       ),
     },
@@ -102,36 +159,29 @@ export default function HelpPage() {
       title: "Explore your channels",
       description: (
         <>
-          The overview shows cards for every channel you can access. Use the
-          search bar in the header to filter by channel name.
+          Channel cards list every space you can access. Use the{" "}
+          <span className="font-semibold">Search channels</span> field in the
+          header to filter quickly.
         </>
       ),
     },
     {
-      title: "Review active broadcasts",
+      title: "Open and read posts",
       description: (
         <>
-          Click the bell icon in the overview header to see current alerts.
-          Broadcasts you have not acknowledged will open automatically in a
-          modal—acknowledge them with the{" "}
-          <span className="font-semibold">Acknowledge</span> button so the
-          system records that you have read them.
+          Open a channel to see recent updates and attachments. If you need
+          posting access, contact the channel admin listed in the channel
+          header.
         </>
-      ),
-      cue: (
-        <CueDisplay
-          leadingIcon={BellIcon}
-          buttonIcon={BellIcon}
-          buttonLabel="Active Broadcast"
-        />
       ),
     },
     {
-      title: "Join the conversation",
+      title: "Share updates",
       description: (
         <>
-          Open a channel to read recent posts. If you need permission to
-          contribute, contact the channel admin listed for that space.
+          Use the <span className="font-semibold">New Post</span> button in a
+          channel to publish. Attach files, then post once each upload shows as
+          complete.
         </>
       ),
       cue: (
@@ -165,7 +215,8 @@ export default function HelpPage() {
         },
         {
           id: "all-members-broadcast",
-          content: "View every broadcast sent to your audience.",
+          content:
+            "Open broadcasts from the bell icon and acknowledge alerts when prompted.",
         },
       ],
     },
@@ -203,7 +254,7 @@ export default function HelpPage() {
           content: (
             <>
               Use <span className="font-semibold">Channel Settings</span> to
-              review future configuration options as they become available.
+              update the channel name, description, and notification defaults.
             </>
           ),
         },
@@ -217,8 +268,9 @@ export default function HelpPage() {
           id: "managers-create",
           content: (
             <>
-              Send organization-wide alerts from the{" "}
-              <span className="font-semibold">Create Broadcast</span> page.
+              Send alerts from <span className="font-semibold">Broadcasts</span>{" "}
+              using the <span className="font-semibold">Broadcast</span> option
+              in the create menu.
             </>
           ),
         },
@@ -226,9 +278,9 @@ export default function HelpPage() {
           id: "managers-delete",
           content: (
             <>
-              Delete outdated broadcasts from the{" "}
-              <span className="font-semibold">Active Broadcast</span> page when
-              they are no longer needed.
+              Remove outdated alerts from the{" "}
+              <span className="font-semibold">Active Broadcast</span> page once
+              they expire or are no longer relevant.
             </>
           ),
         },
@@ -316,7 +368,7 @@ export default function HelpPage() {
         {
           id: "alerts-indicator",
           content:
-            "Look for the red indicator on the bell icon in the communications header or watch for the broadcast modal to appear.",
+            "When broadcasts are posted, a modal will appear with the relevant title and description.",
         },
         {
           id: "alerts-ack",
@@ -333,8 +385,8 @@ export default function HelpPage() {
           content: (
             <>
               Re-open the broadcast list any time from the{" "}
-              <span className="font-semibold">Active Broadcast</span> link if
-              you need to reference instructions again.
+              <span className="font-semibold">Broadcasts</span> bell icon if you
+              need to reference instructions again.
             </>
           ),
         },
@@ -342,7 +394,6 @@ export default function HelpPage() {
       cue: (
         <CueDisplay
           leadingIcon={AcknowledgeIcon}
-          buttonIcon={null}
           buttonLabel="Acknowledge"
           buttonVariant="outline"
         />
@@ -356,8 +407,9 @@ export default function HelpPage() {
           content: (
             <>
               From the communications overview, open{" "}
-              <span className="font-semibold">Active Broadcast</span> and choose{" "}
-              <span className="font-semibold">Broadcast</span>.
+              <span className="font-semibold">Broadcasts</span> or select{" "}
+              <span className="font-semibold">Broadcast</span> from the create
+              menu if you have permissions.
             </>
           ),
         },
@@ -374,9 +426,9 @@ export default function HelpPage() {
       ],
       cue: (
         <CueDisplay
-          leadingIcon={AnnounceIcon}
-          buttonIcon={AnnounceIcon}
-          buttonLabel="Broadcast"
+          leadingIcon={AddIcon}
+          buttonIcon={AddIcon}
+          buttonLabel="New Broadcast"
         />
       ),
       note: "Only users with broadcast permissions will see the creation option.",
@@ -385,7 +437,7 @@ export default function HelpPage() {
 
   const OnboardingContent = () => (
     <>
-      <p className="text-sm text-secondary">
+      <p className="text-sm text-secondary mb-2">
         Follow these steps the first time you sign in so you can start
         collaborating without missing any updates.
       </p>
@@ -407,7 +459,7 @@ export default function HelpPage() {
 
   const RolesContent = () => (
     <>
-      <p className="text-sm text-secondary">
+      <p className="text-sm text-secondary mb-2">
         Access is managed behind the scenes, but understanding each role helps
         you know what to expect on screen.
       </p>
@@ -477,10 +529,112 @@ export default function HelpPage() {
     },
   ];
 
+  const reportSections: Array<{
+    id: "reports-browse" | "reports-submit" | "reports-admin";
+    title: string;
+    content: ReactNode;
+  }> = [
+    {
+      id: "reports-browse",
+      title: "Browse and filter",
+      content: (
+        <>
+          <ul className="list-disc space-y-2 pl-5 text-sm text-secondary">
+            <li>
+              Use the <span className="font-semibold">Search reports</span>{" "}
+              field to find titles, descriptions, or assignees.
+            </li>
+            <li>
+              Sort by newest, oldest, or title with the{" "}
+              <span className="font-semibold">Sort</span> menu in the upper
+              right.
+            </li>
+            <li>
+              Status chips show <span className="font-semibold">Pending</span>,{" "}
+              <span className="font-semibold">Assigned</span>, or{" "}
+              <span className="font-semibold">Resolved</span>; admins also see
+              the assignee column.
+            </li>
+          </ul>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <CueDisplay
+              leadingIcon={SearchIcon}
+              buttonIcon={SearchIcon}
+              buttonLabel="Search reports"
+              buttonVariant="outline"
+              buttonClassName="px-3"
+            />
+            <CueDisplay
+              leadingIconClassName="rotate-90"
+              leadingIcon={SortIcon}
+              buttonIcon={SortIcon}
+              buttonIconClassName="rotate-90"
+              buttonLabel="Sort"
+              buttonVariant="outline"
+              buttonClassName="px-3"
+            />
+          </div>
+        </>
+      ),
+    },
+    {
+      id: "reports-submit",
+      title: "Submit a report",
+      content: (
+        <>
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-secondary">
+            <li>
+              Select <span className="font-semibold">New Report</span> from the
+              header.
+            </li>
+            <li>
+              Choose a category, add a clear title and description, and attach
+              files if needed (up to 10).
+            </li>
+            <li>
+              Send the report; it will appear in the list immediately once
+              saved.
+            </li>
+          </ol>
+          <CueDisplay
+            leadingIcon={ReportsIcon}
+            buttonIcon={AddIcon}
+            buttonLabel="New Report"
+            buttonVariant="outline"
+          />
+        </>
+      ),
+    },
+    {
+      id: "reports-admin",
+      title: "Admin & follow-up",
+      content: (
+        <ul className="list-disc space-y-2 pl-5 text-sm text-secondary">
+          <li>
+            Admins see the status carousel at the top of the page; swipe through
+            on mobile to view counts by status.
+          </li>
+          <li>
+            Use the assignee column to track ownership. If you do not see it,
+            request <span className="font-semibold">reporting admin</span>{" "}
+            access.
+          </li>
+          <li>
+            If someone updates a report elsewhere (like reassigning it), your
+            counts and table will refresh the next time you reload the page.
+          </li>
+        </ul>
+      ),
+    },
+  ];
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () => {
       const initialState: Record<string, boolean> = {};
       for (const section of contentSections) {
+        initialState[section.id] = true;
+      }
+      for (const section of reportSections) {
         initialState[section.id] = true;
       }
       return initialState;
@@ -495,9 +649,9 @@ export default function HelpPage() {
     setOpenSections((prev) => {
       const shouldOpen = Object.values(prev).every((open) => !open);
       const nextState: Record<string, boolean> = {};
-      for (const section of contentSections) {
+      [...contentSections, ...reportSections].forEach((section) => {
         nextState[section.id] = shouldOpen;
-      }
+      });
       return nextState;
     });
   };
@@ -506,7 +660,10 @@ export default function HelpPage() {
 
   return (
     <Tabs
-      defaultValue="communications"
+      value={activeTab}
+      onValueChange={(value) =>
+        setActiveTab(value as (typeof tabsOrder)[number])
+      }
       className="w-full"
       aria-label="Help Center categories"
     >
@@ -523,29 +680,77 @@ export default function HelpPage() {
             <div className="mx-auto flex w-full app-content-width flex-col gap-3">
               <p className="max-w-3xl text-sm text-secondary sm:text-base">
                 Everything you need to get started: learn how to browse
-                channels, send messages, apply for mentorship, and make the most
-                of your experience.
+                channels, follow broadcasts, apply for mentorship, submit
+                reports, and make the most of your experience.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <TabsList
-                  className="flex justify-start gap-2 bg-transparent p-0"
-                  aria-label="Content topic tabs"
-                >
-                  <TabsTrigger
-                    value="communications"
-                    aria-label="View communications help"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous tab"
+                    className="sm:hidden rounded-full border border-border bg-background p-1 text-primary shadow-sm disabled:opacity-50 disabled:shadow-none"
+                    disabled={activeTab === tabsOrder[0]}
+                    onClick={() => {
+                      const currentIndex = tabsOrder.indexOf(activeTab);
+                      const prev = tabsOrder[Math.max(currentIndex - 1, 0)];
+                      setActiveTab(prev);
+                      scrollTabIntoView(prev);
+                    }}
                   >
-                    Communications
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="mentorship"
-                    aria-label="View mentorship help"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                    <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                  <div
+                    className="relative flex overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    ref={tabsScrollRef}
                   >
-                    Mentorship
-                  </TabsTrigger>
-                </TabsList>
+                    <TabsList
+                      className="flex min-w-max justify-start gap-2 bg-transparent p-0"
+                      aria-label="Content topic tabs"
+                    >
+                      <TabsTrigger
+                        id={getTabId("communications")}
+                        value="communications"
+                        aria-label="View communications help"
+                        className="whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                      >
+                        Communications
+                      </TabsTrigger>
+                      <TabsTrigger
+                        id={getTabId("mentorship")}
+                        value="mentorship"
+                        aria-label="View mentorship help"
+                        className="whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                      >
+                        Mentorship
+                      </TabsTrigger>
+                      <TabsTrigger
+                        id={getTabId("reports")}
+                        value="reports"
+                        aria-label="View report help"
+                        className="whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-background data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-secondary"
+                      >
+                        Reports
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Next tab"
+                    className="sm:hidden rounded-full border border-border bg-background p-1 text-primary shadow-sm disabled:opacity-50 disabled:shadow-none"
+                    disabled={activeTab === tabsOrder[tabsOrder.length - 1]}
+                    onClick={() => {
+                      const currentIndex = tabsOrder.indexOf(activeTab);
+                      const next =
+                        tabsOrder[
+                          Math.min(currentIndex + 1, tabsOrder.length - 1)
+                        ];
+                      setActiveTab(next);
+                      scrollTabIntoView(next);
+                    }}
+                  >
+                    <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -604,6 +809,45 @@ export default function HelpPage() {
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-secondary">Mentorship</h2>
             <p className="text-sm text-secondary">Content coming soon.</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reports" className="space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-secondary">Reports</h2>
+            <p className="text-sm text-secondary">
+              Submit, search, and review reports using the same controls you see
+              on the Reports page.
+            </p>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {reportSections.map((section) => (
+              <Collapsible
+                key={section.id}
+                open={openSections[section.id] ?? true}
+                defaultOpen
+                onOpenChange={(open) => handleSectionToggle(section.id, open)}
+                className={cn(
+                  "rounded-xl border border-border/60 bg-background/60 p-4",
+                  section.id === "reports-admin" ? "lg:col-span-2" : "",
+                )}
+              >
+                <CollapsibleTrigger className="flex w-full items-center gap-3 text-left text-base font-semibold text-secondary">
+                  <ArrowRightIcon
+                    className={cn(
+                      "h-5 w-5 text-secondary transition-transform",
+                      openSections[section.id] ? "rotate-90" : "rotate-0",
+                    )}
+                    aria-hidden="true"
+                  />
+                  {section.title}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  {section.content}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
           </div>
         </TabsContent>
       </TitleShell>

@@ -71,3 +71,12 @@ export type RoleSummary = {
   channelId: number | null;
   metadata: Record<string, unknown> | null;
 };
+
+export const updateUserVisibilityInputSchema = z.object({
+  signal_visibility: z.enum(["private", "public"]),
+  email_visibility: z.enum(["private", "public"]),
+});
+
+export type UpdateUserVisibilityInput = z.infer<
+  typeof updateUserVisibilityInputSchema
+>;

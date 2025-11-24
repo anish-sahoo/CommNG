@@ -29,6 +29,8 @@ export class UserRepository {
         location: users.location,
         about: users.about,
         interests: users.interests,
+        signalVisibility: users.signalVisibility,
+        emailVisibility: users.emailVisibility,
       })
       .from(users)
       .where(eq(users.id, user_id));
@@ -120,6 +122,8 @@ export class UserRepository {
         location: users.location,
         about: users.about,
         interests: users.interests,
+        signalVisibility: users.signalVisibility,
+        emailVisibility: users.emailVisibility,
       });
 
     if (!updated) {
@@ -141,6 +145,8 @@ export class UserRepository {
       location?: string | null;
       about?: string | null;
       interests?: string[] | null;
+      signalVisibility?: "private" | "public";
+      emailVisibility?: "private" | "public";
     },
   ) {
     const updateFields: Partial<typeof users.$inferInsert> = {};
@@ -160,6 +166,17 @@ export class UserRepository {
     if (updateData.interests !== undefined)
       updateFields.interests = updateData.interests;
 
+    if (updateData.signalVisibility !== undefined) {
+      updateFields.signalVisibility = updateData.signalVisibility;
+    }
+    if (updateData.emailVisibility !== undefined) {
+      updateFields.emailVisibility = updateData.emailVisibility;
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      throw new Error("No values to set");
+    }
+
     const [updated] = await db
       .update(users)
       .set(updateFields)
@@ -178,6 +195,8 @@ export class UserRepository {
         location: users.location,
         about: users.about,
         interests: users.interests,
+        signalVisibility: users.signalVisibility,
+        emailVisibility: users.emailVisibility,
       });
 
     if (!updated) {
