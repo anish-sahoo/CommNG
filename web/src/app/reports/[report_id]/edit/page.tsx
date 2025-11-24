@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
-//import { icons } from "@/components/icons";
+import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Modal } from "@/components/modal";
 import { TextInput } from "@/components/text-input";
@@ -36,7 +36,7 @@ const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
     { label: "Logistics", value: "Logistics" },
 ];
 
-//const MAX_ATTACHMENTS = 10;
+const MAX_ATTACHMENTS = 10;
 const REPORTING_ASSIGN_ROLE = "reporting:assign" as RoleKey;
 
 type AttachmentState = {
@@ -47,8 +47,8 @@ type AttachmentState = {
     error?: string;
 };
 
-//const RemoveIcon = icons.clear;
-//const SuccessIcon = icons.done;
+const RemoveIcon = icons.clear;
+const SuccessIcon = icons.done;
 
 type EditReportPageProps = {
     params: Promise<{
@@ -132,6 +132,8 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                 setTitle(report.title || "");
                 setDescription(report.description || "");
                 setCategory(report.category || null);
+                console.log("UOOO");
+                console.log("ehehehe: " + report.attachments);
                 setAttachments(report.attachments);
                 setUpdatedAt(report.updatedAt || null);
 
