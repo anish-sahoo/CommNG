@@ -75,7 +75,7 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// Flush Redis endpoint 
+// Flush Redis endpoint
 // TODO: remove this later
 app.get("/api/flush-redis", async (_req, res) => {
   try {
