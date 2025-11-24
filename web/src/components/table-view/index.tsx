@@ -1,3 +1,4 @@
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -6,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRouter } from "next/navigation";
 
 type Report = {
   id: string;
@@ -95,7 +95,7 @@ export function ReportsTable({
   items = fallbackReports,
   isAdmin = false,
 }: ReportsTableProps) {
-  const router = useRouter(); // 
+  const router = useRouter(); //
   const reports = items;
   const lastColumnLabel = "Issued To";
   const fillerRowKeys = Array.from(
@@ -127,10 +127,10 @@ export function ReportsTable({
           </TableHeader>
           <TableBody className="bg-background text-secondary [&_tr]:last:border-b-0">
             {reports.map((report) => (
-              <TableRow 
-              key={report.id}
-              onClick={() => router.push(`/reports/${report.id}/edit`)}
-              className="cursor-pointer hover:bg-muted/50 transition-colors"
+              <TableRow
+                key={report.id}
+                onClick={() => router.push(`/reports/${report.id}/edit`)}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
               >
                 <TableCell className="md:w-[50%] whitespace-normal py-4 align-top">
                   <p className="text-base font-semibold text-secondary">
