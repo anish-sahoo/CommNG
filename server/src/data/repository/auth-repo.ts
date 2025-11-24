@@ -16,7 +16,7 @@ import log from "@/utils/logger.js";
  * Normalizes cached role data (plain arrays, serialized sets, etc.) into a Set<RoleKey>.
  * This protects us from legacy cache entries while keeping the runtime API consistent.
  */
-function hydrateRoleSet(value: unknown): Set<RoleKey> {
+function _hydrateRoleSet(value: unknown): Set<RoleKey> {
   if (value instanceof Set) {
     return value as Set<RoleKey>;
   }
