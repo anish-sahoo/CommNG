@@ -1,14 +1,7 @@
 import { z } from "zod";
+import { reportCategoryEnum } from "../data/db/schema.js";
 
-const REPORT_CATEGORY_VALUES = [
-  "Communication",
-  "Mentorship",
-  "Training",
-  "Resources",
-  "Logistics",
-] as const;
-export const reportCategorySchema = z.enum(REPORT_CATEGORY_VALUES);
-export type ReportCategory = z.infer<typeof reportCategorySchema>;
+export const reportCategorySchema = z.enum(reportCategoryEnum.enumValues);
 
 const userIdSchema = z
   .string()

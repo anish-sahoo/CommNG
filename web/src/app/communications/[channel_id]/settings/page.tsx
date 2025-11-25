@@ -122,19 +122,16 @@ export default function ChannelSettingsPage({
 
   // Load channel data when it arrives
   useEffect(() => {
-    const channel = channels?.find(
-      (ch: { channelId: number }) => ch.channelId === parsedChannelId,
-    );
+    const channel = channels?.find((ch) => ch.channelId === parsedChannelId);
 
     // Set saved values
     if (channel) {
       setChannelName(channel.name || "");
 
       const description =
-        channel.description ||
-        (typeof channel.metadata?.description === "string"
+        typeof channel.metadata?.description === "string"
           ? channel.metadata.description
-          : "");
+          : "";
       setChannelDescription(description);
 
       setIsAdmin(channel.userPermission === "admin");

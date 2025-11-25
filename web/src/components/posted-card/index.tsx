@@ -66,11 +66,11 @@ export const PostedCard = ({
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const channelMessagesQueryKey = useMemo<QueryKey>(() => {
+  const channelMessagesQueryKey = useMemo(() => {
     // TRPC builds a read-only tuple for each query; casting once keeps stable reference React Query can use for invalidations
     return trpc.comms.getChannelMessages.queryKey({
-      channelId: channelId,
-    }) as unknown as QueryKey;
+      channelId,
+    });
   }, [channelId, trpc]);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

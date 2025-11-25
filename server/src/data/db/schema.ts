@@ -507,6 +507,7 @@ export const reportCategoryEnum = pgEnum("report_category_enum", [
   "Training",
   "Resources",
 ]);
+export type ReportCategory = (typeof reportCategoryEnum.enumValues)[number];
 
 export const reports = pgTable("reports", {
   reportId: uuid("report_id").primaryKey().defaultRandom(),

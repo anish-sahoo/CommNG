@@ -39,26 +39,7 @@ export default function NewChannelPostPage({
 
   const parsedChannelId = parseChannelId(channelId);
 
-  // Explicitly type mutation variables to ensure correct inference in certain build environments
-  type CreatePostVars = {
-    channelId: number;
-    content: string;
-    attachmentFileIds?: string[];
-  };
-  type CreatePostMutationOptions = ReturnType<
-    typeof trpc.comms.createPost.mutationOptions
-  >;
-  type CreatePostError = Parameters<
-    NonNullable<CreatePostMutationOptions["onError"]>
-  >[0];
-  type CreatePostData = Parameters<
-    NonNullable<CreatePostMutationOptions["onSuccess"]>
-  >[0];
-  const createPost = useMutation<
-    CreatePostData,
-    CreatePostError,
-    CreatePostVars
-  >(trpc.comms.createPost.mutationOptions());
+  const createPost = useMutation(trpc.comms.createPost.mutationOptions());
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
@@ -74,13 +55,13 @@ export default function NewChannelPostPage({
 
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
 
-  const channelMessagesQueryKey = useMemo<QueryKey | null>(() => {
+  const channelMessagesQueryKey = useMemo(() => {
     if (parsedChannelId === null) {
       return null;
     }
     return trpc.comms.getChannelMessages.queryKey({
       channelId: parsedChannelId,
-    }) as unknown as QueryKey;
+    });
   }, [parsedChannelId, trpc]);
 
   const hasUploadingAttachments = attachments.some(

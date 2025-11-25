@@ -145,28 +145,9 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     };
   }, []);
 
-  // Explicitly type mutation variables to ensure correct inference
-  type ToggleReactionVars = {
-    channelId: number;
-    messageId: number;
-    emoji: string;
-    active: boolean;
-  };
-  type ToggleReactionMutationOptions = ReturnType<
-    typeof trpc.comms.toggleMessageReaction.mutationOptions
-  >;
-  type ToggleReactionError = Parameters<
-    NonNullable<ToggleReactionMutationOptions["onError"]>
-  >[0];
-  type ToggleReactionData = Parameters<
-    NonNullable<ToggleReactionMutationOptions["onSuccess"]>
-  >[0];
-
-  const { mutate: mutateReaction } = useMutation<
-    ToggleReactionData,
-    ToggleReactionError,
-    ToggleReactionVars
-  >(trpc.comms.toggleMessageReaction.mutationOptions());
+  const { mutate: mutateReaction } = useMutation(
+    trpc.comms.toggleMessageReaction.mutationOptions(),
+  );
 
   const parsedChannelId = parseChannelId(channelId);
 
