@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { RoleKey } from "@/data/roles.js";
+import type { RoleKey } from "../../data/roles.js";
 
 // Enums
 export const permissionEnum = pgEnum("permission_enum", [
@@ -507,6 +507,7 @@ export const reportCategoryEnum = pgEnum("report_category_enum", [
   "Training",
   "Resources",
 ]);
+export type ReportCategory = (typeof reportCategoryEnum.enumValues)[number];
 
 export const reports = pgTable("reports", {
   reportId: uuid("report_id").primaryKey().defaultRandom(),

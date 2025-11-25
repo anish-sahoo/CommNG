@@ -1,14 +1,14 @@
-import type { channelSubscriptions, channels } from "@/data/db/schema.js";
-import type { CommsRepository } from "@/data/repository/comms-repo.js";
-import { channelRole } from "@/data/roles.js";
-import { policyEngine } from "@/service/policy-engine.js";
-import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
+import type { channelSubscriptions, channels } from "../data/db/schema.js";
+import type { CommsRepository } from "../data/repository/comms-repo.js";
+import { channelRole } from "../data/roles.js";
+import { policyEngine } from "../service/policy-engine.js";
+import type { ChannelUpdateMetadata } from "../types/comms-types.js";
 import {
   BadRequestError,
   ForbiddenError,
   InternalServerError,
-} from "@/types/errors.js";
-import log from "@/utils/logger.js";
+} from "../types/errors.js";
+import log from "../utils/logger.js";
 
 /**
  * Service for communication-related business logic (channels, messages, subscriptions)

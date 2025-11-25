@@ -1,20 +1,20 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { Readable } from "node:stream";
-import type { FileRepository } from "@/data/repository/file-repo.js";
+import type { FileRepository } from "../data/repository/file-repo.js";
 import type {
   FileInputStreamOptions,
   StorageAdapter,
-} from "@/storage/storage-adapter.js";
-import { ForbiddenError } from "@/types/errors.js";
+} from "../storage/storage-adapter.js";
+import { ForbiddenError } from "../types/errors.js";
 import {
   type FileLike,
   type FileMetadata,
   type FileStreamNullable,
   fileMetadataSchema,
-} from "@/types/file-types.js";
-import { ensureNOTUsingAws } from "@/utils/aws.js";
-import log from "@/utils/logger.js";
+} from "../types/file-types.js";
+import { ensureNOTUsingAws } from "../utils/aws.js";
+import log from "../utils/logger.js";
 
 /**
  * Service for file upload/download operations with storage adapter integration

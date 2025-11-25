@@ -1,16 +1,16 @@
 import { count, eq } from "drizzle-orm";
-import { getRedisClientInstance } from "@/data/db/redis.js";
+import { getRedisClientInstance } from "../../data/db/redis.js";
 import {
   type RoleNamespace,
   roles,
   userRoles,
   users,
-} from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { getImpliedRoles } from "@/data/role-hierarchy.js";
-import type { RoleKey } from "@/data/roles.js";
-// import { Cache } from "@/utils/cache.js";
-import log from "@/utils/logger.js";
+} from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { getImpliedRoles } from "../../data/role-hierarchy.js";
+import type { RoleKey } from "../../data/roles.js";
+// import { Cache } from "../../utils/cache.js";
+import log from "../../utils/logger.js";
 
 /**
  * Normalizes cached role data (plain arrays, serialized sets, etc.) into a Set<RoleKey>.

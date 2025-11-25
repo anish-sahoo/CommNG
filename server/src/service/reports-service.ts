@@ -1,9 +1,9 @@
-import type { ReportRepository } from "@/data/repository/reports-repo.js";
+import type { ReportRepository } from "../data/repository/reports-repo.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "@/types/reports-types.js";
+} from "../types/reports-types.js";
 
 /**
  * Service for managing reports (create, edit, delete, assign)

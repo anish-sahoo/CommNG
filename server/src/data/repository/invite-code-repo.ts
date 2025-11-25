@@ -1,10 +1,10 @@
 import { and, eq, gt, isNotNull, isNull, lt } from "drizzle-orm";
-import { type InviteCode, inviteCodes } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import type { RoleKey } from "@/data/roles.js";
-import { NotFoundError } from "@/types/errors.js";
-import type { InviteCodeStatus } from "@/types/invite-code-types.js";
-import log from "@/utils/logger.js";
+import { type InviteCode, inviteCodes } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import type { RoleKey } from "../../data/roles.js";
+import { NotFoundError } from "../../types/errors.js";
+import type { InviteCodeStatus } from "../../types/invite-code-types.js";
+import log from "../../utils/logger.js";
 
 /**
  * Repository to handle database queries for invite codes

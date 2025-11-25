@@ -25,7 +25,7 @@ export default function NewChannelPage() {
 
   const createChannel = useMutation(trpc.comms.createChannel.mutationOptions());
 
-  const channelsQueryKey = useMemo<QueryKey>(
+  const channelsQueryKey = useMemo(
     () => trpc.comms.getAllChannels.queryKey(),
     [trpc],
   );

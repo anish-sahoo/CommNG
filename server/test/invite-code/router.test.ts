@@ -1,12 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { InviteCode } from "@/data/db/schema.js";
+import type { InviteCode } from "../../src/data/db/schema.js";
 import {
   GLOBAL_ADMIN_KEY,
   GLOBAL_CREATE_INVITE_KEY,
   type RoleKey,
-} from "@/data/roles.js";
-import { inviteCodeRouter } from "@/routers/invite-codes.js";
+} from "../../src/data/roles.js";
+import { inviteCodeRouter } from "../../src/routers/invite-codes.js";
 
 const { mockInviteCodeRepo, mockAuthRepo } = vi.hoisted(() => {
   return {
