@@ -6,7 +6,7 @@ import type {
   EmbedBatchResponse,
   EmbedResponse,
   InvokeModelBody,
-} from "@/types/embedding-types.js";
+} from "../types/embedding-types.js";
 
 class EmbeddingService {
   private model: string;
