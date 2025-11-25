@@ -1,12 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import { pushSubscriptions, users } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import type { TargetAudience } from "@/types/message-blast-types.js";
+import { pushSubscriptions, users } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import type { TargetAudience } from "../../types/message-blast-types.js";
 import type {
   PushSubscriptionKeys,
   SubscribeInput,
-} from "@/types/notification-types.js";
-import log from "@/utils/logger.js";
+} from "../../types/notification-types.js";
+import log from "../../utils/logger.js";
 
 export type ActivePushSubscription = {
   endpoint: string;

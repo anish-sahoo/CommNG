@@ -23,11 +23,14 @@ type TextInputProps = {
   name?: string;
   disabled?: boolean;
 } & (
-  | {
+  | ({
       multiline: true;
       rows?: number;
-    }
-  | { multiline?: false; type?: React.HTMLInputTypeAttribute }
+    } & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange">)
+  | ({
+      multiline?: false;
+      type?: React.HTMLInputTypeAttribute;
+    } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange">)
 );
 
 export const TextInput = (props: TextInputProps) => {
@@ -44,7 +47,9 @@ export const TextInput = (props: TextInputProps) => {
   } = props;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     if (disabled) return;
 
@@ -65,15 +70,8 @@ export const TextInput = (props: TextInputProps) => {
   };
 
   // Multiline (textarea)
-  if ("multiline" in rest && rest.multiline) {
-    const {
-      rows,
-      multiline: _multiline,
-      ...textareaProps
-    } = rest as {
-      multiline: true;
-      rows?: number;
-    } & React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+  if (rest.multiline) {
+    const { rows = 3, multiline: _multiline, ...textareaProps } = rest;
 
     return (
       <div className="relative w-full max-w-full">
@@ -84,7 +82,7 @@ export const TextInput = (props: TextInputProps) => {
           placeholder={placeholder}
           maxLength={maxLength}
           disabled={disabled}
-          rows={rows ?? 3}
+          rows={rows}
           className={cn(
             "w-full max-w-full resize-none pb-7",
             showCount && "pb-7 pr-16",
@@ -105,14 +103,7 @@ export const TextInput = (props: TextInputProps) => {
     );
   }
 
-  const {
-    multiline: _multiline,
-    type,
-    ...inputProps
-  } = rest as {
-    multiline?: false;
-    type?: React.HTMLInputTypeAttribute;
-  } & React.InputHTMLAttributes<HTMLInputElement>;
+  const { type, multiline: _multiline, ...inputProps } = rest;
 
   return (
     <div className="relative w-full max-w-full">

@@ -7,8 +7,8 @@ import {
   type FileInputStreamOptions,
   type FilePath,
   StorageAdapter,
-} from "@/storage/storage-adapter.js";
-import { ForbiddenError } from "@/types/errors.js";
+} from "../storage/storage-adapter.js";
+import { ForbiddenError } from "../types/errors.js";
 
 /**
  * Storage adapter for local filesystem operations

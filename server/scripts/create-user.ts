@@ -1,5 +1,5 @@
 import { auth } from "../src/auth.js";
-import { shutdownPostgres } from "../src/data/db/sql.js";
+import { connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
 
 /**
  * Script to create a new user account using better-auth
@@ -12,6 +12,8 @@ import { shutdownPostgres } from "../src/data/db/sql.js";
  */
 
 async function createUser() {
+  // Ensure the DB pool is connected (uses Secrets Manager if enabled)
+  await connectPostgres();
   // Edit this object to create a new user
   const userData = {
     email: "admin@admin.admin",

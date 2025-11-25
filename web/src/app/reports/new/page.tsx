@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReportCategory } from "@server/types/reports-types";
+import type { ReportCategory } from "@server/data/db/schema";
 import {
   type QueryKey,
   useMutation,
@@ -31,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { hasRole } from "@/lib/rbac";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import type { RoleKey } from "@/types/roles";
 
 const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
@@ -39,7 +39,6 @@ const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
   { label: "Mentorship", value: "Mentorship" },
   { label: "Training", value: "Training" },
   { label: "Resources", value: "Resources" },
-  { label: "Logistics", value: "Logistics" },
 ];
 
 const MAX_ATTACHMENTS = 10;
@@ -78,6 +77,7 @@ const createLocalId = () =>
 
 export default function CreateReportPage() {
   const router = useRouter();
+  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const { data: sessionData } = authClient.useSession();
@@ -116,15 +116,7 @@ export default function CreateReportPage() {
   const titleId = useId();
   const descriptionId = useId();
 
-  type CreateReportInput = Parameters<
-    typeof trpcClient.reports.createReport.mutate
-  >[0];
-
-  const createReport = useMutation({
-    mutationFn: async (input: CreateReportInput) => {
-      return await trpcClient.reports.createReport.mutate(input);
-    },
-  });
+  const createReport = useMutation(trpc.reports.createReport.mutationOptions());
 
   const reportsQueryKey = useMemo<QueryKey | null>(() => {
     if (!userId) return null;

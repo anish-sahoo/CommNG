@@ -68,11 +68,11 @@ const secretsManagerMock = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/utils/secrets-manager.js", () => ({
+vi.mock("../src/utils/secrets-manager.js", () => ({
   secretsManager: secretsManagerMock,
 }));
 
-vi.mock("@/utils/logger.js", () => ({
+vi.mock("../src/utils/logger.js", () => ({
   default: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -105,7 +105,7 @@ describe("database pool rotation", () => {
       password: "",
     });
 
-    const { connectPostgres } = await import("@/data/db/sql.js");
+    const { connectPostgres } = await import("../src/data/db/sql.js");
     await connectPostgres();
 
     expect(fakePoolState.instances).toHaveLength(1);
@@ -118,7 +118,7 @@ describe("database pool rotation", () => {
       password: "rotated",
     });
 
-    const { connectPostgres } = await import("@/data/db/sql.js");
+    const { connectPostgres } = await import("../src/data/db/sql.js");
     await connectPostgres();
 
     // New pool should be created with rotated password. We no longer close
@@ -134,7 +134,7 @@ describe("database pool rotation", () => {
       password: "",
     });
 
-    const { connectPostgres } = await import("@/data/db/sql.js");
+    const { connectPostgres } = await import("../src/data/db/sql.js");
     await connectPostgres();
 
     const rotationHandler = secretsManagerMock.rotationState.handler;

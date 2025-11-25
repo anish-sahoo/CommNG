@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { InviteCode } from "@/data/db/schema.js";
-import type { AuthRepository } from "@/data/repository/auth-repo.js";
-import type { InviteCodeRepository } from "@/data/repository/invite-code-repo.js";
-import type { RoleKey } from "@/data/roles.js";
-import { GLOBAL_ADMIN_KEY, GLOBAL_CREATE_INVITE_KEY } from "@/data/roles.js";
-import { InviteCodeService } from "@/service/invite-code-service.js";
+import type { InviteCode } from "../../src/data/db/schema.js";
+import type { AuthRepository } from "../../src/data/repository/auth-repo.js";
+import type { InviteCodeRepository } from "../../src/data/repository/invite-code-repo.js";
+import type { RoleKey } from "../../src/data/roles.js";
+import {
+  GLOBAL_ADMIN_KEY,
+  GLOBAL_CREATE_INVITE_KEY,
+} from "../../src/data/roles.js";
+import { InviteCodeService } from "../../src/service/invite-code-service.js";
 import {
   ForbiddenError,
   NotFoundError,
   ValidationError,
-} from "@/types/errors.js";
+} from "../../src/types/errors.js";
 
 // Mock nanoid to return predictable codes
 vi.mock("nanoid", () => ({

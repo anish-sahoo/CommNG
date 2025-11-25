@@ -4,13 +4,13 @@ import {
   type NewReport,
   reportAttachments,
   reports,
-} from "@/data/db/schema.js";
-import { ConflictError, NotFoundError } from "@/types/errors.js";
+} from "../../data/db/schema.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "@/types/reports-types.js";
+} from "../../types/reports-types.js";
 import { db } from "../db/sql.js";
 
 type Transaction = Parameters<typeof db.transaction>[0] extends (

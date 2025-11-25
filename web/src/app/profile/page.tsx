@@ -7,7 +7,6 @@ import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
 
-// ProfilePage allows users to view their information as well as edit and change the settings
 type UserProfileExtras = {
   location?: string | null;
   about?: string | null;
@@ -88,7 +87,7 @@ export default function ProfilePage() {
   const branch = userData.branch ?? "";
   const unit = userData.department ?? "";
   const signalNumber = userData.phoneNumber ?? "";
-  const image = userData.image ?? undefined;
+  const imageId = userData.image ?? null;
 
   const location = profile.location ?? "";
   const about = profile.about ?? "";
@@ -96,6 +95,8 @@ export default function ProfilePage() {
   const interests: string[] = Array.isArray(profile.interests)
     ? (profile.interests ?? [])
     : [];
+
+  const avatarSrc = imageId ? `/files/${imageId}` : undefined;
 
   const renderSignalContactText = () => (
     <span className="text-sm font-medium text-secondary">
@@ -154,9 +155,10 @@ export default function ProfilePage() {
     branch,
     unit,
     location,
+    avatarSrc,
+    avatarAlt: `${name} profile photo`,
     interests,
     about,
-    image,
     contactActions,
     headerActions: [
       {

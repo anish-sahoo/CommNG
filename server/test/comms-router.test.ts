@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import type { CommsRepository } from "@/data/repository/comms-repo.js";
-import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
+import type { CommsRepository } from "../src/data/repository/comms-repo.js";
+import type { ChannelUpdateMetadata } from "../src/types/comms-types.js";
 
 // Mock the logger to prevent pino configuration issues
 vi.mock("../src/utils/logger.js", () => ({

@@ -1,13 +1,13 @@
-import { MessageBlastRepository } from "@/data/repository/message-blast-repo.js";
-import { UserRepository } from "@/data/repository/user-repo.js";
-import { broadcastRole } from "@/data/roles.js";
-import { MessageBlastService } from "@/service/message-blast-service.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { ensureHasRole, protectedProcedure, router } from "@/trpc/trpc.js";
+import { MessageBlastRepository } from "../data/repository/message-blast-repo.js";
+import { UserRepository } from "../data/repository/user-repo.js";
+import { broadcastRole } from "../data/roles.js";
+import { MessageBlastService } from "../service/message-blast-service.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { ensureHasRole, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createMessageBlastInputSchema,
   deleteMessageBlastInputSchema,
-} from "@/types/message-blast-types.js";
+} from "../types/message-blast-types.js";
 
 const messageBlastRepository = new MessageBlastRepository();
 const userRepository = new UserRepository();

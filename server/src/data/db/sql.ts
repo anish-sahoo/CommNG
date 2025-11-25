@@ -1,7 +1,7 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool, type PoolConfig } from "pg";
-import log from "@/utils/logger.js";
-import { secretsManager } from "@/utils/secrets-manager.js";
+import log from "../../utils/logger.js";
+import { secretsManager } from "../../utils/secrets-manager.js";
 
 type ConnectionCredentials = {
   user: string;

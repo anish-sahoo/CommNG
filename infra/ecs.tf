@@ -93,6 +93,10 @@ resource "aws_ecs_task_definition" "server" {
           value = var.aws_region
         },
         {
+          name  = "BEDROCK_MODEL_ID"
+          value = "amazon.titan-embed-text-v2:0"
+        },
+        {
           name  = "DB_SECRET_ID"
           value = aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
         },

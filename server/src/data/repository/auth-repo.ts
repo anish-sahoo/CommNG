@@ -1,22 +1,22 @@
 import { count, eq } from "drizzle-orm";
-import { getRedisClientInstance } from "@/data/db/redis.js";
+import { getRedisClientInstance } from "../../data/db/redis.js";
 import {
   type RoleNamespace,
   roles,
   userRoles,
   users,
-} from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { getImpliedRoles } from "@/data/role-hierarchy.js";
-import type { RoleKey } from "@/data/roles.js";
-import { Cache } from "@/utils/cache.js";
-import log from "@/utils/logger.js";
+} from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { getImpliedRoles } from "../../data/role-hierarchy.js";
+import type { RoleKey } from "../../data/roles.js";
+// import { Cache } from "../../utils/cache.js";
+import log from "../../utils/logger.js";
 
 /**
  * Normalizes cached role data (plain arrays, serialized sets, etc.) into a Set<RoleKey>.
  * This protects us from legacy cache entries while keeping the runtime API consistent.
  */
-function hydrateRoleSet(value: unknown): Set<RoleKey> {
+function _hydrateRoleSet(value: unknown): Set<RoleKey> {
   if (value instanceof Set) {
     return value as Set<RoleKey>;
   }
@@ -59,9 +59,9 @@ export class AuthRepository {
     return rows.map((row) => row.userId);
   }
 
-  @Cache((userId: string) => `roles:${userId}`, 3600, {
-    hydrate: hydrateRoleSet,
-  })
+  // @Cache((userId: string) => `roles:${userId}`, 3600, {
+  //   hydrate: hydrateRoleSet,
+  // })
   /**
    * Get all role keys assigned to a user
    * @param userId User ID
@@ -79,9 +79,9 @@ export class AuthRepository {
     return new Set(rows.map((r) => r.key));
   }
 
-  @Cache((userId: string) => `roles:implied:${userId}`, 3600, {
-    hydrate: hydrateRoleSet,
-  })
+  // @Cache((userId: string) => `roles:implied:${userId}`, 3600, {
+  //   hydrate: hydrateRoleSet,
+  // })
   /**
    * Get all role keys assigned to a user, including implied roles from hierarchy
    * @param userId User ID
@@ -114,7 +114,7 @@ export class AuthRepository {
     return roleData.map((r) => r.roleKey);
   }
 
-  @Cache((roleKey: string) => `role:id:${roleKey}`, 3600)
+  // @Cache((roleKey: string) => `role:id:${roleKey}`, 3600)
   /**
    * Get the role ID for a given role key
    * @param roleKey Role key

@@ -1,6 +1,6 @@
 import { eq, ne } from "drizzle-orm";
 import { channels } from "../src/data/db/schema.js";
-import { db, shutdownPostgres } from "../src/data/db/sql.js";
+import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
 
 /**
  * Clears every channel except for the default Events channel.
@@ -12,6 +12,7 @@ import { db, shutdownPostgres } from "../src/data/db/sql.js";
 const EVENT_CHANNEL_NAME = "Events";
 
 async function clearNonEventChannels() {
+  await connectPostgres();
   const [eventChannel] = await db
     .select({
       channelId: channels.channelId,

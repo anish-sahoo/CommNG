@@ -61,8 +61,8 @@ async function grantRole() {
     console.log(`Granted ${roleKey} to ${email}`);
   } else {
     console.error(`Failed to grant ${roleKey} to ${email}`);
-    process.exit(1);
   }
+  process.exit(1);
 }
 
 grantRole()

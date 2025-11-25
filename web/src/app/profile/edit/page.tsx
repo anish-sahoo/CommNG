@@ -211,35 +211,9 @@ export default function ProfileEditPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  type UpdateUserProfileVars = {
-    name?: string;
-    phoneNumber?: string | null;
-    rank?: string | null;
-    department?: string | null;
-    branch?: string | null;
-    image?: string | null;
-    location?: string | null;
-    about?: string | null;
-    interests?: string[] | null;
-  };
-
-  type UpdateUserProfileMutationOptions = ReturnType<
-    typeof trpc.user.updateUserProfile.mutationOptions
-  >;
-
-  type UpdateUserProfileError = Parameters<
-    NonNullable<UpdateUserProfileMutationOptions["onError"]>
-  >[0];
-
-  type UpdateUserProfileData = Parameters<
-    NonNullable<UpdateUserProfileMutationOptions["onSuccess"]>
-  >[0];
-
-  const updateUserProfile = useMutation<
-    UpdateUserProfileData,
-    UpdateUserProfileError,
-    UpdateUserProfileVars
-  >(trpc.user.updateUserProfile.mutationOptions());
+  const updateUserProfile = useMutation(
+    trpc.user.updateUserProfile.mutationOptions(),
+  );
 
   const isSaving = updateUserProfile.isPending;
 
@@ -322,49 +296,50 @@ export default function ProfileEditPage() {
       return;
     }
 
-    const payload: UpdateUserProfileVars = {
-      name,
-      phoneNumber: signalNumber || null,
-      department: unit || null,
-      rank: rank || null,
-      branch: branch || null,
-      image: avatarFileId ?? null,
-      location: location || null,
-      about: about || null,
-      interests: interests.length ? interests : null,
-    };
-
-    updateUserProfile.mutate(payload, {
-      async onSuccess() {
-        await queryClient.invalidateQueries({
-          queryKey: ["current-user-profile", userId],
-        });
-
-        setInitialState({
-          name,
-          rank,
-          branch,
-          unit,
-          location,
-          email,
-          signalNumber,
-          interestsRaw,
-          about,
-          avatarFileId,
-        });
-        setPhotoFile(null);
-
-        toast.success("Profile updated", {
-          description: "Your profile changes have been saved.",
-        });
-        router.push("/profile");
+    updateUserProfile.mutate(
+      {
+        name,
+        phoneNumber: signalNumber || null,
+        department: unit || null,
+        rank: rank || null,
+        branch: branch || null,
+        image: avatarFileId ?? null,
+        location: location || null,
+        about: about || null,
+        interests: interests.length ? interests : null,
       },
-      onError(error) {
-        toast.error("Unable to update profile", {
-          description: error.message,
-        });
+      {
+        async onSuccess() {
+          await queryClient.invalidateQueries({
+            queryKey: ["current-user-profile", userId],
+          });
+
+          setInitialState({
+            name,
+            rank,
+            branch,
+            unit,
+            location,
+            email,
+            signalNumber,
+            interestsRaw,
+            about,
+            avatarFileId,
+          });
+          setPhotoFile(null);
+
+          toast.success("Profile updated", {
+            description: "Your profile changes have been saved.",
+          });
+          router.push("/profile");
+        },
+        onError(error) {
+          toast.error("Unable to update profile", {
+            description: error.message,
+          });
+        },
       },
-    });
+    );
   };
 
   const requestLeave = (action: () => void) => {
