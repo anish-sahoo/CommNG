@@ -157,19 +157,41 @@ export default function Page() {
                   className="w-full"
                 />
 
-                <label>
-                  Don't have an account?{" "}
-                  <Link
-                    href={`/sign-up`}
+                <div>
+                  <label
+                    htmlFor="login-password"
+                    className="mb-2 block text-sm font-semibold text-secondary"
                   >
-                    <span className="cursor-pointer text-primary underline-offset-4 hover:underline">
-                      Sign up
-                    </span>
+                    Password
+                  </label>
+                  <TextInput
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(value) => {
+                      setPassword(value);
+                      setErrorMessage(null);
+                    }}
+                    className="w-full"
+                  />
+
+                  <Link href="/forgot-password">
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="text-xs text-primary underline-offset-4 p-0"
+                      >
+                        Forgot password?
+                      </Button>
+                    </div>
                   </Link>
-                </label>
+                </div>
               </div>
 
-              {stage === "password" ? (
+              {/* {stage === "password" ? (
                 <div>
                   <label
                     htmlFor="login-password"
@@ -202,6 +224,7 @@ export default function Page() {
                   </Link>
                 </div>
               ) : null}
+            */}
             </div>
 
             {errorMessage ? (
@@ -224,6 +247,15 @@ export default function Page() {
                 {(isCheckingEmail || isSigningIn) && <Spinner />}
                 {stage === "email" ? "Continue" : "Sign in"}
               </Button>
+
+              <label className=" block text-sm text-secondary">
+                Don't have an account?{" "}
+                <Link href={`/sign-up`}>
+                  <span className="cursor-pointer text-primary underline-offset-4 hover:underline">
+                    Sign up
+                  </span>
+                </Link>
+              </label>
 
               {stage === "password" ? (
                 <div className="flex flex-col items-center gap-2">
