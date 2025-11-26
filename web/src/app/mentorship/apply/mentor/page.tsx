@@ -12,6 +12,13 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 
+type ResumeState = null | {
+  file: File;
+  status: "uploading" | "uploaded" | "error";
+  fileId?: string;
+  error?: string;
+};
+
 //Static arrays for select options
 const positionOptions = [
   {
@@ -149,7 +156,7 @@ const rankOptions = [
 export default function MentorshipApplyMentorPage() {
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
-  const [files, setFiles] = useState<File[] | undefined>();
+  const [resume, setResume] = useState<ResumeState>(null);
   const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [multiLineText, setMultiLineText] = useState("");
@@ -269,10 +276,15 @@ export default function MentorshipApplyMentorPage() {
           <Dropzone
             className="mb-3 max-w-3xl"
             onDrop={(files) => {
-              setFiles(files);
+              if (files.length > 0) {
+                setResume({
+                  file: files[0],
+                  status: "uploading",
+                });
+              }
             }}
-            src={files}
-            maxFiles={5}
+            src={resume ? [resume.file] : undefined}
+            maxFiles={1}
           >
             <DropzoneEmptyState />
             <DropzoneContent />
