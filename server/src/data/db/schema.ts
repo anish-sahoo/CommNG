@@ -34,6 +34,12 @@ export const menteeStatusEnum = pgEnum("mentee_status_enum", [
   "matched",
 ]);
 
+export const matchStatusEnum = pgEnum("match_status_enum", [
+  "pending", // Mentee requested, waiting for mentor acceptance
+  "accepted", // Mentor accepted the request
+  "declined", // Mentor declined the request
+]);
+
 export const messageBlastStatusEnum = pgEnum("message_blast_status_enum", [
   "draft",
   "sent",
@@ -457,6 +463,7 @@ export const mentorshipMatches = pgTable(
     matchId: integer("match_id").primaryKey().generatedAlwaysAsIdentity(),
     requestorUserId: text("requestor_user_id").references(() => users.id),
     mentorUserId: text("mentor_user_id").references(() => users.id),
+    status: matchStatusEnum("status").default("pending").notNull(),
     matchedAt: timestamp("matched_at", { withTimezone: false })
       .defaultNow()
       .notNull(),
@@ -468,6 +475,7 @@ export const mentorshipMatches = pgTable(
     ),
     index("ix_mentorship_matches_requestor_user_id").on(table.requestorUserId),
     index("ix_mentorship_matches_mentor_user_id").on(table.mentorUserId),
+    index("ix_mentorship_matches_status").on(table.status),
   ],
 );
 
