@@ -380,30 +380,28 @@ export class CommsService {
     // Check if user already has a role in this channel
     const hasRole = await policyEngine.validate(user_id, roleKey);
 
-    if (hasRole) {
-      throw new BadRequestError("You are already a member of this channel");
-    }
-
-    // Create read role and assign it to the user
-    await policyEngine.createAndAssignChannelRole(
-      user_id,
-      user_id,
-      roleKey,
-      "read",
-      "channel",
-      channel_id,
-    );
-
-    if (channelData?.postPermissionLevel === "everyone") {
-      const postRoleKey = channelRole("post", channel_id);
+    if (!hasRole) {
+      // Create read role and assign it to the user
       await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
-        postRoleKey,
-        "post",
+        roleKey,
+        "read",
         "channel",
         channel_id,
       );
+
+      if (channelData?.postPermissionLevel === "everyone") {
+        const postRoleKey = channelRole("post", channel_id);
+        await policyEngine.createAndAssignChannelRole(
+          user_id,
+          user_id,
+          postRoleKey,
+          "post",
+          "channel",
+          channel_id,
+        );
+      }
     }
 
     // Auto-subscribe the user with notifications enabled

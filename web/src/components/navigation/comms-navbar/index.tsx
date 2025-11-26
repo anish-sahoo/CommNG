@@ -10,8 +10,11 @@ import { cn } from "@/lib/utils";
 type Channel<T extends string = string> = {
   id: string;
   label: string;
-  href: Route<`/communications/${T}`>;
-  type: "all" | "channel";
+  href:
+    | Route<`/communications/${T}`>
+    | "/communications"
+    | "/communications/all-channels";
+  type: "link" | "channel";
   userPermission?: "admin" | "post" | "read" | null;
   postPermissionLevel?: "admin" | "everyone" | "custom";
 };
@@ -92,10 +95,16 @@ export const CommsNavBar = ({
 
   const channels: Channel[] = [
     {
-      id: "all",
-      label: "All Channels",
+      id: "my-channels",
+      label: "My Channels",
       href: "/communications",
-      type: "all",
+      type: "link",
+    },
+    {
+      id: "all-channels",
+      label: "All Channels",
+      href: "/communications/all-channels",
+      type: "link",
     },
     ...(accessibleChannels.map((channel) => ({
       id: channel.channelId.toString(),
@@ -126,7 +135,8 @@ export const CommsNavBar = ({
         ) : null}
         {channels.map((channel) => {
           const isActive =
-            channel.href === "/communications"
+            channel.href === "/communications" ||
+            channel.href === "/communications/all-channels"
               ? pathname === channel.href
               : pathname === channel.href ||
                 pathname.startsWith(`${channel.href}/`);
