@@ -15,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
@@ -112,7 +111,7 @@ export default function CommunicationsOverviewPage() {
     if (Array.isArray(data) && data.length > 0) {
       return data;
     }
-    return [DEMO_CHANNEL];
+    return [];
   }, [data]);
 
   const channels = useMemo(() => {
@@ -271,11 +270,11 @@ export default function CommunicationsOverviewPage() {
           <section className="grid h-64 place-items-center rounded-2xl border border-primary/20 bg-card text-secondary/70">
             Loading channels…
           </section>
-        ) : channels.length === 0 ? (
+        ) : channels.length === 0 && search.trim() ? (
           <section className="grid h-64 place-items-center rounded-2xl border border-primary/20 bg-card text-secondary/70">
             No channels match "{search.trim()}".
           </section>
-        ) : (
+        ) : channels.length > 0 ? (
           <section className={gridClassName}>
             {channels.map((channel, index) => {
               const metadata = (channel.metadata ?? {}) as ChannelMetadata;
@@ -316,7 +315,7 @@ export default function CommunicationsOverviewPage() {
               );
             })}
           </section>
-        )}
+        ) : null}
       </div>
     </TitleShell>
   );
