@@ -23,6 +23,7 @@ import {
   type BroadcastActions,
   broadcastRole,
   GLOBAL_ADMIN_KEY,
+  GLOBAL_CREATE_INVITE_KEY,
   type ReportingActions,
   ROLE_HIERARCHIES,
   type RoleKey,
@@ -92,7 +93,14 @@ async function main() {
           roleKey = reportingRole(action as ReportingActions);
           break;
         case "global":
-          roleKey = GLOBAL_ADMIN_KEY;
+          if (action === "admin") {
+            roleKey = GLOBAL_ADMIN_KEY;
+          } else if (action === "create-invite") {
+            roleKey = GLOBAL_CREATE_INVITE_KEY;
+          } else {
+            console.warn(`Skipping unknown global action: ${action}`);
+            continue;
+          }
           break;
         default:
           // Unexpected namespace - fall back to "namespace:action" string

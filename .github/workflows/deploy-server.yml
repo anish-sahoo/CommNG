@@ -91,6 +91,14 @@ jobs:
             --task-definition ${{ env.ECS_TASK_DEFINITION }} \
             --query taskDefinition > task-definition.json
 
+      - name: Inject image tag into task definition
+        run: |
+          IMAGE_TAG="${{ steps.release-version.outputs.version }}"
+          jq --arg tag "$IMAGE_TAG" \
+            '.containerDefinitions[0].environment += [{"name":"IMAGE_TAG","value":$tag}]' \
+            task-definition.json > new-task-def.json
+          mv new-task-def.json task-definition.json
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1

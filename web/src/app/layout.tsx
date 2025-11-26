@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import NotificationSubscriber from "@/components/providers/notification-subscriber";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen w-full max-w-full overflow-x-hidden">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <NotificationSubscriber />
+          {children}
+        </QueryProvider>
         <Toaster />
       </body>
     </html>

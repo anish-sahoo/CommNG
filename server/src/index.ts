@@ -3,6 +3,7 @@ import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
 import { auth } from "./auth.js";
+import { allowedOrigins } from "./cors.js";
 import { connectRedis, getRedisClientInstance } from "./data/db/redis.js";
 import { connectPostgres } from "./data/db/sql.js";
 import { policyEngine } from "./service/policy-engine.js";
@@ -12,13 +13,6 @@ import log from "./utils/logger.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
-
-// Configure allowed origins for CORS
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  process.env.BACKEND_URL,
-].filter(Boolean);
 
 app.use(
   cors({
@@ -61,17 +55,23 @@ app.get("/api/health", (_req, res) => {
     log.warn("Health check: Connections still initializing");
     return res.status(200).json({
       status: "initializing",
-      postgres: isPostgresConnected,
-      redis: isRedisConnected,
+      db: {
+        postgres: isPostgresConnected,
+        redis: isRedisConnected,
+      },
       timestamp: new Date().toISOString(),
+      image: process.env.IMAGE_TAG || "unknown",
     });
   }
 
   res.status(200).json({
     status: "healthy",
-    postgres: isPostgresConnected,
-    redis: isRedisConnected,
+    db: {
+      postgres: isPostgresConnected,
+      redis: isRedisConnected,
+    },
     timestamp: new Date().toISOString(),
+    image: process.env.IMAGE_TAG || "unknown",
   });
 });
 
