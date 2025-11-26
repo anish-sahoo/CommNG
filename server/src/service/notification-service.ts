@@ -1,12 +1,12 @@
 import webpush from "web-push";
-import type { ActivePushSubscription } from "../data/repository/notification-repo.js";
-import { NotificationRepository } from "../data/repository/notification-repo.js";
-import type { TargetAudience } from "../types/message-blast-types.js";
+import type { ActivePushSubscription } from "@/data/repository/notification-repo.js";
+import { NotificationRepository } from "@/data/repository/notification-repo.js";
+import type { TargetAudience } from "@/types/message-blast-types.js";
 import type {
   NotificationPayload,
   SubscribeInput,
-} from "../types/notification-types.js";
-import log from "../utils/logger.js";
+} from "@/types/notification-types.js";
+import log from "@/utils/logger.js";
 
 /**
  * Service for managing web push notifications and subscriptions

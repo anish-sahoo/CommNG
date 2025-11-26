@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowRightLeft,
   Bell,
   BellPlus,
   Check,
@@ -62,6 +63,7 @@ export const icons = {
   user: User,
   drag: GripVertical,
   help: CircleQuestionMark,
+  sort: ArrowRightLeft,
   externalLink: ExternalLink,
 } satisfies Record<string, LucideIcon>;
 

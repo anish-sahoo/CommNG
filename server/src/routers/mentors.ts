@@ -1,11 +1,11 @@
-import { MenteeRepository } from "../data/repository/mentee-repo.js";
-import { MentorRepository } from "../data/repository/mentor-repo.js";
-import { MatchingService } from "../service/matching-service.js";
-import { MentorshipService } from "../service/mentorship-service.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
-import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
-import { createMentorInputSchema } from "../types/mentor-types.js";
-import log from "../utils/logger.js";
+import { MenteeRepository } from "@/data/repository/mentee-repo.js";
+import { MentorRepository } from "@/data/repository/mentor-repo.js";
+import { MatchingService } from "@/service/matching-service.js";
+import { MentorshipService } from "@/service/mentorship-service.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
+import { procedure, protectedProcedure, router } from "@/trpc/trpc.js";
+import { createMentorInputSchema } from "@/types/mentor-types.js";
+import log from "@/utils/logger.js";
 
 const mentorRepo = new MentorRepository();
 const menteeRepo = new MenteeRepository();
@@ -20,10 +20,17 @@ const createMentor = protectedProcedure
     const mentor = await mentorRepo.createMentor(
       input.userId,
       input.mentorshipPreferences,
-      input.rank,
       input.yearsOfService,
-      input.eligibilityData,
+      input.eligibilityData ?? undefined,
       input.status,
+      input.resumeFileId,
+      input.strengths,
+      input.personalInterests,
+      input.whyInterestedResponses,
+      input.careerAdvice,
+      input.preferredMenteeCareerStages,
+      input.preferredMeetingFormat,
+      input.hoursPerMonthCommitment,
     );
 
     // Trigger matching process

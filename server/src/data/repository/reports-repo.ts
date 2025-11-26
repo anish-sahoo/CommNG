@@ -1,16 +1,16 @@
 import { desc, eq, inArray } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
-import type {
-  AssignReport,
-  CreateReport,
-  EditReport,
-} from "../../types/reports-types.js";
 import {
   files,
   type NewReport,
   reportAttachments,
   reports,
-} from "../db/schema.js";
+} from "@/data/db/schema.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
+import type {
+  AssignReport,
+  CreateReport,
+  EditReport,
+} from "@/types/reports-types.js";
 import { db } from "../db/sql.js";
 
 type Transaction = Parameters<typeof db.transaction>[0] extends (
@@ -43,13 +43,7 @@ const BASE_REPORT_FIELDS = {
 /**
  * Repository to handle database queries/communication related to reports.
  */
-/**
- * Repository to handle database queries/communication related to reports.
- */
 export class ReportRepository {
-  /**
-   * Returns the reports created by a specific user.
-   */
   /**
    * Returns the reports created by a specific user.
    * @param userId User ID
@@ -74,8 +68,25 @@ export class ReportRepository {
   }
 
   /**
-   * Fetch a single report. Throws if not found.
+   * Returns every report regardless of submitter.
    */
+  async getAllReports() {
+    const result = await db
+      .select(BASE_REPORT_FIELDS)
+      .from(reports)
+      .orderBy(desc(reports.createdAt));
+
+    const attachmentMap = await this.getAttachmentsForReports(
+      db,
+      result.map((row) => row.reportId),
+    );
+
+    return result.map((row) => ({
+      ...row,
+      attachments: attachmentMap.get(row.reportId) ?? [],
+    }));
+  }
+
   /**
    * Fetch a single report by its ID.
    * @param reportId Report ID
@@ -101,9 +112,6 @@ export class ReportRepository {
     };
   }
 
-  /**
-   * Create a new report.
-   */
   /**
    * Create a new report.
    * @param input CreateReport input object
@@ -140,9 +148,6 @@ export class ReportRepository {
     });
   }
 
-  /**
-   * Update an existing report.
-   */
   /**
    * Update an existing report.
    * @param reportId Report ID
@@ -212,9 +217,6 @@ export class ReportRepository {
     });
   }
 
-  /**
-   * Delete a report permanently.
-   */
   /**
    * Delete a report permanently.
    * @param reportId Report ID

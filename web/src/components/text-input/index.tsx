@@ -42,16 +42,14 @@ export const TextInput = (props: TextInputProps) => {
     disabled,
     ...rest
   } = props;
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    if (disabled) {
-      return;
-    }
+    if (disabled) return;
 
     const newValue = e.target.value;
 
-    // Respect maxLength if provided
     if (maxLength !== undefined && newValue.length > maxLength) {
       return;
     }
@@ -66,6 +64,7 @@ export const TextInput = (props: TextInputProps) => {
     color: counterColor,
   };
 
+  // Multiline (textarea)
   if ("multiline" in rest && rest.multiline) {
     const {
       rows,
@@ -77,7 +76,7 @@ export const TextInput = (props: TextInputProps) => {
     } & React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
     return (
-      <div className="relative w-full">
+      <div className="relative w-full max-w-full">
         <Textarea
           {...textareaProps}
           value={value}
@@ -87,7 +86,7 @@ export const TextInput = (props: TextInputProps) => {
           disabled={disabled}
           rows={rows ?? 3}
           className={cn(
-            "resize-none pb-7",
+            "w-full max-w-full resize-none pb-7",
             showCount && "pb-7 pr-16",
             className,
           )}
@@ -95,7 +94,7 @@ export const TextInput = (props: TextInputProps) => {
 
         {showCount && (
           <div
-            className="absolute bottom-2 right-3 text-xs pointer-events-none bg-background px-1"
+            className="pointer-events-none absolute bottom-2 right-3 bg-background px-1 text-xs"
             style={counterStyles}
           >
             {charCount}
@@ -116,7 +115,7 @@ export const TextInput = (props: TextInputProps) => {
   } & React.InputHTMLAttributes<HTMLInputElement>;
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full max-w-full">
       <Input
         {...inputProps}
         value={value}
@@ -125,7 +124,11 @@ export const TextInput = (props: TextInputProps) => {
         maxLength={maxLength}
         disabled={disabled}
         type={type}
-        className={cn(showCount && "pr-20", className)}
+        className={cn(
+          "w-full max-w-full truncate",
+          showCount && "pr-20",
+          className,
+        )}
       />
 
       {showCount && (

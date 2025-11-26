@@ -1,14 +1,13 @@
 {
   "name": "server",
   "type": "module",
-  "version": "0.8.2-SNAPSHOT",
+  "version": "0.10.0-SNAPSHOT",
   "description": "",
   "main": "index.ts",
   "scripts": {
     "dev": "npx dotenv -e .env -- tsx watch --clear-screen=false src/index.ts",
     "test": "vitest",
-    "db:generate": "npx dotenv -e .env -- drizzle-kit generate --config=drizzle.config.ts",
-    "db:migrate": "npx dotenv -e .env -- drizzle-kit migrate --config=drizzle.config.ts",
+    "db:push": "npx dotenv -e .env -- drizzle-kit push --config=drizzle.config.ts",
     "db:studio": "npx dotenv -e .env -- drizzle-kit studio --config=drizzle.config.ts",
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
@@ -27,6 +26,7 @@
     "dotenv-cli": "^10.0.0",
     "drizzle-kit": "^0.31.5",
     "pino-pretty": "^13.1.1",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
   "overrides": {
@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",
+    "@aws-sdk/client-secrets-manager": "^3.936.0",
     "@aws-sdk/s3-request-presigner": "^3.917.0",
     "@trpc/client": "^11.6.0",
     "@trpc/server": "^11.6.0",
@@ -41,11 +42,12 @@
     "cors": "^2.8.5",
     "drizzle-orm": "^0.44.6",
     "express": "^5.1.0",
+    "nanoid": "^5.1.6",
     "p-limit": "^7.1.1",
     "pg": "^8.16.3",
     "pino": "^10.0.0",
     "redis": "^5.8.3",
-    "web-push": "^3.6.7",
-    "tsx": "^4.20.6"
+    "tsx": "^4.20.6",
+    "web-push": "^3.6.7"
   }
 }

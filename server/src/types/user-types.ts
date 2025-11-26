@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { RoleNamespace } from "../data/db/schema.js";
+import type { RoleNamespace } from "@/data/db/schema.js";
 
 export const userSchema = z.object({
   userId: z.number().int().positive(),
@@ -9,8 +9,15 @@ export const userSchema = z.object({
   rank: z.string().nullable().optional(),
   department: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
+  positionType: z.enum(["active", "guard", "reserve"]).nullable().optional(),
+  serviceType: z.enum(["enlisted", "officer"]).nullable().optional(),
+  detailedPosition: z.string().nullable().optional(),
+  detailedRank: z.string().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type UserSchema = z.infer<typeof userSchema>;
@@ -33,7 +40,14 @@ export const createUserProfileInputSchema = z.object({
   rank: z.string().nullable().optional(),
   department: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
+  positionType: z.enum(["active", "guard", "reserve"]).nullable().optional(),
+  serviceType: z.enum(["enlisted", "officer"]).nullable().optional(),
+  detailedPosition: z.string().nullable().optional(),
+  detailedRank: z.string().nullable().optional(),
   imageFileId: z.string().uuid().nullable().optional(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type CreateUserProfileInput = z.infer<
@@ -46,7 +60,14 @@ export const updateUserProfileInputSchema = z.object({
   rank: z.string().nullable().optional(),
   department: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
+  positionType: z.enum(["active", "guard", "reserve"]).nullable().optional(),
+  serviceType: z.enum(["enlisted", "officer"]).nullable().optional(),
+  detailedPosition: z.string().nullable().optional(),
+  detailedRank: z.string().nullable().optional(),
   image: z.string().uuid().nullable().optional(),
+  location: z.string().nullable().optional(),
+  about: z.string().nullable().optional(),
+  interests: z.array(z.string()).nullable().optional(),
 });
 
 export type UpdateUserProfileInput = z.infer<

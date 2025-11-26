@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
-import { NotFoundError } from "../../types/errors.js";
-import { users } from "../db/schema.js";
-import { db } from "../db/sql.js";
+import { users } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { NotFoundError } from "@/types/errors.js";
 
 /**
  * Repository to handle database queries/communication related to users
@@ -26,6 +26,9 @@ export class UserRepository {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         image: users.image,
+        location: users.location,
+        about: users.about,
+        interests: users.interests,
       })
       .from(users)
       .where(eq(users.id, user_id));
@@ -58,6 +61,9 @@ export class UserRepository {
       department?: string | null;
       branch?: string | null;
       image?: string | null;
+      location?: string | null;
+      about?: string | null;
+      interests?: string[] | null;
     },
   ) {
     const updateFields: Partial<typeof users.$inferInsert> = {
@@ -84,6 +90,18 @@ export class UserRepository {
       updateFields.image = profileData.image;
     }
 
+    if (profileData.location !== undefined) {
+      updateFields.location = profileData.location;
+    }
+
+    if (profileData.about !== undefined) {
+      updateFields.about = profileData.about;
+    }
+
+    if (profileData.interests !== undefined) {
+      updateFields.interests = profileData.interests;
+    }
+
     const [updated] = await db
       .update(users)
       .set(updateFields)
@@ -99,6 +117,9 @@ export class UserRepository {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         image: users.image,
+        location: users.location,
+        about: users.about,
+        interests: users.interests,
       });
 
     if (!updated) {
@@ -117,6 +138,9 @@ export class UserRepository {
       department?: string | null;
       branch?: string | null;
       image?: string | null;
+      location?: string | null;
+      about?: string | null;
+      interests?: string[] | null;
     },
   ) {
     const updateFields: Partial<typeof users.$inferInsert> = {};
@@ -130,6 +154,11 @@ export class UserRepository {
     if (updateData.branch !== undefined)
       updateFields.branch = updateData.branch;
     if (updateData.image !== undefined) updateFields.image = updateData.image;
+    if (updateData.location !== undefined)
+      updateFields.location = updateData.location;
+    if (updateData.about !== undefined) updateFields.about = updateData.about;
+    if (updateData.interests !== undefined)
+      updateFields.interests = updateData.interests;
 
     const [updated] = await db
       .update(users)
@@ -146,6 +175,9 @@ export class UserRepository {
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
         image: users.image,
+        location: users.location,
+        about: users.about,
+        interests: users.interests,
       });
 
     if (!updated) {

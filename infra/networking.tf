@@ -185,7 +185,29 @@ resource "aws_lb_target_group" "web" {
   })
 }
 
-# ALB Listener
+# ------------------------------------------------------------
+# ACM Certificate
+# ------------------------------------------------------------
+
+resource "aws_acm_certificate" "main" {
+  count             = var.domain_name != "" ? 1 : 0
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-certificate"
+  })
+}
+
+# ------------------------------------------------------------
+# ALB Listeners
+# ------------------------------------------------------------
+
+# HTTP Listener - Always forwards traffic (works regardless of HTTPS setup)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = "80"
@@ -197,9 +219,58 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# ALB Listener Rules for routing
-resource "aws_lb_listener_rule" "server" {
+# HTTP Listener Rule for server routing
+resource "aws_lb_listener_rule" "server_http" {
   listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.server.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*", "/trpc/*"]
+    }
+  }
+}
+
+# Certificate Validation - Wait for DNS validation to complete
+resource "aws_acm_certificate_validation" "main" {
+  count           = var.domain_name != "" ? 1 : 0
+  certificate_arn = aws_acm_certificate.main[0].arn
+
+  timeouts {
+    create = "5m"  # Short timeout - will fail fast if CNAME not added
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# HTTPS Listener - Only created after certificate is validated
+resource "aws_lb_listener" "https" {
+  count             = var.domain_name != "" ? 1 : 0
+  load_balancer_arn = aws_lb.main.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = aws_acm_certificate_validation.main[0].certificate_arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.web.arn
+  }
+
+  depends_on = [aws_acm_certificate_validation.main]
+}
+
+# HTTPS Listener Rule for server routing (only when HTTPS exists)
+resource "aws_lb_listener_rule" "server_https" {
+  count        = var.domain_name != "" ? 1 : 0
+  listener_arn = aws_lb_listener.https[0].arn
   priority     = 100
 
   action {

@@ -1,9 +1,10 @@
-import { CommsRepository } from "../data/repository/comms-repo.js";
-import { channelRole } from "../data/roles.js";
-import { CommsService } from "../service/comms-service.js";
-import { policyEngine } from "../service/policy-engine.js";
-import { withErrorHandling } from "../trpc/error_handler.js";
-import { ensureHasRole, protectedProcedure, router } from "../trpc/trpc.js";
+import { CommsRepository } from "@/data/repository/comms-repo.js";
+import { channelRole } from "@/data/roles.js";
+import { fileService } from "@/routers/files.js";
+import { CommsService } from "@/service/comms-service.js";
+import { policyEngine } from "@/service/policy-engine.js";
+import { withErrorHandling } from "@/trpc/error_handler.js";
+import { ensureHasRole, protectedProcedure, router } from "@/trpc/trpc.js";
 import {
   createChannelSchema,
   createSubscriptionSchema,
@@ -16,12 +17,13 @@ import {
   joinChannelSchema,
   leaveChannelSchema,
   postPostSchema,
+  removeMemberSchema,
   toggleReactionSchema,
   updateChannelSchema,
-} from "../types/comms-types.js";
-import { ForbiddenError, InternalServerError } from "../types/errors.js";
-import log from "../utils/logger.js";
-import { fileService } from "./files.js";
+  updateSubscriptionSchema,
+} from "@/types/comms-types.js";
+import { ForbiddenError, InternalServerError } from "@/types/errors.js";
+import log from "@/utils/logger.js";
 
 const commsRepo = new CommsRepository();
 const commsService = new CommsService(commsRepo);
@@ -190,25 +192,16 @@ const createChannel = protectedProcedure
     }),
   );
 
-// get channel settings
-/*const getChannelSettings = protectedProcedure
-  .input(updateChannelSchema)
-  .query(({ input }) =>
-    withErrorHandling("getChannelSettings", async () => {
-      log.debug({ channelId: input.channelId }, "getChannelSettings");
-      return await commsRepo.getChannelSettings(input.channelId);
-    }),
-  );*/
-
 // update channel settings
 const updateChannelSettings = protectedProcedure
   .input(updateChannelSchema)
   .mutation(({ ctx, input }) =>
     withErrorHandling("updateChannel", async () => {
       ensureHasRole(ctx, [channelRole("admin", input.channelId)]);
-
       return await commsService.updateChannelSettings(
+        input.metadata.name,
         input.channelId,
+        input.metadata.description,
         input.metadata,
       );
     }),
@@ -269,6 +262,18 @@ const getUserSubscriptions = protectedProcedure.query(({ ctx }) =>
   }),
 );
 
+const updateSubscriptionSettings = protectedProcedure
+  .input(updateSubscriptionSchema)
+  .mutation(({ input }) =>
+    withErrorHandling("updateSubscription", async () => {
+      return await commsService.updateSubscriptionSettings(
+        input.channelId,
+        input.userId,
+        input.notificationsEnabled,
+      );
+    }),
+  );
+
 // Delete channel endpoint (admin only)
 const deleteChannel = protectedProcedure
   .input(deleteChannelSchema)
@@ -308,6 +313,26 @@ const joinChannel = protectedProcedure
     }),
   );
 
+// Remove member endpoint (admin only)
+const removeMember = protectedProcedure
+  .input(removeMemberSchema)
+  .mutation(({ ctx, input }) =>
+    withErrorHandling("removeMember", async () => {
+      const userId = ctx.auth.user.id;
+
+      log.debug(
+        { userId, targetUserId: input.userId, channelId: input.channelId },
+        "Removing member from channel",
+      );
+
+      return await commsService.removeUserFromChannel(
+        userId,
+        input.channelId,
+        input.userId,
+      );
+    }),
+  );
+
 export const commsRouter = router({
   createPost,
   getAllChannels,
@@ -317,12 +342,13 @@ export const commsRouter = router({
   deletePost,
   createChannel,
   updateChannelSettings,
-  // getChannelSettings,
   getChannelMembers,
   createSubscription,
   deleteSubscription,
   getUserSubscriptions,
+  updateSubscriptionSettings,
   deleteChannel,
   leaveChannel,
   joinChannel,
+  removeMember,
 });

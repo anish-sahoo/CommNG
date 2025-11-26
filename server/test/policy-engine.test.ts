@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { AuthRepository } from "../src/data/repository/auth-repo.js";
-import type { RoleKey } from "../src/data/roles.js";
-import { PolicyEngine } from "../src/service/policy-engine.js";
+import type { AuthRepository } from "@/data/repository/auth-repo.js";
+import type { RoleKey } from "@/data/roles.js";
+import { PolicyEngine } from "@/service/policy-engine.js";
 
 vi.mock("../src/data/db/redis.js", () => {
   const mockRedisClient = {

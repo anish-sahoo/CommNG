@@ -3,12 +3,12 @@ import * as fsp from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { ForbiddenError } from "../types/errors.js";
 import {
   type FileInputStreamOptions,
   type FilePath,
   StorageAdapter,
-} from "./storage-adapter.js";
+} from "@/storage/storage-adapter.js";
+import { ForbiddenError } from "@/types/errors.js";
 
 /**
  * Storage adapter for local filesystem operations

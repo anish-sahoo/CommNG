@@ -16,7 +16,6 @@
  * This is idempotent: existing roles are skipped.
  */
 
-import { connectRedis, disconnectRedis } from "../src/data/db/redis.js";
 import type { RoleNamespace } from "../src/data/db/schema.js";
 import { connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
 import { AuthRepository } from "../src/data/repository/auth-repo.js";
@@ -30,8 +29,22 @@ import {
   reportingRole,
 } from "../src/data/roles.js";
 
+let disconnectRedisFn: (() => Promise<void>) | null = null;
+
 async function main() {
-  await connectRedis();
+  try {
+    const { connectRedis, disconnectRedis } = await import(
+      "../src/data/db/redis.js"
+    );
+    await connectRedis();
+    disconnectRedisFn = disconnectRedis;
+  } catch (error) {
+    console.warn(
+      "Redis is unavailable. Continuing role creation without cache invalidation.",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
   await connectPostgres();
   const authRepo = new AuthRepository();
 
@@ -126,6 +139,15 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await disconnectRedis();
+    if (disconnectRedisFn) {
+      try {
+        await disconnectRedisFn();
+      } catch (error) {
+        console.warn(
+          "Failed to disconnect redis after role creation",
+          error instanceof Error ? error.message : error,
+        );
+      }
+    }
     await shutdownPostgres();
   });

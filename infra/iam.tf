@@ -125,38 +125,9 @@ resource "aws_iam_role_policy" "ecs_task_s3_access" {
   })
 }
 
-# ------------------------------------------------------------
-# IAM Roles for Lambda Automation
-# ------------------------------------------------------------
-resource "aws_iam_role" "ecs_restart_lambda" {
-  name = "${local.name_prefix}-ecs-restart-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = merge(local.common_tags, {
-    Name = "${local.name_prefix}-ecs-restart-lambda-role"
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_restart_lambda_logs" {
-  role       = aws_iam_role.ecs_restart_lambda.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-}
-
-resource "aws_iam_role_policy" "ecs_restart_lambda_ecs" {
-  name = "${local.name_prefix}-ecs-update-service-policy"
-  role = aws_iam_role.ecs_restart_lambda.id
+resource "aws_iam_role_policy" "ecs_task_secrets_runtime_access" {
+  name = "${local.name_prefix}-ecs-task-secrets-runtime-access"
+  role = aws_iam_role.ecs_task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -164,12 +135,11 @@ resource "aws_iam_role_policy" "ecs_restart_lambda_ecs" {
       {
         Effect = "Allow"
         Action = [
-          "ecs:UpdateService",
-          "ecs:DescribeServices"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
         Resource = [
-          aws_ecs_service.server.id,
-          aws_ecs_service.web.id
+          aws_db_instance.dev_db_comm_ng.master_user_secret[0].secret_arn
         ]
       }
     ]

@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
+import { mentors } from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
 import type {
   CreateMentorOutput,
   GetMentorOutput,
-} from "../../types/mentor-types.js";
-import { mentors } from "../db/schema.js";
-import { db } from "../db/sql.js";
+} from "@/types/mentor-types.js";
 
 /**
  * Repository to handle database queries/communication related to mentors
@@ -15,20 +15,38 @@ export class MentorRepository {
    * Create a new mentor profile for a user
    * @param userId User ID
    * @param mentorshipPreferences Optional mentorship preferences
-   * @param rank Optional rank
    * @param yearsOfService Optional years of service
    * @param eligibilityData Optional eligibility data
    * @param status Mentor status (default: "requested")
+   * @param resumeFileId Optional resume file ID
+   * @param strengths Optional array of up to 5 strengths
+   * @param personalInterests Optional personal interests
+   * @param whyInterestedResponses Optional ordered responses to why interested
+   * @param careerAdvice Optional text response to career advice question
+   * @param preferredMenteeCareerStages Optional preferred mentee career stages
+   * @param preferredMeetingFormat Optional preferred meeting format
+   * @param hoursPerMonthCommitment Optional hours per month commitment
    * @returns Created mentor profile
    * @throws ConflictError if profile already exists or creation fails
    */
   async createMentor(
     userId: string,
     mentorshipPreferences?: string,
-    rank?: string,
     yearsOfService?: number,
     eligibilityData?: Record<string, unknown>,
     status: "requested" | "approved" | "active" = "requested",
+    resumeFileId?: string,
+    strengths?: string[],
+    personalInterests?: string,
+    whyInterestedResponses?: string[],
+    careerAdvice?: string,
+    preferredMenteeCareerStages?: string[],
+    preferredMeetingFormat?:
+      | "in-person"
+      | "virtual"
+      | "hybrid"
+      | "no-preference",
+    hoursPerMonthCommitment?: number,
   ): Promise<CreateMentorOutput> {
     // Check if mentor already exists for this user
     const existingMentor = await db
@@ -46,26 +64,41 @@ export class MentorRepository {
       .values({
         userId,
         mentorshipPreferences,
-        rank,
         yearsOfService,
         eligibilityData,
         status,
+        resumeFileId,
+        strengths,
+        personalInterests,
+        whyInterestedResponses,
+        careerAdvice,
+        preferredMenteeCareerStages,
+        preferredMeetingFormat,
+        hoursPerMonthCommitment,
       })
       .returning({
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
       });
 
     if (!created) {
       throw new ConflictError("Failed to create mentor profile");
     }
 
-    // Ensure eligibilityData is typed correctly for CreateMentorOutput
     return created;
   }
 
@@ -81,10 +114,19 @@ export class MentorRepository {
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
       })
       .from(mentors)
       .where(eq(mentors.mentorId, mentorId))
@@ -108,10 +150,19 @@ export class MentorRepository {
         mentorId: mentors.mentorId,
         userId: mentors.userId,
         mentorshipPreferences: mentors.mentorshipPreferences,
-        rank: mentors.rank,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
         status: mentors.status,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
       })
       .from(mentors)
       .where(eq(mentors.userId, userId))

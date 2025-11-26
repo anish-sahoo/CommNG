@@ -1,8 +1,5 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { QueryResult } from "pg";
-import { ConflictError, NotFoundError } from "../../types/errors.js";
-import { fileMetadataSchema } from "../../types/file-types.js";
-import log from "../../utils/logger.js";
 import {
   channelSubscriptions,
   channels,
@@ -13,8 +10,11 @@ import {
   roles,
   userRoles,
   users,
-} from "../db/schema.js";
-import { db } from "../db/sql.js";
+} from "@/data/db/schema.js";
+import { db } from "@/data/db/sql.js";
+import { ConflictError, NotFoundError } from "@/types/errors.js";
+import { fileMetadataSchema } from "@/types/file-types.js";
+import log from "@/utils/logger.js";
 
 export type Transaction = Parameters<typeof db.transaction>[0] extends (
   arg: infer T,
@@ -388,6 +388,20 @@ export class CommsRepository {
     return subscription;
   }
 
+  async getChannelSubscriptionFromId(userId: string, channelId: number) {
+    const [result] = await db
+      .select()
+      .from(channelSubscriptions)
+      .where(
+        and(
+          eq(channelSubscriptions.channelId, channelId),
+          eq(channelSubscriptions.userId, userId),
+        ),
+      )
+      .limit(1);
+    return result;
+  }
+
   /**
    * Ensure a user is subscribed to a channel, creates if missing
    * @param userId User ID
@@ -425,6 +439,72 @@ export class CommsRepository {
       );
       return false;
     }
+  }
+
+  async updateChannelSubscriptionSettings(
+    userId: string,
+    channelId: number,
+    updateData: Partial<typeof channelSubscriptions.$inferInsert>,
+  ) {
+    return await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(channelSubscriptions)
+        .set(updateData)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .returning({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        });
+
+      if (updated) return updated;
+
+      const [inserted] = await tx
+        .insert(channelSubscriptions)
+        .values({
+          userId,
+          channelId,
+          notificationsEnabled: updateData.notificationsEnabled ?? true,
+        })
+        .onConflictDoNothing({
+          target: [channelSubscriptions.userId, channelSubscriptions.channelId],
+        })
+        .returning({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        });
+
+      if (inserted) return inserted;
+
+      const [fetched] = await tx
+        .select({
+          subscriptionId: channelSubscriptions.subscriptionId,
+          userId: channelSubscriptions.userId,
+          channelId: channelSubscriptions.channelId,
+          notificationsEnabled: channelSubscriptions.notificationsEnabled,
+          createdAt: channelSubscriptions.createdAt,
+        })
+        .from(channelSubscriptions)
+        .where(
+          and(
+            eq(channelSubscriptions.userId, userId),
+            eq(channelSubscriptions.channelId, channelId),
+          ),
+        )
+        .limit(1);
+
+      return fetched ?? null;
+    });
   }
 
   /**
@@ -775,19 +855,23 @@ export class CommsRepository {
    * @returns True if successful, false on error
    */
   async updateChannelSettings(
-    listOfUpdates: ((tx: Transaction) => Promise<unknown>)[],
-  ): Promise<boolean> {
-    try {
-      await db.transaction(async (tx) => {
-        for (const update of listOfUpdates) {
-          await update(tx);
-        }
+    channelId: number,
+    updateData: Partial<typeof channels.$inferInsert>,
+  ) {
+    const [updated] = await db
+      .update(channels)
+      .set(updateData)
+      .where(eq(channels.channelId, channelId))
+      .returning({
+        channelId: channels.channelId,
+        name: channels.name,
+        description: channels.description,
+        createdAt: channels.createdAt,
+        metadata: channels.metadata,
+        postPermissionLevel: channels.postPermissionLevel,
       });
-      return true;
-    } catch (err) {
-      log.error(err, "Error updating channel settings");
-      return false;
-    }
+
+    return updated;
   }
 
   /**
@@ -856,22 +940,4 @@ export class CommsRepository {
       return { success: true };
     });
   }
-
-  /*async getChannelSettings(channelId: number) {
-    const [channel] = await db
-      .select({
-        channelId: channels.channelId,
-        name: channels.name,
-        description: channels.description,
-        metadata: channels.metadata,
-      })
-      .from(channels)
-      .where(eq(channels.channelId, channelId))
-      .limit(1);
-      
-    if (!channel) {
-      throw new NotFoundError("Channel not found");
-    }
-    return channel;
-  }*/
 }
