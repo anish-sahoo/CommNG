@@ -18,6 +18,7 @@ import { useTRPCClient } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Spinner } from "@/components/ui/spinner";
+import { time } from "console";
 
 export default function CreateAccountPage() {
   const [email, _setEmail] = useState("");
@@ -28,86 +29,69 @@ export default function CreateAccountPage() {
       label: "Army National Guard",
       value: "army-national-guard",
       dropdownOptions: [
-        { label: "Private (PVT)", value: "private" },
-        { label: "Private Second Class (PV2)", value: "private-second" },
-        { label: "Private First Class (PFC)", value: "private-first" },
-        { label: "Specialist (SPC)", value: "specialist" },
-        { label: "Corporal (CPL)", value: "corporal" },
-        { label: "Sergeant (SGT)", value: "sergeant" },
-        { label: "Staff Sergeant (SSG)", value: "staff-sergeant" },
-        { label: "Sergeant First Class (SFC)", value: "sergeant-first" },
-        { label: "Master Sergeant (MSG)", value: "master-sergeant" },
-        { label: "First Sergeant (1SG)", value: "first-sergeant" },
-        { label: "Sergeant Major (SGM)", value: "sergeant-major" },
-        {
-          label: "Command Sergeant Major (CSM)",
-          value: "command-sergeant-major",
-        },
-        { label: "Warrant Officer (WO1)", value: "warrant-officer" },
-        {
-          label: "Chief Warrant Officer 2 (CW2)",
-          value: "chief-warrant-officer-2",
-        },
-        {
-          label: "Chief Warrant Officer 3 (CW3)",
-          value: "chief-warrant-officer-3",
-        },
-        {
-          label: "Chief Warrant Officer 4 (CW4)",
-          value: "chief-warrant-officer-4",
-        },
-        {
-          label: "Chief Warrant Officer 5 (CW5)",
-          value: "chief-warrant-officer-5",
-        },
-        { label: "Second Lieutenant (2LT)", value: "second-lieutenant" },
-        { label: "First Lieutenant (1LT)", value: "first-lieutenant" },
-        { label: "Captain (CPT)", value: "captain" },
-        { label: "Major (MAJ)", value: "major" },
-        { label: "Lieutenant Colonel (LTC)", value: "lieutenant-colonel" },
-        { label: "Colonel (COL)", value: "colonel" },
-        { label: "Brigadier General (BG)", value: "brigadier-general" },
-        { label: "Major General (MG)", value: "major-general" },
-        { label: "Lieutenant General (LTG)", value: "lieutenant-general" },
-        { label: "General (GEN)", value: "general" },
+        { label: "E-1 (Private)", value: "e1-private" },
+        { label: "E-2 (Private Second Class)", value: "e2-private-second" },
+        { label: "E-3 (Private First Class)", value: "e3-private-first" },
+        { label: "E-4 (Specialist/Corporal)", value: "e4-specialist" },
+        { label: "E-5 (Sergeant)", value: "e5-sergeant" },
+        { label: "E-6 (Staff Sergeant)", value: "e6-staff-sergeant" },
+        { label: "E-7 (Sergeant First Class)", value: "e7-sfc" },
+        { label: "E-8 (Master Sergeant)", value: "e8-master-sergeant" },
+        { label: "E-8 (First Sergeant)", value: "e8-first-sergeant" },
+        { label: "E-9 (Sergeant Major)", value: "e9-sergeant-major" },
+        { label: "E-9 (Command Sergeant Major)", value: "e9-csm" },
+        { label: "E-9 (Sergeant Major of the Army)", value: "e9-sma" },
+        { label: "O-1 (Second Lieutenant)", value: "o1-second-lieutenant" },
+        { label: "O-2 (First Lieutenant)", value: "o2-first-lieutenant" },
+        { label: "O-3 (Captain)", value: "o3-captain" },
+        { label: "O-4 (Major)", value: "o4-major" },
+        { label: "O-5 (Lieutenant Colonel)", value: "o5-lieutenant-colonel" },
+        { label: "O-6 (Colonel)", value: "o6-colonel" },
+        { label: "O-7 (Brigadier General)", value: "o7-brigadier-general" },
+        { label: "O-8 (Major General)", value: "o8-major-general" },
+        { label: "O-9 (Lieutenant General)", value: "o9-lieutenant-general" },
+        { label: "O-10 (General/General of the Army)", value: "o10-general" },
       ],
     },
     {
       label: "Air Force National Guard",
       value: "air-force-national-guard",
       dropdownOptions: [
-        { label: "Airman Basic (AB)", value: "airman-basic" },
-        { label: "Airman (Amn)", value: "airman" },
-        { label: "Airman First Class (A1C)", value: "airman-first" },
-        { label: "Senior Airman (SrA)", value: "senior-airman" },
-        { label: "Staff Sergeant (SSgt)", value: "staff-sergeant" },
-        { label: "Technical Sergeant (TSgt)", value: "technical-sergeant" },
-        { label: "Master Sergeant (MSgt)", value: "master-sergeant" },
+        { label: "E-1 (Airman Basic)", value: "e1-airman-basic" },
+        { label: "E-2 (Airman)", value: "e2-airman" },
+        { label: "E-3 (Airman First Class)", value: "e3-airman-first-class" },
+        { label: "E-4 (Senior Airman)", value: "e4-senior-airman" },
+        { label: "E-5 (Staff Sergeant)", value: "e5-staff-sergeant" },
+        { label: "E-6 (Technical Sergeant)", value: "e6-technical-sergeant" },
+        { label: "E-7 (Master Sergeant)", value: "e7-master-sergeant" },
+        { label: "E-8 (Senior Master Sergeant)", value: "e8-senior-master" },
+        { label: "E-9 (Chief Master Sergeant)", value: "e9-chief-master" },
+        { label: "E-9 (Command Chief Master Sergeant)", value: "e9-ccms" },
         {
-          label: "Senior Master Sergeant (SMSgt)",
-          value: "senior-master-sergeant",
+          label: "E-9 (Chief Master Sergeant of the Air Force)",
+          value: "e9-cmsaf",
         },
+        { label: "O-1 (Second Lieutenant)", value: "o1-second-lieutenant" },
+        { label: "O-2 (First Lieutenant)", value: "o2-first-lieutenant" },
+        { label: "O-3 (Captain)", value: "o3-captain" },
+        { label: "O-4 (Major)", value: "o4-major" },
+        { label: "O-5 (Lieutenant Colonel)", value: "o5-lieutenant-colonel" },
+        { label: "O-6 (Colonel)", value: "o6-colonel" },
+        { label: "O-7 (Brigadier General)", value: "o7-brigadier-general" },
+        { label: "O-8 (Major General)", value: "o8-major-general" },
+        { label: "O-9 (Lieutenant General)", value: "o9-lieutenant-general" },
         {
-          label: "Chief Master Sergeant (CMSgt)",
-          value: "chief-master-sergeant",
+          label: "O-10 (General/General of the Air Force)",
+          value: "o10-general",
         },
-        { label: "Command Chief Master Sergeant", value: "command-chief" },
-        { label: "Second Lieutenant (2d Lt)", value: "second-lieutenant" },
-        { label: "First Lieutenant (1st Lt)", value: "first-lieutenant" },
-        { label: "Captain (Capt)", value: "captain" },
-        { label: "Major (Maj)", value: "major" },
-        { label: "Lieutenant Colonel (Lt Co)", value: "lieutenant-colonel" },
-        { label: "Colonel (Col)", value: "colonel" },
-        { label: "Brigadier General (Brig)", value: "brigadier-general" },
-        { label: "Major General (Maj G)", value: "major-general" },
-        { label: "Lieutenant General (Lt Ge)", value: "lieutenant-general" },
-        { label: "General", value: "general" },
       ],
     },
   ];
+  const [branch, setBranch] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [locationSelection, setLocationSelection] = useState<string>("");
+  const [singleLineText, setSingleLineText] = useState("");
 
   const locationOptions = [
     { label: "Abington", value: "abington-ma" },
@@ -492,6 +476,9 @@ export default function CreateAccountPage() {
     { label: "Personal Fitness", value: "personal-fitness" },
   ];
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [careerField, setCareerField] = useState("");
+  const [dutySelection, setDutySelection] = useState<string>("");
+  
 
   const [signalVisibility, setSignalVisibility] = useState<
     "private" | "public"
@@ -638,7 +625,7 @@ export default function CreateAccountPage() {
           htmlFor="login-rank"
           className="text-sm font-semibold text-secondary"
         >
-          Rank*
+          What is your rank?*
         </label>
         <SingleSelectButtonGroup
           options={rankOptions}
@@ -647,20 +634,43 @@ export default function CreateAccountPage() {
           onDropdownChange={(parent, child) => console.log(parent, child)}
         />
 
-        <label //gets filled in mentee/mentor forms
-          htmlFor="login-unit"
-          className="text-sm font-semibold text-secondary"
-        >
-          Unit Assignment*
-        </label>
+        <label htmlFor="login-branch">What is your branch?*</label>
         <TextInput
-          id="login-unit"
-          name="unit"
-          placeholder="Your unit assignment"
+          id="login-branch"
+          name="branch"
+          placeholder="Your branch"
+          value={branch}
           className="w-full"
+          onChange={setSingleLineText}
         />
 
-        <label //connects to "About" section in Profile page
+        <label htmlFor="login-career-field">What is your career field?</label>
+        <TextInput
+          id="login-career-field"
+          name="careerField"
+          placeholder="Your career field"
+          value={careerField}
+          className="w-full"
+          onChange={setSingleLineText}
+        />
+
+        <label
+          htmlFor="login-duty-status"
+          className="text-sm font-semibold text-secondary"
+        >
+          Are you active duty or part-time?*
+        </label>
+        <SingleSelectButtonGroup
+          options={[
+            { label: "Active Duty", value: "active-duty" },
+            { label: "Part-time", value: "part-time" },
+          ]}
+          value={dutySelection}
+          onChange={setDutySelection}
+          onDropdownChange={(parent, child) => console.log(parent, child)}
+        />
+
+        <label
           htmlFor="login-biography"
           className="text-sm font-semibold text-secondary"
         >
