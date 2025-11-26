@@ -20,10 +20,17 @@ const createMentor = protectedProcedure
     const mentor = await mentorRepo.createMentor(
       input.userId,
       input.mentorshipPreferences,
-      input.rank,
       input.yearsOfService,
       input.eligibilityData ?? undefined,
       input.status,
+      input.resumeFileId,
+      input.strengths,
+      input.personalInterests,
+      input.whyInterestedResponses,
+      input.careerAdvice,
+      input.preferredMenteeCareerStages,
+      input.preferredMeetingFormat,
+      input.hoursPerMonthCommitment,
     );
 
     // Trigger matching process

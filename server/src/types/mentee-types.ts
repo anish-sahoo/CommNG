@@ -1,12 +1,22 @@
 import { z } from "zod";
 
 export const menteeSchema = z.object({
-  menteeId: z.string(),
+  menteeId: z.number().int().positive(),
   userId: z.string(),
   learningGoals: z.string().nullable().optional(),
   experienceLevel: z.string().nullable().optional(),
   preferredMentorType: z.string().nullable().optional(),
   status: z.enum(["active", "inactive", "matched"]),
+  resumeFileId: z.string().uuid().nullable().optional(),
+  personalInterests: z.string().nullable().optional(),
+  roleModelInspiration: z.string().nullable().optional(),
+  hopeToGainResponses: z.array(z.string()).nullable().optional(),
+  mentorQualities: z.array(z.string()).nullable().optional(),
+  preferredMeetingFormat: z
+    .enum(["in-person", "virtual", "hybrid", "no-preference"])
+    .nullable()
+    .optional(),
+  hoursPerMonthCommitment: z.number().int().positive().nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -22,6 +32,15 @@ export const createMenteeInputSchema = z.object({
     .enum(["active", "inactive", "matched"])
     .optional()
     .default("active"),
+  resumeFileId: z.string().uuid().optional(),
+  personalInterests: z.string().optional(),
+  roleModelInspiration: z.string().optional(),
+  hopeToGainResponses: z.array(z.string()).optional(),
+  mentorQualities: z.array(z.string()).optional(),
+  preferredMeetingFormat: z
+    .enum(["in-person", "virtual", "hybrid", "no-preference"])
+    .optional(),
+  hoursPerMonthCommitment: z.number().int().positive().optional(),
 });
 
 export const updateMenteeInputSchema = z.object({
@@ -52,6 +71,18 @@ export type CreateMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
+  resumeFileId?: string | null;
+  personalInterests?: string | null;
+  roleModelInspiration?: string | null;
+  hopeToGainResponses?: string[] | null;
+  mentorQualities?: string[] | null;
+  preferredMeetingFormat?:
+    | "in-person"
+    | "virtual"
+    | "hybrid"
+    | "no-preference"
+    | null;
+  hoursPerMonthCommitment?: number | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -63,6 +94,18 @@ export type GetMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
+  resumeFileId?: string | null;
+  personalInterests?: string | null;
+  roleModelInspiration?: string | null;
+  hopeToGainResponses?: string[] | null;
+  mentorQualities?: string[] | null;
+  preferredMeetingFormat?:
+    | "in-person"
+    | "virtual"
+    | "hybrid"
+    | "no-preference"
+    | null;
+  hoursPerMonthCommitment?: number | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 };
@@ -74,6 +117,18 @@ export type UpdateMenteeOutput = {
   experienceLevel?: string | null;
   preferredMentorType?: string | null;
   status: "active" | "inactive" | "matched";
+  resumeFileId?: string | null;
+  personalInterests?: string | null;
+  roleModelInspiration?: string | null;
+  hopeToGainResponses?: string[] | null;
+  mentorQualities?: string[] | null;
+  preferredMeetingFormat?:
+    | "in-person"
+    | "virtual"
+    | "hybrid"
+    | "no-preference"
+    | null;
+  hoursPerMonthCommitment?: number | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 };
