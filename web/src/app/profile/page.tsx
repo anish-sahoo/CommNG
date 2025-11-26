@@ -33,6 +33,19 @@ export default function ProfilePage() {
     },
   });
 
+  const imageId = userData?.image ?? null;
+
+  const { data: fileData } = useQuery({
+    queryKey: ["file", imageId],
+    enabled: !!imageId,
+    queryFn: async () => {
+      if (!imageId) {
+        throw new Error("File ID is missing");
+      }
+      return trpcClient.files.getFile.query({ fileId: imageId });
+    },
+  });
+
   if (!userId) {
     return (
       <TitleShell
@@ -87,7 +100,6 @@ export default function ProfilePage() {
   const branch = userData.branch ?? "";
   const unit = userData.department ?? "";
   const signalNumber = userData.phoneNumber ?? "";
-  const imageId = userData.image ?? null;
 
   const location = profile.location ?? "";
   const about = profile.about ?? "";
@@ -96,12 +108,7 @@ export default function ProfilePage() {
     ? (profile.interests ?? [])
     : [];
 
-  const avatarSrc =
-    imageId && process.env.NEXT_PUBLIC_SERVER_URL
-      ? `${process.env.NEXT_PUBLIC_SERVER_URL}/files/${imageId}`
-      : imageId
-        ? `/files/${imageId}`
-        : undefined;
+  const avatarSrc = fileData?.data;
 
   const renderSignalContactText = () => (
     <span className="text-sm font-medium text-secondary">
