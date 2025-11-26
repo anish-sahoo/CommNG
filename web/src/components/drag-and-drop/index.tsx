@@ -16,10 +16,6 @@ interface DragReorderFrameProps {
   className?: string;
 }
 
-/**
- * A simple reorderable list with native drag-and-drop.
- * No external libraries needed.
- */
 export function DragReorderFrame({
   options,
   onChange,
@@ -49,7 +45,7 @@ export function DragReorderFrame({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      {items.map((value) => {
+      {items.map((value, index) => {
         const option = options.find((o) => o.value === value);
         if (!option) return null;
 
@@ -57,25 +53,41 @@ export function DragReorderFrame({
         const isDragOver = dragOver === value && dragging !== value;
 
         return (
-          <Card
-            key={value}
-            draggable
-            onDragStart={() => handleDragStart(value)}
-            onDragEnter={() => handleDragEnter(value)}
-            onDragEnd={handleDragEnd}
-            className={cn(
-              "flex flex-row items-center gap-3 cursor-grab active:cursor-grabbing px-4 py-3 text-sm font-medium min-w-0",
-              isDragging && "opacity-50",
-              isDragOver && "border-primary",
-            )}
-          >
-            <span className="flex items-center">
-              <DragIcon className="h-5 w-5 text-accent cursor-move" />
-            </span>
-            <span className="flex-1 min-w-0 break-words whitespace-normal">
-              {option.label}
-            </span>
-          </Card>
+          <div key={value} className="flex items-center gap-3">
+            {/* STATIC NUMBER OUTSIDE THE CARD */}
+            <div
+              className="
+                w-6 h-6 flex items-center justify-center 
+                text-xs font-semibold text-secondary 
+                bg-muted rounded-full shrink-0 select-none
+              "
+            >
+              {index + 1}
+            </div>
+
+            {/* DRAGGABLE CARD */}
+            <Card
+              draggable
+              onDragStart={() => handleDragStart(value)}
+              onDragEnter={() => handleDragEnter(value)}
+              onDragEnd={handleDragEnd}
+              className={cn(
+                "flex flex-row items-center gap-3 cursor-grab active:cursor-grabbing px-4 py-3 text-sm font-medium min-w-0",
+                isDragging && "opacity-50",
+                isDragOver && "border-primary"
+              )}
+            >
+              {/* DRAG HANDLE ICON */}
+              <span className="flex items-center">
+                <DragIcon className="h-5 w-5 text-accent cursor-move" />
+              </span>
+
+              {/* CARD LABEL */}
+              <span className="flex-1 min-w-0 break-words whitespace-normal">
+                {option.label}
+              </span>
+            </Card>
+          </div>
         );
       })}
     </div>

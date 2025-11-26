@@ -284,10 +284,10 @@ export default function MentorshipApplyMenteePage() {
 
         <section>
           <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mt-3 mb-3">
-            6. What do you hope to get out of the mentorship program?*
+            6. What do you hope to get out of the mentorship program?
             <div className="italic font-normal text-secondary sm:text-sm mt-1">
-              Rank the following reasons from most important (top) to least
-              important (bottom).
+              Rank the following reasons from most important (1) to least
+              important (5).
             </div>
           </h1>
           <DragReorderFrame

@@ -726,7 +726,7 @@ export default function CreateAccountPage() {
         </div>
       </div>
 
-      <div className="flex-1 max-w-xl">
+      <div className="flex-1 max-w-xl mt-5">
         <Button
           type="button"
           className="inline-flex items-center gap-2 px-6"

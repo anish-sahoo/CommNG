@@ -311,7 +311,11 @@ export default function MentorshipApplyMentorPage() {
 
         <section>
           <h1 className="mt-3 mb-3 max-w-3xl text-left text-xs font-large text-secondary sm:text-sm">
-            6. What are you interested in becoming a mentor?*
+            6. What are you interested in becoming a mentor?
+            <div className="italic font-normal text-secondary sm:text-sm mt-1">
+              Rank the following reasons from most important (1) to least
+              important (5).
+            </div>
           </h1>
           <DragReorderFrame
             options={[
