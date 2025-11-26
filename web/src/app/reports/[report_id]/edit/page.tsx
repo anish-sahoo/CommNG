@@ -3,7 +3,7 @@
 import type { ReportCategory } from "@server/data/db/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useId, useMemo, useState } from "react";
+import { use, useEffect, useId, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
@@ -22,6 +22,7 @@ import {
     DropzoneContent,
     DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { Spinner } from "@/components/ui/spinner";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { hasRole } from "@/lib/rbac";
@@ -38,11 +39,26 @@ const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
 const MAX_ATTACHMENTS = 10;
 const REPORTING_ASSIGN_ROLE = "reporting:assign" as RoleKey;
 
-type AttachmentState = {
+type ExistingAttachment = {
+    fileId: string;
+    fileName: string;
+    contentType?: string;
+};
+
+type NewAttachment = {
     id: string;
     file: File;
     status: "uploading" | "uploaded" | "error";
     fileId?: string;
+    error?: string;
+};
+
+type DisplayAttachment = {
+    id: string;
+    fileName: string;
+    fileId?: string;
+    file?: File;
+    status: "existing" | "uploading" | "uploaded" | "error";
     error?: string;
 };
 
@@ -82,12 +98,42 @@ export default function EditReportPage({ params }: EditReportPageProps) {
 
     const { report_id: reportId } = use(params);
     const { data: sessionData } = authClient.useSession();
-    const userId = sessionData?.user?.id;
+    const userId = sessionData?.user.id ?? null;
+
+    const backHref = `/reports` as const;
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+
+    const pageTitle = (
+        <span className="block truncate text-[1.5rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            Edit Report
+        </span>
+    );
+
+    /* REPORTS VALUES */
+    const [category, setCategory] = useState<ReportCategory | null>(null);
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [assignedTo, setAssignedTo] = useState<string | null>(null);
+    const [updatedAt, setUpdatedAt] = useState<string | number | Date | null>(null);
+    const [existingAttachments, setExistingAttachments] = useState<ExistingAttachment[]>([]);
+    const [newAttachments, setNewAttachments] = useState<NewAttachment[]>([]);
+    const [attachmentNotice, setAttachmentNotice] = useState<string | null>(null);
+
+    const [initialCategory, setInitialCategory] = useState<ReportCategory | null>(null);
+    const [initialTitle, setInitialTitle] = useState<string | null>(null);
+    const [initialDescription, setInitialDescription] = useState<string | null>(null);
+    const [initialAssignedTo, setInitialAssignedTo] = useState<string | null>(null);
+    const [initialExistingAttachments, setInitialExistingAttachments] = useState<ExistingAttachment[]>([]);
+
+    const categoryId = useId();
+    const categoryLabelId = useId();
+    const titleId = useId();
+    const descriptionId = useId();
+
+    /* SEARCH FOR USER */
+
     const {
         roles,
-        //isLoading: rolesLoading,
-        //isError: rolesRequestFailed,
-        //refetch: refetchRoles,
     } = useUserRoles();
 
     const normalizedRoles = useMemo<RoleKey[]>(() => {
@@ -99,39 +145,231 @@ export default function EditReportPage({ params }: EditReportPageProps) {
         return hasRole(normalizedRoles, REPORTING_ASSIGN_ROLE);
     }, [roles, normalizedRoles]);
 
-    const [category, setCategory] = useState<ReportCategory | null>(null);
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [assignedTo, setAssignedTo] = useState<string | null>(null);
-    const [updatedAt, setUpdatedAt] = useState<string | number | Date | null>(
-        null,
-    );
     const [searchQuery, setSearchQuery] = useState("");
     const [relevantUsersQuery, setRelevantUsersQuery] = useState(searchQuery);
 
+    /* ATTACHMENTS */
+    const allAttachments = useMemo<DisplayAttachment[]>(() => {
+        const existingAsDisplay: DisplayAttachment[] = existingAttachments.map(att => ({
+            id: att.fileId,
+            fileName: att.fileName,
+            fileId: att.fileId,
+            status: "existing" as const,
+        }));
 
-    const [initialCategory, setInitialCategory] = useState<ReportCategory | null>(
-        null,
+        const newAsDisplay: DisplayAttachment[] = newAttachments.map(att => ({
+            id: att.id,
+            fileName: att.file.name,
+            fileId: att.fileId,
+            file: att.file,
+            status: att.status,
+            error: att.error,
+        }));
+
+        return [...existingAsDisplay, ...newAsDisplay];
+    }, [existingAttachments, newAttachments]);
+
+    const dropzoneFiles = useMemo(
+        () =>
+            newAttachments.length
+                ? newAttachments.map((attachment) => attachment.file)
+                : undefined,
+        [newAttachments],
     );
-    const [initialTitle, setInitialTitle] = useState<string | null>(null);
-    const [initialDescription, setInitialDescription] = useState<string | null>(
-        null,
+    const hasUploadingAttachments = useMemo(
+        () => newAttachments.some((attachment) => attachment.status === "uploading"),
+        [newAttachments],
     );
-    const [initialAssignedTo, setInitialAssignedTo] = useState<string | null>(null); // seems like nowhere to get assigned to in reports
 
-
-    const categoryId = useId();
-    const categoryLabelId = useId();
-    const titleId = useId();
-    const descriptionId = useId();
-    const backHref = `/reports` as const;
-    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-
-    const pageTitle = (
-        <span className="block truncate text-[1.5rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Edit Report
-        </span>
+    const hasAttachmentErrors = useMemo(
+        () => newAttachments.some((attachment) => attachment.status === "error"),
+        [newAttachments],
     );
+
+    const attachmentsAtLimit = (existingAttachments.length + newAttachments.length) >= MAX_ATTACHMENTS;
+
+    const uploadAttachment = useCallback(
+        async (attachmentId: string, file: File) => {
+            try {
+                const presign = await trpcClient.files.createPresignedUpload.mutate({
+                    fileName: file.name,
+                    contentType: file.type,
+                    fileSize: file.size,
+                });
+
+                const uploadResponse = await fetch(presign.uploadUrl, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": file.type || "application/octet-stream",
+                    },
+                    body: file,
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error("We couldn't upload that file. Please try again.");
+                }
+
+                await trpcClient.files.confirmUpload.mutate({
+                    fileId: presign.fileId,
+                    fileName: file.name,
+                    storedName: presign.storedName,
+                    contentType: file.type || undefined,
+                });
+
+                setNewAttachments((prev) =>
+                    prev.map((attachment) =>
+                        attachment.id === attachmentId
+                            ? {
+                                ...attachment,
+                                status: "uploaded",
+                                fileId: presign.fileId,
+                                error: undefined,
+                            }
+                            : attachment,
+                    ),
+                );
+            } catch (error) {
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "We couldn't upload that file.";
+                setNewAttachments((prev) =>
+                    prev.map((attachment) =>
+                        attachment.id === attachmentId
+                            ? { ...attachment, status: "error", error: message }
+                            : attachment,
+                    ),
+                );
+            }
+        },
+        [trpcClient],
+    );
+
+    const handleAttachmentDrop = useCallback(
+        (acceptedFiles: File[]) => {
+            setAttachmentNotice(null);
+            if (!acceptedFiles.length) return;
+
+            const availableSlots = MAX_ATTACHMENTS - (existingAttachments.length + newAttachments.length);
+            if (availableSlots <= 0) {
+                setAttachmentNotice(
+                    `You can upload up to ${MAX_ATTACHMENTS} attachments.`,
+                );
+                return;
+            }
+
+            const filesToUpload = acceptedFiles.slice(0, availableSlots);
+            const newEntries = filesToUpload.map((file) => ({
+                id: createLocalId(),
+                file,
+                status: "uploading" as const,
+            }));
+
+            setNewAttachments((prev) => [...prev, ...newEntries]);
+            newEntries.forEach((entry) => {
+                void uploadAttachment(entry.id, entry.file);
+            });
+
+            if (acceptedFiles.length > filesToUpload.length) {
+                setAttachmentNotice(
+                    `Only ${availableSlots} more attachment${availableSlots === 1 ? "" : "s"
+                    } can be added right now.`,
+                );
+            }
+        },
+        [existingAttachments.length, newAttachments.length, uploadAttachment],
+    );
+
+    const handleRemoveAttachment = useCallback((attachmentId: string) => {
+        setNewAttachments((prev) =>
+            prev.filter((attachment) => attachment.id !== attachmentId),
+        );
+        setAttachmentNotice(null);
+    }, []);
+
+    const handleRemoveExistingAttachment = useCallback((fileId: string) => {
+        setExistingAttachments((prev) =>
+            prev.filter((att) => att.fileId !== fileId)
+        );
+    }, []);
+
+    const handleRetryAttachment = useCallback(
+        (attachmentId: string) => {
+            let fileToRetry: File | null = null;
+            setNewAttachments((prev) =>
+                prev.map((attachment) => {
+                    if (attachment.id === attachmentId) {
+                        fileToRetry = attachment.file;
+                        return { ...attachment, status: "uploading", error: undefined };
+                    }
+                    return attachment;
+                }),
+            );
+
+            if (fileToRetry) {
+                void uploadAttachment(attachmentId, fileToRetry);
+            }
+        },
+        [uploadAttachment],
+    );
+
+    /* ============ GETTING INFO FROM REPORTS + SETTING EXISTING VALUES ============ */
+    // Fetch all reports
+    const { data: reports } = useQuery({
+        queryKey: ["reports", userId],
+        queryFn: async () => {
+            return await trpcClient.reports.getReports.query({ name: userId });
+        },
+    });
+
+    // Find report ID
+    useEffect(() => {
+        if (reports) {
+            const report = reports.find((rep) => {
+                return rep.reportId === reportId;
+            });
+
+            console.log("=== LOADING REPORT ===");
+            console.log("Found report:", report);
+            console.log("Report status:", report?.status);
+            console.log("Report assignedTo:", report?.assignedTo);
+
+            if (report) {
+                setTitle(report.title || "");
+                setDescription(report.description || "");
+                setCategory(report.category || null);
+                setUpdatedAt(report.updatedAt || null);
+                if (report.attachments) {
+                    const existing: ExistingAttachment[] = report.attachments.map(att => ({
+                        fileId: att.fileId,
+                        fileName: att.fileName,
+                    }));
+                    setExistingAttachments(existing);
+                    setInitialExistingAttachments(existing);
+                }
+                console.log("Setting assignedTo to:", report.assignedTo);
+                if (report.status === "Assigned") {
+                    setAssignedTo((prev) => prev ?? (report.assignedTo ?? null));
+                    setInitialAssignedTo((prev) => prev ?? (report.assignedTo ?? null));
+                }
+
+                setInitialTitle((prev) => prev ?? (report.title || ""));
+                setInitialDescription((prev) => prev ?? (report.description || ""));
+                setInitialCategory((prev) => prev ?? (report.category || null));
+            } else {
+                console.log("No report found!");
+            }
+        }
+    }, [reports, reportId]);
+
+    const isDirty =
+        // Check category, title, description, attachments, report assignment
+        (initialTitle !== null && title !== initialTitle) ||
+        (initialDescription !== null && description !== initialDescription) ||
+        (initialCategory !== null && category !== initialCategory) ||
+        (assignedTo !== initialAssignedTo) ||
+        (newAttachments.length > 0) ||
+        (existingAttachments.length !== initialExistingAttachments.length);
 
     /* ============ SEARCH FOR USERS ============ */
     // Add a delay to avoid flickering
@@ -149,49 +387,50 @@ export default function EditReportPage({ params }: EditReportPageProps) {
         enabled: relevantUsersQuery.length >= 2,
     });
 
-    /* ============ GETTING INFO FROM REPORTS ============ */
-    // Fetch all reports
-    const { data: reports } = useQuery({
-        queryKey: ["reports", userId],
+    //console.log("assignedTo: " + assignedTo);
+
+    // Fetch the assigned user when report loads
+    const { data: assignedUser, error: assignedUserError } = useQuery({
+        queryKey: ["assignedUser", assignedTo],
         queryFn: async () => {
-            return await trpcClient.reports.getReports.query({ name: userId });
+            if (!assignedTo) return null;
+            console.log("Fetching user data for:", assignedTo);
+            try {
+                const userData = await trpcClient.user.getUserData.query({ user_id: assignedTo });
+                console.log("Got user data:", userData);
+                return userData;
+            } catch (error) {
+                console.error("Error fetching assigned user:", error);
+                throw error;
+            }
         },
+        enabled: !!assignedTo,
     });
 
-    // Find report ID
     useEffect(() => {
-        if (reports) {
-            const report = reports.find((rep) => {
-                return rep.reportId === reportId;
-            });
-
-            if (report) {
-                setTitle(report.title || "");
-                setDescription(report.description || "");
-                setCategory(report.category || null);
-                setUpdatedAt(report.updatedAt || null);
-
-                setInitialTitle((prev) => prev ?? (report.title || ""));
-                setInitialDescription((prev) => prev ?? (report.description || ""));
-                setInitialCategory((prev) => prev ?? (report.category || null));
-            } else {
-                console.log("No report found!");
-            }
+        if (assignedUserError) {
+            console.error("Assigned user query error:", assignedUserError);
         }
-    }, [reports, reportId]);
+    }, [assignedUserError]);
 
-    const isDirty =
-        // Check category, title, description, ATTACHMENTS (TODO)
-        (initialTitle !== null && title !== initialTitle) ||
-        (initialDescription !== null && description !== initialDescription) ||
-        (initialCategory !== null && category !== initialCategory) ||
-        (assignedTo !== initialAssignedTo);
+    //if (assignedUser) console.log(assignedUser.name);
+    //else console.log("YO NO USER ASSIGNED WHAT THE FEREAK");
+
+    console.log("assignedTo:", assignedTo);
+    console.log("assignedUser:", assignedUser);
 
     /* ============ UPDATING REPORTS ============ */
 
     const handleSaveChanges = async () => {
         if (!isDirty) return;
         try {
+            const allFileIds = [
+                ...existingAttachments.map(att => att.fileId),
+                ...newAttachments
+                    .filter(att => att.status === "uploaded" && att.fileId)
+                    .map(att => att.fileId as string),
+            ];
+
             // Update changes
             await trpcClient.reports.updateReport.mutate({
                 reportId: reportId,
@@ -199,9 +438,18 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                     category: category,
                     title: title,
                     description: description,
-                    attachments: [],
+                    attachments: allFileIds,
+                    status: (assignedTo !== null) ? "Assigned" : "Pending",
                 },
             });
+
+            if (assignedTo !== null) {
+                await trpcClient.reports.assignReport.mutate({
+                    reportId: reportId,
+                    assigneeId: assignedTo,
+                    assignedBy: userId,
+                })
+            }
 
             // Invalidate the cache to ensure the most recent data is used
             await queryClient.invalidateQueries({
@@ -336,14 +584,103 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                                 </div>
                             </div>
 
-                            <Dropzone multiple aria-label="Upload report attachments">
+                            <Dropzone
+                                onDrop={handleAttachmentDrop}
+                                disabled={attachmentsAtLimit}
+                                src={dropzoneFiles}
+                                multiple
+                                maxFiles={Math.max(1, MAX_ATTACHMENTS - allAttachments.length)}
+                                aria-label="Upload report attachments"
+                            >
                                 <DropzoneEmptyState />
                                 <DropzoneContent />
                             </Dropzone>
 
-                            <p className="text-xs text-secondary/70">
-                                No attachments added yet.
-                            </p>
+                            {attachmentsAtLimit && (
+                                <p className="text-xs text-secondary/70">
+                                    You&apos;ve added the maximum number of attachments.
+                                </p>
+                            )}
+                            {attachmentNotice && (
+                                <p className="text-xs text-error">{attachmentNotice}</p>
+                            )}
+
+                            {allAttachments.length > 0 ? (
+                                <ul className="space-y-3">
+                                    {allAttachments.map((attachment) => {
+                                        const statusText =
+                                            attachment.status === "existing"
+                                                ? "Uploaded"
+                                                : attachment.status === "uploaded"
+                                                    ? "Ready to submit"
+                                                    : attachment.status === "uploading"
+                                                        ? "Uploading…"
+                                                        : (attachment.error ?? "Upload failed. Remove or try again.");
+
+                                        const statusClass =
+                                            attachment.status === "error"
+                                                ? "text-error"
+                                                : "text-secondary/70";
+
+                                        return (
+                                            <li
+                                                key={attachment.id}
+                                                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3"
+                                            >
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-sm font-semibold text-secondary">
+                                                        {attachment.fileName}
+                                                    </p>
+                                                    {attachment.file && (
+                                                        <p className="text-xs text-secondary/60">
+                                                            {formatFileSize(attachment.file.size)}
+                                                        </p>
+                                                    )}
+                                                    <p className={`text-xs ${statusClass}`}>
+                                                        {statusText}
+                                                    </p>
+                                                </div>
+                                                <div className="flex flex-shrink-0 items-center gap-2">
+                                                    {attachment.status === "uploading" ? (
+                                                        <Spinner className="text-secondary" />
+                                                    ) : attachment.status === "uploaded" || attachment.status === "existing" ? (
+                                                        <SuccessIcon className="h-4 w-4 text-primary" />
+                                                    ) : null}
+                                                    {attachment.status === "error" ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleRetryAttachment(attachment.id)}
+                                                        >
+                                                            Retry
+                                                        </Button>
+                                                    ) : null}
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        onClick={() => {
+                                                            if (attachment.status === "existing") {
+                                                                handleRemoveExistingAttachment(attachment.fileId!);
+                                                            } else {
+                                                                handleRemoveAttachment(attachment.id);
+                                                            }
+                                                        }}
+                                                        aria-label={`Remove ${attachment.fileName}`}
+                                                    >
+                                                        <RemoveIcon className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            ) : (
+                                <p className="text-xs text-secondary/70">
+                                    No attachments added yet.
+                                </p>
+                            )}
                         </div>
 
                         {hasAssignAccess && (
@@ -352,23 +689,19 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                                     Assign To
                                 </label>
                                 <Select
-                                    value={assignedTo || ""}
+                                    value={assignedTo ?? undefined}
                                     onValueChange={setAssignedTo}
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Select a user to assign..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <div
-                                            className="p-2"
-                                            onKeyDown={(e) => e.stopPropagation()}
-                                        >
+                                        <div className="p-2" onKeyDown={(e) => e.stopPropagation()}>
                                             <TextInput
                                                 placeholder="Search users..."
                                                 value={searchQuery}
-                                                onChange={(value) => setSearchQuery(value)}
+                                                onChange={setSearchQuery}
                                                 className="mb-2"
-                                                autoFocus
                                             />
                                         </div>
 
@@ -392,6 +725,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                                             </div>
                                         )}
                                     </SelectContent>
+
                                 </Select>
                             </div>
                         )}
