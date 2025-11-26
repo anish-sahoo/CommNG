@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTRPCClient } from "@/lib/trpc";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useTRPCClient } from "@/lib/trpc";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -65,7 +65,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
     };
 
     await trpc.notifications.subscribe.mutate(payload);
-  } catch (err) {}
+  } catch (_err) {}
 }
 
 export default function NotificationSubscriber() {

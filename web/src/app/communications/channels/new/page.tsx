@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  type QueryKey,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";

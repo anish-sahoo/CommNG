@@ -1,6 +1,5 @@
 "use client";
 
-import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useId, useMemo, useState } from "react";
