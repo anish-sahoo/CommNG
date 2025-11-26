@@ -27,7 +27,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
 
     const existingSub = await reg.pushManager.getSubscription();
     if (existingSub) {
-      console.log('User is already subscribed notifications...')
+      console.log("User is already subscribed notifications...");
       return;
     }
 
@@ -39,7 +39,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
     if (permission !== "granted") {
       return;
     }
-    console.log('Subscribing user to notifications...')
+    console.log("Subscribing user to notifications...");
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -65,8 +65,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
     };
 
     await trpc.notifications.subscribe.mutate(payload);
-  } catch (err) {
-  }
+  } catch (err) {}
 }
 
 export default function NotificationSubscriber() {
