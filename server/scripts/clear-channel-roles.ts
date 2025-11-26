@@ -12,7 +12,7 @@
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { roles, userRoles, users } from "../src/data/db/schema.js";
-import { db, shutdownPostgres } from "../src/data/db/sql.js";
+import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
 
 async function main() {
   const emailArg = process.argv[2];
@@ -32,6 +32,8 @@ async function main() {
           .map((c) => Number.parseInt(c.trim(), 10))
           .filter((n) => Number.isFinite(n))
       : [];
+
+  await connectPostgres();
 
   const [user] = await db
     .select({ id: users.id })
