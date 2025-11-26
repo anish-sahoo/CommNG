@@ -44,14 +44,14 @@ export type MentorshipDataOutput = {
   // User's own profiles
   mentor: GetMentorOutput | null;
   mentee: GetMenteeOutput | null;
-  
+
   // Legacy matches array (all matches user is involved in)
   matches: MentorshipMatch[];
-  
+
   // MENTEE VIEW: "Your Mentor" section
   suggestedMentors?: SuggestedMentor[]; // Case 2: Suggested mentors with request status
   matchedMentors?: MatchedMentor[]; // Case 3: Accepted matches with full mentor info
-  
+
   // MENTOR VIEW: "Your Mentee" section
   pendingMenteeRequests?: PendingMenteeRequest[]; // Case 2: Mentees who requested this mentor (status: pending)
   matchedMentees?: MatchedMentee[]; // Case 3: Accepted mentees (status: accepted, can coexist with pending)

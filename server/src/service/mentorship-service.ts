@@ -1,14 +1,14 @@
-import { eq, or, and, notInArray } from "drizzle-orm";
-import { mentorshipMatches, mentors } from "../data/db/schema.js";
+import { and, eq, notInArray, or } from "drizzle-orm";
+import { mentors, mentorshipMatches } from "../data/db/schema.js";
 import { db } from "../data/db/sql.js";
 import type { MenteeRepository } from "../data/repository/mentee-repo.js";
 import type { MentorRepository } from "../data/repository/mentor-repo.js";
 import type {
-  MentorshipDataOutput,
-  SuggestedMentor,
-  MatchedMentor,
-  PendingMenteeRequest,
   MatchedMentee,
+  MatchedMentor,
+  MentorshipDataOutput,
+  PendingMenteeRequest,
+  SuggestedMentor,
 } from "../types/mentorship-types.js";
 
 /**
@@ -23,12 +23,12 @@ export class MentorshipService {
   /**
    * Get mentorship data for a user (mentor profile, mentee profile, and matches)
    * Returns different data based on user's role:
-   * 
+   *
    * MENTEE VIEW ("Your Mentor"):
    * - Case 1: No mentee profile -> mentee is null
    * - Case 2: Mentee exists with pending suggestions -> suggestedMentors array
    * - Case 3: Mentee exists with accepted matches -> matchedMentors array
-   * 
+   *
    * MENTOR VIEW ("Your Mentee"):
    * - Case 1: No mentor profile -> mentor is null
    * - Case 2: Mentor exists with pending requests -> pendingMenteeRequests array
@@ -77,13 +77,12 @@ export class MentorshipService {
       // Get matches where user is the requestor (mentee) with accepted status
       const acceptedMatches = allMatches.filter(
         (match) =>
-          match.requestorUserId === userId &&
-          match.status === "accepted"
+          match.requestorUserId === userId && match.status === "accepted",
       );
 
       // Get all matches where user is requestor (pending or accepted)
       const allMenteeMatches = allMatches.filter(
-        (match) => match.requestorUserId === userId
+        (match) => match.requestorUserId === userId,
       );
 
       // Case 3: User has accepted matches - return matched mentors with full info
@@ -92,7 +91,7 @@ export class MentorshipService {
         for (const match of acceptedMatches) {
           if (!match.mentorUserId) continue;
           const mentorProfile = await this.mentorRepo.getMentorByUserId(
-            match.mentorUserId
+            match.mentorUserId,
           );
           if (mentorProfile) {
             matchedMentors.push({
@@ -111,7 +110,7 @@ export class MentorshipService {
       const requestedMentorIds = new Set(
         allMenteeMatches
           .map((match) => match.mentorUserId)
-          .filter((id): id is string => id !== null)
+          .filter((id): id is string => id !== null),
       );
 
       // Get approved mentors that haven't been requested yet
@@ -123,22 +122,25 @@ export class MentorshipService {
             eq(mentors.status, "approved"),
             requestedMentorIds.size > 0
               ? notInArray(mentors.userId, Array.from(requestedMentorIds))
-              : undefined
-          )
+              : undefined,
+          ),
         )
         .limit(10);
 
       // Check which suggested mentors have pending requests
       const pendingRequestMentorIds = new Set(
         allMenteeMatches
-          .filter((match) => match.status === "pending" && match.mentorUserId)
-          .map((match) => match.mentorUserId!)
+          .filter(
+            (match): match is typeof match & { mentorUserId: string } =>
+              match.status === "pending" && match.mentorUserId !== null,
+          )
+          .map((match) => match.mentorUserId),
       );
 
       const suggestedMentors: SuggestedMentor[] = [];
       for (const mentorRecord of suggestedMentorRecords) {
         const mentorProfile = await this.mentorRepo.getMentorByUserId(
-          mentorRecord.userId
+          mentorRecord.userId,
         );
         if (mentorProfile) {
           suggestedMentors.push({
@@ -161,7 +163,7 @@ export class MentorshipService {
     if (mentor) {
       // Get matches where user is the mentor
       const mentorMatches = allMatches.filter(
-        (match) => match.mentorUserId === userId
+        (match) => match.mentorUserId === userId,
       );
 
       if (mentorMatches.length > 0) {
@@ -172,7 +174,7 @@ export class MentorshipService {
         for (const match of mentorMatches) {
           if (!match.requestorUserId) continue;
           const menteeProfile = await this.menteeRepo.getMenteeByUserId(
-            match.requestorUserId
+            match.requestorUserId,
           );
           if (menteeProfile) {
             const menteeData = {
