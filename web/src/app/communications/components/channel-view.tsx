@@ -410,7 +410,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       <TitleShell
         title={displayChannelName}
         backHref="/communications"
-        backAriaLabel="Back to all channels"
+        backAriaLabel="Back to my channels"
       >
         <div className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border bg-muted/30 p-8 text-center">
           <div className="flex flex-col gap-2">
@@ -442,7 +442,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     <TitleShell
       title={displayChannelName}
       backHref="/communications"
-      backAriaLabel="Back to all channels"
+      backAriaLabel="Back to my channels"
       actions={
         <>
           <div className="hidden items-center gap-3 sm:flex">
