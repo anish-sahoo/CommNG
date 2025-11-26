@@ -66,7 +66,8 @@ resource "aws_s3_bucket_cors_configuration" "comm_ng_files_cors" {
       "http://localhost:3001",
       "http://localhost:3000",
       "http://${aws_lb.main.dns_name}",
-      "https://${aws_lb.main.dns_name}"
+      "https://${aws_lb.main.dns_name}",
+      "https://commng.nunext.dev"
     ]
     expose_headers  = ["ETag", "x-amz-version-id"]
     max_age_seconds = 3000
