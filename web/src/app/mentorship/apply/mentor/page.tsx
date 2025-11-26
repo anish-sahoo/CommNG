@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
@@ -11,6 +11,7 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { useTRPCClient } from "@/lib/trpc";
 
 type ResumeState = null | {
   file: File;
@@ -154,6 +155,7 @@ const rankOptions = [
 ];
 
 export default function MentorshipApplyMentorPage() {
+  const trpcClient = useTRPCClient();
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
   const [resume, setResume] = useState<ResumeState>(null);
@@ -168,6 +170,59 @@ export default function MentorshipApplyMentorPage() {
   >([]);
   const [desiredMentorHours, setDesiredMentorHours] = useState("");
   const [availableMentorHours, setAvailableMentorHours] = useState("");
+
+  const uploadResume = useCallback(
+    async (file: File) => {
+      setResume({
+        file,
+        status: "uploading",
+      });
+
+      try {
+        const presign = await trpcClient.files.createPresignedUpload.mutate({
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        });
+
+        const uploadResponse = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("We couldn't upload that file. Please try again.");
+        }
+
+        await trpcClient.files.confirmUpload.mutate({
+          fileId: presign.fileId,
+          fileName: file.name,
+          storedName: presign.storedName,
+          contentType: file.type || undefined,
+        });
+
+        setResume({
+          file,
+          status: "uploaded",
+          fileId: presign.fileId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "We couldn't upload that file.";
+        setResume({
+          file,
+          status: "error",
+          error: message,
+        });
+      }
+    },
+    [trpcClient],
+  );
 
   const mentorQualityOptions: MultiSelectOption[] = [
     { label: "Adaptability", value: "adaptability" },
