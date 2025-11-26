@@ -14,6 +14,7 @@ export const userSchema = z.object({
   location: z.string().nullable().optional(),
   about: z.string().nullable().optional(),
   interests: z.array(z.string()).nullable().optional(),
+  image: z.string().uuid().nullable().optional(),
 });
 
 export type UserSchema = z.infer<typeof userSchema>;
