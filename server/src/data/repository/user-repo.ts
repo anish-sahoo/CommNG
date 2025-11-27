@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ilike, inArray, or } from "drizzle-orm";
 import { users } from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import { NotFoundError } from "../../types/errors.js";
@@ -7,6 +7,32 @@ import { NotFoundError } from "../../types/errors.js";
  * Repository to handle database queries/communication related to users
  */
 export class UserRepository {
+  async searchUsers(name: string) {
+    const searchTerm = name.trim().toLowerCase();
+    if (!searchTerm) return [];
+
+    const words = searchTerm.split(/\s+/);
+
+    const conditions = words.map((word) =>
+      or(ilike(users.name, `${word}%`), ilike(users.email, `%${word}%`)),
+    );
+
+    const results = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        rank: users.rank,
+        department: users.department,
+        branch: users.branch,
+      })
+      .from(users)
+      .where(and(...conditions))
+      .limit(10);
+
+    return results;
+  }
+
   /**
    * Get user data by user ID
    * @param user_id User ID
@@ -204,5 +230,35 @@ export class UserRepository {
     }
 
     return updated;
+  }
+
+  /**
+   * Get all user data by IDs (cached)
+   * @param user_ids Array of user IDs
+   * @returns List of user data objects
+   */
+  async getUsersByIds(user_ids: string[]) {
+    const userRows = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        rank: users.rank,
+        department: users.department,
+        branch: users.branch,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        image: users.image,
+        location: users.location,
+        about: users.about,
+        interests: users.interests,
+        signalVisibility: users.signalVisibility,
+        emailVisibility: users.emailVisibility,
+      })
+      .from(users)
+      .where(inArray(users.id, user_ids));
+
+    return userRows;
   }
 }
