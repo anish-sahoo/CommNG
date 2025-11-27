@@ -128,3 +128,9 @@ Alternatively, trigger the application flow that calls `notificationService.send
 - Browser denies permission to show notifications: ensure you requested notification permission from the page and the Service Worker registered successfully.
 - Push subscription fails to register: check that `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is present and used as the `applicationServerKey` (URL-safe base64 key). The client code should convert the base64 key to a Uint8Array before calling `subscribe()`.
 - When sending a notification you get 404 / 410 responses from `web-push`: these indicate the subscription is gone; the service will remove inactive subscriptions automatically.
+
+Additional behavior:
+
+- 401 Unauthorized responses indicate an issue with VAPID authentication — the subscription is kept and a warning is logged for investigation.
+- 429 Rate Limited responses are logged as a warning (we don't delete the subscription), and the system may benefit from throttling/backoff if you see many.
+- Other transient errors (5xx, network) are logged as errors but won't cause the subscription to be deleted so retries remain possible.

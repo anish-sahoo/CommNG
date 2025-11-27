@@ -18,7 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, MessageList } from "./index";
 
@@ -163,7 +162,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const channelListRaw =
     Array.isArray(channelListQuery.data) && channelListQuery.data.length > 0
       ? channelListQuery.data
-      : [DEMO_CHANNEL];
+      : [];
 
   const channelList = channelListRaw;
 
