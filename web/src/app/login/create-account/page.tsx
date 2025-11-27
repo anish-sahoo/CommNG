@@ -482,14 +482,14 @@ export default function CreateAccountPage() {
     "private" | "public"
   >("private");
   const [emailVisibility, setEmailVisibility] = useState<"private" | "public">(
-    "private",
+    "private"
   );
 
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
   const saveVisibility = async (
     nextSignal: "private" | "public",
-    nextEmail: "private" | "public",
+    nextEmail: "private" | "public"
   ) => {
     try {
       setIsSavingVisibility(true);
@@ -535,24 +535,16 @@ export default function CreateAccountPage() {
       </h1>
 
       <div className="flex-1 max-w-lg space-y-6">
-        <label
-          htmlFor="login-fullname"
-          className="text-sm font-semibold text-secondary space-y-2"
-        >
-          Full Name*
-        </label>
+        <label htmlFor="login-fullname">Full Name*</label>
         <TextInput
           id="login-fullname"
           name="fullname"
           placeholder="Your full name"
           value={fullname}
-          className="w-full"
+          className="w-full mt-2"
         />
 
-        <label
-          htmlFor="login-email"
-          className="text-sm font-semibold text-secondary"
-        >
+        <label htmlFor="login-email">
           Email address{" "}
           <span className="font-regular text-accent">(Not Required)</span>
         </label>
@@ -561,46 +553,33 @@ export default function CreateAccountPage() {
           name="email"
           placeholder="you@example.com"
           value={email}
-          className="w-full"
+          className="w-full mt-2"
         />
 
-        <label
-          htmlFor="login-phone"
-          className="text-sm font-semibold text-secondary"
-        >
-          Phone Number*
-        </label>
+        <label htmlFor="login-phone">Phone Number*</label>
         <TextInput
           id="login-phone"
           name="phone"
           placeholder="(123) 456-7890"
           value={phone}
-          className="w-full"
+          className="w-full mt-2"
         />
 
-        <label
-          htmlFor="login-location"
-          className="text-sm font-semibold text-secondary"
-        >
-          Location*
-        </label>
+        <label htmlFor="login-location">Location*</label>
         <DropdownSelect
           options={locationOptions}
           value={locationSelection}
           onChange={setLocationSelection}
+          className="w-full mt-2"
         />
 
-        <label
-          htmlFor="login-rank"
-          className="text-sm font-semibold text-secondary"
-        >
-          What is your rank?*
-        </label>
+        <label htmlFor="login-rank">What is your rank?*</label>
         <SingleSelectButtonGroup
           options={rankOptions}
           value={rankSelection}
           onChange={setRankSelection}
           onDropdownChange={(parent, child) => console.log(parent, child)}
+          className="w-full mt-2"
         />
 
         <label htmlFor="login-branch">What is your branch?*</label>
@@ -609,7 +588,7 @@ export default function CreateAccountPage() {
           name="branch"
           placeholder="Your branch"
           value={branch}
-          className="w-full"
+          className="w-full mt-2"
           onChange={setBranch}
         />
 
@@ -619,14 +598,11 @@ export default function CreateAccountPage() {
           name="careerField"
           placeholder="Your career field"
           value={careerField}
-          className="w-full"
+          className="w-full mt-2"
           onChange={setCareerField}
         />
 
-        <label
-          htmlFor="login-duty-status"
-          className="text-sm font-semibold text-secondary"
-        >
+        <label htmlFor="login-duty-status">
           Are you active duty or part-time?*
         </label>
         <SingleSelectButtonGroup
@@ -639,12 +615,7 @@ export default function CreateAccountPage() {
           onDropdownChange={(parent, child) => console.log(parent, child)}
         />
 
-        <label
-          htmlFor="login-biography"
-          className="text-sm font-semibold text-secondary"
-        >
-          Short Biography*
-        </label>
+        <label htmlFor="login-biography">Short Biography*</label>
         <TextInput
           value={multiLineText}
           onChange={setMultiLineText}
@@ -653,13 +624,12 @@ export default function CreateAccountPage() {
           rows={5}
           maxLength={500}
           showCharCount={true}
-          className="border-primary"
+          className="border-primary mt-2"
           counterColor="text-primary"
         />
 
         <label //selected here will appear selected in "interests" section of mentee/mentor forms
           htmlFor="login-interests"
-          className="text-sm font-semibold text-secondary"
         >
           Areas of Interest
         </label>
@@ -672,12 +642,9 @@ export default function CreateAccountPage() {
           maxSelections={9}
         />
 
-        <div className="text-base font-semibold text-secondary sm:w-48 shrink-0 pt-1">
-          Visibility
-        </div>
         <div className="flex-1 max-w-xl space-y-6">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-secondary">Signal</p>
+            <p>Signal Visiblity</p>
             <Select
               value={signalVisibility}
               onValueChange={(value) => {
@@ -701,7 +668,7 @@ export default function CreateAccountPage() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm font-medium text-secondary">Email</p>
+            <p>Email Visibility</p>
             <Select
               value={emailVisibility}
               onValueChange={(value) => {
