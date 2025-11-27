@@ -182,6 +182,7 @@ export default function MentorshipApplyMentorPage() {
   const [availableMentorHours, setAvailableMentorHours] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const createMentor = useMutation(trpc.mentors.createMentor.mutationOptions());
 
@@ -288,6 +289,7 @@ export default function MentorshipApplyMentorPage() {
           : undefined,
       });
 
+      setIsSubmitted(true);
       router.push("/mentorship");
     } catch (error) {
       if (error instanceof TRPCClientError) {
