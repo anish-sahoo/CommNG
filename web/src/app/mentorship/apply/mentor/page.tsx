@@ -239,6 +239,20 @@ export default function MentorshipApplyMentorPage() {
     [trpcClient],
   );
 
+  const cleanupUnusedResume = useCallback(async () => {
+    // Only cleanup if resume was uploaded but form was not submitted
+    if (resume?.status === "uploaded" && resume.fileId && !isSubmitted) {
+      try {
+        await trpcClient.files.deleteFile.mutate({
+          fileId: resume.fileId,
+        });
+      } catch (error) {
+        // Silently fail - cleanup is best effort
+        console.error("Failed to cleanup unused resume:", error);
+      }
+    }
+  }, [resume, isSubmitted, trpcClient]);
+
   const handleSubmit = useCallback(async () => {
     if (!userId) {
       setFormError("You must be logged in to submit this application.");
