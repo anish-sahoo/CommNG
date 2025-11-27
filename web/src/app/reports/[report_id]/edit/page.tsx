@@ -124,7 +124,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
   const [category, setCategory] = useState<ReportCategory | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assignedTo, setAssignedTo] = useState<string | null>(null);
+  const [assignedTo, setAssignedTo] = useState<string | undefined>(undefined);
   const [updatedAt, setUpdatedAt] = useState<string | number | Date | null>(
     null,
   );
@@ -133,6 +133,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
   >([]);
   const [newAttachments, setNewAttachments] = useState<NewAttachment[]>([]);
   const [attachmentNotice, setAttachmentNotice] = useState<string | null>(null);
+  const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
 
   const [initialCategory, setInitialCategory] = useState<ReportCategory | null>(
     null,
@@ -141,9 +142,9 @@ export default function EditReportPage({ params }: EditReportPageProps) {
   const [initialDescription, setInitialDescription] = useState<string | null>(
     null,
   );
-  const [initialAssignedTo, setInitialAssignedTo] = useState<string | null>(
-    null,
-  );
+  const [initialAssignedTo, setInitialAssignedTo] = useState<
+    string | undefined
+  >(undefined);
   const [initialExistingAttachments, setInitialExistingAttachments] = useState<
     ExistingAttachment[]
   >([]);
@@ -272,6 +273,19 @@ export default function EditReportPage({ params }: EditReportPageProps) {
     [trpcClient],
   );
 
+  const removeFile = useCallback(
+    async (fileId: string) => {
+      try {
+        await trpcClient.files.deleteFile.mutate({
+          fileId: fileId,
+        });
+      } catch (error) {
+        console.error("Failed to delete attachment:", error);
+      }
+    },
+    [trpcClient],
+  );
+
   const handleAttachmentDrop = useCallback(
     (acceptedFiles: File[]) => {
       setAttachmentNotice(null);
@@ -310,9 +324,17 @@ export default function EditReportPage({ params }: EditReportPageProps) {
   );
 
   const handleRemoveAttachment = useCallback((attachmentId: string) => {
-    setNewAttachments((prev) =>
-      prev.filter((attachment) => attachment.id !== attachmentId),
-    );
+    setNewAttachments((prev) => {
+      const target = prev.find((att) => att.id === attachmentId);
+
+      if (target?.status === "uploaded" && target.fileId) {
+        const fileIdToDelete = target.fileId;
+        setFilesToDelete((files) => [...files, fileIdToDelete]);
+      }
+
+      return prev.filter((att) => att.id !== attachmentId);
+    });
+
     setAttachmentNotice(null);
   }, []);
 
@@ -320,6 +342,8 @@ export default function EditReportPage({ params }: EditReportPageProps) {
     setExistingAttachments((prev) =>
       prev.filter((att) => att.fileId !== fileId),
     );
+
+    setFilesToDelete((prev) => [...prev, fileId]);
   }, []);
 
   const handleRetryAttachment = useCallback(
@@ -341,6 +365,16 @@ export default function EditReportPage({ params }: EditReportPageProps) {
     },
     [uploadAttachment],
   );
+
+  const removeUnsavedFiles = useCallback(async () => {
+    const uploadedNewFiles = newAttachments
+      .filter((att) => att.status === "uploaded" && att.fileId)
+      .map((att) => att.fileId as string);
+
+    if (uploadedNewFiles.length > 0) {
+      await Promise.all(uploadedNewFiles.map((fileId) => removeFile(fileId)));
+    }
+  }, [newAttachments, removeFile]);
 
   /* ============ GETTING INFO FROM REPORTS + SETTING EXISTING VALUES ============ */
   // Fetch all reports
@@ -503,6 +537,10 @@ export default function EditReportPage({ params }: EditReportPageProps) {
         });
       }
 
+      if (filesToDelete.length > 0) {
+        await Promise.all(filesToDelete.map((fileId) => removeFile(fileId)));
+      }
+
       // Invalidate the cache to ensure the most recent data is used
       await queryClient.invalidateQueries({
         queryKey: ["reports"],
@@ -520,6 +558,8 @@ export default function EditReportPage({ params }: EditReportPageProps) {
   /* ============ CANCEL CHANGES TO REPORTS ============ */
 
   const handleCancel = async () => {
+    await removeUnsavedFiles();
+
     // Return to the main reports page
     router.push(backHref);
   };
@@ -660,15 +700,17 @@ export default function EditReportPage({ params }: EditReportPageProps) {
               {allAttachments.length > 0 ? (
                 <ul className="space-y-3">
                   {allAttachments.map((attachment) => {
-                    const statusText =
-                      attachment.status === "existing"
-                        ? "Uploaded"
-                        : attachment.status === "uploaded"
-                          ? "Ready to submit"
-                          : attachment.status === "uploading"
-                            ? "Uploading…"
-                            : (attachment.error ??
-                              "Upload failed. Remove or try again.");
+                    let statusText: string;
+                    if (attachment.status === "existing")
+                      statusText = "Uploaded";
+                    else if (attachment.status === "uploaded")
+                      statusText = "Ready to submit";
+                    else if (attachment.status === "uploading")
+                      statusText = "Uploading…";
+                    else
+                      statusText =
+                        attachment.error ??
+                        "Upload failed. Remove or try again.";
 
                     const statusClass =
                       attachment.status === "error"
@@ -751,7 +793,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                 </label>
                 <div className="relative w-full">
                   <Select
-                    value={assignedTo ?? ""}
+                    value={assignedTo ?? undefined}
                     onValueChange={(value) => {
                       // Only update if it's a real user ID (not empty string)
                       if (value && value.length > 0) {
@@ -877,8 +919,9 @@ export default function EditReportPage({ params }: EditReportPageProps) {
             <Button
               type="button"
               className="h-11"
-              onClick={() => {
+              onClick={async () => {
                 setShowUnsavedModal(false);
+                await removeUnsavedFiles();
                 router.push(backHref);
               }}
               aria-label="Leave without saving"

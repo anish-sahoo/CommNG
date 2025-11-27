@@ -99,3 +99,9 @@ export const updateUserVisibilityInputSchema = z.object({
 export type UpdateUserVisibilityInput = z.infer<
   typeof updateUserVisibilityInputSchema
 >;
+
+export const getUsersByIdsInputSchema = z.object({
+  user_ids: z.array(z.string()),
+});
+
+export type GetUsersByIdsInput = z.infer<typeof getUsersByIdsInputSchema>;

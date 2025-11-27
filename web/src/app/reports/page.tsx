@@ -168,20 +168,19 @@ export default function ReportsPage() {
     queryKey: ["assignedUsers", assignedUserIds],
     enabled: assignedUserIds.length > 0,
     queryFn: async () => {
-      const users: Record<string, string> = {};
-      await Promise.all(
-        assignedUserIds.map(async (userId) => {
-          try {
-            const userData = await trpcClient.user.getUserData.query({
-              user_id: userId,
-            });
-            users[userId] = userData.name;
-          } catch (error) {
-            console.error(`Failed to fetch user ${userId}:`, error);
-          }
-        }),
-      );
-      return users;
+      try {
+        const userList = await trpcClient.user.getUsersByIds.query({
+          user_ids: assignedUserIds,
+        });
+        const users: Record<string, string> = {};
+        userList.forEach((user) => {
+          users[user.id] = user.name;
+        });
+        return users;
+      } catch (error) {
+        console.error("Failed to fetch assigned users:", error);
+        return {};
+      }
     },
   });
 
