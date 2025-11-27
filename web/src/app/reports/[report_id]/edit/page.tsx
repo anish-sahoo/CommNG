@@ -433,7 +433,12 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                     reportId: reportId,
                     assigneeId: assignedTo,
                     assignedBy: userId,
-                })
+                });
+            }
+            else {
+                await trpcClient.reports.unassignReport.mutate({
+                    reportId: reportId,
+                });
             }
 
             // Invalidate the cache to ensure the most recent data is used
@@ -673,56 +678,67 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                                 <label className="block text-sm font-medium text-secondary">
                                     Assign To
                                 </label>
-                                <Select
-                                    value={assignedTo ?? ""}
-                                    onValueChange={(value) => {
-                                        // Only update if it's a real user ID (not empty string)
-                                        if (value && value.length > 0) {
-                                            setAssignedTo(value);
-                                        }
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <div className="flex-1 text-left">
-                                            {assignedUser
-                                                ? `${assignedUser.name} (${assignedUser.email})`
-                                                : assignedTo
-                                                ? "Loading user..."
-                                                : "Select a user to assign..."}
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <div className="p-2" onKeyDown={(e) => e.stopPropagation()}>
-                                            <TextInput
-                                                placeholder="Search users..."
-                                                value={searchQuery}
-                                                onChange={setSearchQuery}
-                                                className="mb-2"
-                                            />
-                                        </div>
+                                <div className="relative w-full">
+                                    <Select
+                                        value={assignedTo ?? ""}
+                                        onValueChange={(value) => {
+                                            // Only update if it's a real user ID (not empty string)
+                                            if (value && value.length > 0) {
+                                                setAssignedTo(value);
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="w-full pr-10">
+                                            <div className="flex-1 text-left">
+                                                {assignedUser
+                                                    ? `${assignedUser.name} (${assignedUser.email})`
+                                                    : assignedTo
+                                                    ? "Loading user..."
+                                                    : "Select a user to assign..."}
+                                            </div>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <div className="p-2" onKeyDown={(e) => e.stopPropagation()}>
+                                                <TextInput
+                                                    placeholder="Search users..."
+                                                    value={searchQuery}
+                                                    onChange={setSearchQuery}
+                                                    className="mb-2"
+                                                />
+                                            </div>
 
-                                        {isFetching ? (
-                                            <div className="p-2 text-sm text-secondary/70">
-                                                Searching...
-                                            </div>
-                                        ) : users.length > 0 ? (
-                                            users.map((user) => (
-                                                <SelectItem key={user.id} value={user.id}>
-                                                    {user.name} ({user.email})
-                                                </SelectItem>
-                                            ))
-                                        ) : relevantUsersQuery.length >= 2 ? (
-                                            <div className="p-2 text-sm text-secondary/70">
-                                                No users found
-                                            </div>
-                                        ) : (
-                                            <div className="p-2 text-sm text-secondary/70">
-                                                Type to search users...
-                                            </div>
-                                        )}
-                                    </SelectContent>
-
-                                </Select>
+                                            {isFetching ? (
+                                                <div className="p-2 text-sm text-secondary/70">
+                                                    Searching...
+                                                </div>
+                                            ) : users.length > 0 ? (
+                                                users.map((user) => (
+                                                    <SelectItem key={user.id} value={user.id}>
+                                                        {user.name} ({user.email})
+                                                    </SelectItem>
+                                                ))
+                                            ) : relevantUsersQuery.length >= 2 ? (
+                                                <div className="p-2 text-sm text-secondary/70">
+                                                    No users found
+                                                </div>
+                                            ) : (
+                                                <div className="p-2 text-sm text-secondary/70">
+                                                    Type to search users...
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    {assignedUser && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setAssignedTo(null)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors"
+                                            aria-label="Remove assigned user"
+                                        >
+                                            <RemoveIcon className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         )}
 
