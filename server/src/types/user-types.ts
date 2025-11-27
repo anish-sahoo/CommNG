@@ -79,9 +79,7 @@ export const searchUsersInputSchema = z.object({
   name: z.string().min(1),
 });
 
-export type SearchUsersInput = z.infer<
-  typeof searchUsersInputSchema
->;
+export type SearchUsersInput = z.infer<typeof searchUsersInputSchema>;
 
 export type RoleSummary = {
   roleId: number;

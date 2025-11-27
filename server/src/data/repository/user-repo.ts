@@ -1,4 +1,4 @@
-import { and, eq, or, ilike } from "drizzle-orm";
+import { and, eq, ilike, or } from "drizzle-orm";
 import { users } from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import { NotFoundError } from "../../types/errors.js";
@@ -7,18 +7,14 @@ import { NotFoundError } from "../../types/errors.js";
  * Repository to handle database queries/communication related to users
  */
 export class UserRepository {
-
   async searchUsers(name: string) {
     const searchTerm = name.trim().toLowerCase();
     if (!searchTerm) return [];
 
     const words = searchTerm.split(/\s+/);
 
-    const conditions = words.map(word =>
-      or(
-        ilike(users.name, `%${word}%`),
-        ilike(users.email, `%${word}%`)
-      )
+    const conditions = words.map((word) =>
+      or(ilike(users.name, `%${word}%`), ilike(users.email, `%${word}%`)),
     );
 
     const results = await db
@@ -36,7 +32,6 @@ export class UserRepository {
 
     return results;
   }
-
 
   /**
    * Get user data by user ID

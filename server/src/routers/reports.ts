@@ -10,7 +10,7 @@ import {
   deleteReportSchema,
   editReportSchema,
   getReportsSchema,
-  unassignReportSchema
+  unassignReportSchema,
 } from "../types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
@@ -68,7 +68,9 @@ const unassignReport = roleProcedure([reportingRole("assign")])
   .input(unassignReportSchema)
   .meta({ description: "Unassigns a report to a user" })
   .mutation(({ input }) =>
-    withErrorHandling("unassignReport", () => reportService.unassignReport(input.reportId)),
+    withErrorHandling("unassignReport", () =>
+      reportService.unassignReport(input.reportId),
+    ),
   );
 
 export const reportsRouter = router({
@@ -77,5 +79,5 @@ export const reportsRouter = router({
   updateReport,
   deleteReport,
   assignReport,
-  unassignReport
+  unassignReport,
 });

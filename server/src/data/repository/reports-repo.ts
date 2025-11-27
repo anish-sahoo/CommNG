@@ -331,7 +331,6 @@ export class ReportRepository {
     );
   }
 
-
   /**
    * Unassign a report and revert status to Pending.
    * @param reportId Report ID
