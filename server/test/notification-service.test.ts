@@ -7,7 +7,13 @@ vi.mock("web-push", () => {
     headers: Record<string, string>;
     body: string;
     endpoint: string;
-    constructor(message: string, statusCode: number, headers: Record<string, string>, body: string, endpoint: string) {
+    constructor(
+      message: string,
+      statusCode: number,
+      headers: Record<string, string>,
+      body: string,
+      endpoint: string,
+    ) {
       super(message);
       this.name = "WebPushError";
       this.statusCode = statusCode;
@@ -29,7 +35,7 @@ vi.mock("web-push", () => {
   };
 });
 
-import webpush, { WebPushError } from "web-push";
+import webpush, { type SendResult, WebPushError } from "web-push";
 import type {
   ActivePushSubscription,
   NotificationRepository,
@@ -75,7 +81,9 @@ describe("NotificationService", () => {
     service = new NotificationService(repo as NotificationRepository);
     // default sendNotification to a resolved promise to emulate web-push behavior
     // Resolve to an empty object because SendResult type is not relevant for tests
-    vi.mocked(webpush, true).sendNotification.mockResolvedValue({} as any);
+    vi.mocked(webpush, true).sendNotification.mockResolvedValue(
+      {} as SendResult,
+    );
   });
 
   afterEach(() => {
