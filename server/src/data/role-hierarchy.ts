@@ -175,7 +175,7 @@ export function getImpliedRoles(roleKey: RoleKey): RoleKey[] {
     const allRoles: RoleKey[] = [];
     for (const [_namespace, actions] of Object.entries(ROLE_HIERARCHIES)) {
       const namespace = _namespace as keyof typeof ROLE_HIERARCHIES;
-      for (const action of actions as string[]) {
+      for (const action of actions) {
         allRoles.push(buildRoleKey(namespace, null, action));
       }
     }
