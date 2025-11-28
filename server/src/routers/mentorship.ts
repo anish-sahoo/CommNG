@@ -7,6 +7,7 @@ import { protectedProcedure, router } from "../trpc/trpc.js";
 import { createMenteeInputSchema } from "../types/mentee-types.js";
 import { createMentorInputSchema } from "../types/mentor-types.js";
 import log from "../utils/logger.js";
+import { z } from "zod";
 
 const mentorRepo = new MentorRepository();
 const menteeRepo = new MenteeRepository();
@@ -33,6 +34,25 @@ const createMentee = protectedProcedure
     }),
   );
 
+const requestMentorship = protectedProcedure
+  .input(z.object({ 
+    mentorUserId: z.string(),
+    message: z.string().optional()
+  }))
+  .mutation(({ input, ctx }) =>
+    withErrorHandling("requestMentorship", async () => {
+      return await mentorshipService.requestMentorship(ctx.auth.user.id, input.mentorUserId, input.message);
+    }),
+  );
+
+const declineMentorshipRequest = protectedProcedure
+  .input(z.object({ matchId: z.number() }))
+  .mutation(({ input, ctx }) =>
+    withErrorHandling("declineMentorshipRequest", async () => {
+      return await mentorshipService.declineMentorshipRequest(input.matchId, ctx.auth.user.id);
+    }),
+  );
+
 const getMentorshipData = protectedProcedure
   .meta({
     description:
@@ -49,5 +69,7 @@ const getMentorshipData = protectedProcedure
 export const mentorshipRouter = router({
   createMentor,
   createMentee,
+  requestMentorship,
+  declineMentorshipRequest,
   getMentorshipData,
 });

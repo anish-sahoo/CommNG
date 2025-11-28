@@ -10,6 +10,7 @@ export type MentorshipMatch = {
   mentorUserId: string;
   status: MatchStatus;
   matchedAt: string | Date;
+  message?: string; // Optional personalized message from mentee to mentor
 };
 
 // For mentee's "Your Mentor" section
@@ -28,6 +29,13 @@ export type MatchedMentor = {
 // For mentor's "Your Mentee" section
 export type PendingMenteeRequest = {
   mentee: GetMenteeOutput;
+  matchId: number;
+  status: MatchStatus;
+  matchedAt: string | Date;
+};
+
+export type PendingMentorRequest = {
+  mentor: GetMentorOutput;
   matchId: number;
   status: MatchStatus;
   matchedAt: string | Date;
@@ -55,6 +63,12 @@ export type MentorshipDataOutput = {
   // MENTOR VIEW: "Your Mentee" section
   pendingMenteeRequests?: PendingMenteeRequest[]; // Case 2: Mentees who requested this mentor (status: pending)
   matchedMentees?: MatchedMentee[]; // Case 3: Accepted mentees (status: accepted, can coexist with pending)
+
+  // New fields for comprehensive view
+  activeMentees?: GetMenteeOutput[]; // All active mentees (for mentors to see)
+  activeMentors?: GetMentorOutput[]; // All active mentors (for mentees to see)
+  pendingMentorRequests?: PendingMentorRequest[]; // Outgoing pending requests from this user
+  mentorRecommendations?: SuggestedMentor[]; // Stored recommendations for this user
 };
 
 export const getMentorshipDataInputSchema = z.object({

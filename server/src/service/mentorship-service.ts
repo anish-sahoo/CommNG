@@ -1,5 +1,5 @@
-import { and, eq, notInArray, or } from "drizzle-orm";
-import { mentors, mentorshipMatches } from "../data/db/schema.js";
+import { and, eq, isNull, notInArray, or, sql } from "drizzle-orm";
+import { mentorRecommendations, mentors, mentorshipMatches, mentees } from "../data/db/schema.js";
 import { db } from "../data/db/sql.js";
 import type { MenteeRepository } from "../data/repository/mentee-repo.js";
 import type { MentorRepository } from "../data/repository/mentor-repo.js";
@@ -9,6 +9,7 @@ import type {
   MatchedMentor,
   MentorshipDataOutput,
   PendingMenteeRequest,
+  PendingMentorRequest,
   SuggestedMentor,
 } from "../types/mentorship-types.js";
 import type { CreateMenteeInput } from "../types/mentee-types.js";
@@ -58,7 +59,7 @@ export class MentorshipService {
   }
 
   /**
-   * Create a new mentee profile, generate embeddings, and return mentor recommendations
+   * Create a new mentee profile, generate embeddings, and store mentor recommendations
    */
   async createMentee(input: CreateMenteeInput) {
     await this.menteeRepo.createMentee(
@@ -85,11 +86,65 @@ export class MentorshipService {
         hopeToGainResponses: input.hopeToGainResponses,
         mentorQualities: input.mentorQualities,
       });
+
+      // Generate and store recommendations
+      await this.matchingService.generateMentorRecommendations(input.userId);
+    }
+  }
+
+  /**
+   * Request mentorship from a specific mentor
+   */
+  async requestMentorship(menteeUserId: string, mentorUserId: string, message?: string) {
+    // Check if request already exists
+    const existing = await db
+      .select()
+      .from(mentorshipMatches)
+      .where(
+        and(
+          eq(mentorshipMatches.requestorUserId, menteeUserId),
+          eq(mentorshipMatches.mentorUserId, mentorUserId),
+        ),
+      )
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw new Error("Mentorship request already exists");
     }
 
-    return this.matchingService
-      ? await this.matchingService.generateMentorRecommendations(input.userId)
-      : [];
+    await db.insert(mentorshipMatches).values({
+      requestorUserId: menteeUserId,
+      mentorUserId,
+      status: "pending",
+      message,
+    });
+  }
+
+  /**
+   * Decline a mentorship request (mentor action)
+   */
+  async declineMentorshipRequest(matchId: number, mentorUserId: string) {
+    // Verify the mentor owns this match
+    const match = await db
+      .select()
+      .from(mentorshipMatches)
+      .where(
+        and(
+          eq(mentorshipMatches.matchId, matchId),
+          eq(mentorshipMatches.mentorUserId, mentorUserId),
+          eq(mentorshipMatches.status, "pending"),
+        ),
+      )
+      .limit(1);
+
+    if (match.length === 0) {
+      throw new Error("Mentorship request not found or not authorized to decline");
+    }
+
+    await db
+      .update(mentorshipMatches)
+      .set({ status: "declined" })
+      .where(eq(mentorshipMatches.matchId, matchId));
   }
 
   /**
@@ -121,6 +176,7 @@ export class MentorshipService {
         mentorUserId: mentorshipMatches.mentorUserId,
         status: mentorshipMatches.status,
         matchedAt: mentorshipMatches.matchedAt,
+        message: mentorshipMatches.message,
       })
       .from(mentorshipMatches)
       .where(
@@ -129,6 +185,27 @@ export class MentorshipService {
           eq(mentorshipMatches.requestorUserId, userId),
         ),
       );
+
+    // Get active mentors and mentees
+    const [activeMentors, activeMentees] = await Promise.all([
+      db.select().from(mentors).where(eq(mentors.status, "active")),
+      db.select().from(mentees).where(eq(mentees.status, "active")),
+    ]);
+
+    // Get user's mentor recommendations
+    const userRecommendations = await db
+      .select()
+      .from(mentorRecommendations)
+      .where(
+        and(
+          eq(mentorRecommendations.userId, userId),
+          or(
+            isNull(mentorRecommendations.expiresAt),
+            sql`${mentorRecommendations.expiresAt} > NOW()`,
+          ),
+        ),
+      )
+      .limit(1);
 
     const result: MentorshipDataOutput = {
       mentor,
@@ -139,8 +216,51 @@ export class MentorshipService {
         mentorUserId: match.mentorUserId ?? "",
         status: match.status as "pending" | "accepted" | "declined",
         matchedAt: match.matchedAt,
+        message: match.message ?? undefined,
       })),
+      activeMentors: activeMentors.map(m => ({ ...m, strengths: m.strengths ?? [] })),
+      activeMentees: activeMentees,
     };
+
+    // Add pending mentor requests (outgoing from this user)
+    const pendingMentorRequests = allMatches
+      .filter(match => match.requestorUserId === userId && match.status === "pending")
+      .map(async match => {
+        if (!match.mentorUserId) return null;
+        const mentorProfile = await this.mentorRepo.getMentorByUserId(match.mentorUserId);
+        return mentorProfile ? {
+          mentor: mentorProfile,
+          matchId: match.matchId,
+          status: match.status as "pending" | "accepted" | "declined",
+          matchedAt: match.matchedAt,
+        } : null;
+      });
+
+    const resolvedPendingRequests = (await Promise.all(pendingMentorRequests)).filter(Boolean) as PendingMentorRequest[];
+    if (resolvedPendingRequests.length > 0) {
+      result.pendingMentorRequests = resolvedPendingRequests;
+    }
+
+    // Add mentor recommendations
+    if (userRecommendations.length > 0) {
+      const recommendation = userRecommendations[0]!;
+      const recommendedMentors: SuggestedMentor[] = [];
+      for (const mentorId of recommendation.recommendedMentorIds) {
+        const mentorProfile = await this.mentorRepo.getMentorByUserId(mentorId);
+        if (mentorProfile) {
+          const hasRequested = allMatches.some(
+            match => match.requestorUserId === userId && match.mentorUserId === mentorId
+          );
+          recommendedMentors.push({
+            mentor: mentorProfile,
+            hasRequested,
+          });
+        }
+      }
+      if (recommendedMentors.length > 0) {
+        result.mentorRecommendations = recommendedMentors;
+      }
+    }
 
     // ============================================
     // MENTEE VIEW: "Your Mentor" section
