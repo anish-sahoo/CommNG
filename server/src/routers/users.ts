@@ -7,6 +7,8 @@ import {
   checkEmailExistsInputSchema,
   createUserProfileInputSchema,
   getUserDataInputSchema,
+  getUsersByIdsInputSchema,
+  searchUsersInputSchema,
   updateUserProfileInputSchema,
   updateUserVisibilityInputSchema,
 } from "../types/user-types.js";
@@ -88,6 +90,24 @@ const getUserRoles = protectedProcedure
     });
   });
 
+const searchUsers = protectedProcedure
+  .input(searchUsersInputSchema)
+  .meta({
+    description: "Search for users with names that include the given name",
+  })
+  .query(async ({ input }) => {
+    return userService.searchUsers(input.name);
+  });
+
+const getUsersByIds = protectedProcedure
+  .input(getUsersByIdsInputSchema)
+  .meta({
+    description: "Returns the public-facing data for all given users",
+  })
+  .query(async ({ input }) => {
+    return userService.getUsersByIds(input.user_ids);
+  });
+
 export const userRouter = router({
   getUserData,
   checkEmailExists,
@@ -95,4 +115,6 @@ export const userRouter = router({
   updateUserProfile,
   updateUserVisibility,
   getUserRoles,
+  searchUsers,
+  getUsersByIds,
 });

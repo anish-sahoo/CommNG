@@ -69,4 +69,13 @@ export class ReportService {
   async assignReport(input: AssignReport) {
     return await this.reportsRepo.assignReport(input);
   }
+
+  /**
+   * Unassign a report from a user
+   * @param input Assignment data
+   * @returns Assignment object
+   */
+  async unassignReport(reportId: string) {
+    return await this.reportsRepo.unassignReport(reportId);
+  }
 }

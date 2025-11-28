@@ -17,6 +17,10 @@ export const assignReportSchema = z.object({
   assignedBy: userIdSchema,
 });
 
+export const unassignReportSchema = z.object({
+  reportId: z.uuid(),
+});
+
 export const createReportsSchema = z.object({
   category: reportCategorySchema.optional(),
   title: z.string().min(1, "Report title cannot be empty."),

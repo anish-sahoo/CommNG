@@ -75,6 +75,12 @@ export type UpdateUserProfileInput = z.infer<
   typeof updateUserProfileInputSchema
 >;
 
+export const searchUsersInputSchema = z.object({
+  name: z.string().min(1),
+});
+
+export type SearchUsersInput = z.infer<typeof searchUsersInputSchema>;
+
 export type RoleSummary = {
   roleId: number;
   namespace: RoleNamespace;
@@ -93,3 +99,9 @@ export const updateUserVisibilityInputSchema = z.object({
 export type UpdateUserVisibilityInput = z.infer<
   typeof updateUserVisibilityInputSchema
 >;
+
+export const getUsersByIdsInputSchema = z.object({
+  user_ids: z.array(z.string()),
+});
+
+export type GetUsersByIdsInput = z.infer<typeof getUsersByIdsInputSchema>;

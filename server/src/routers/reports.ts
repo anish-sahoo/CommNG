@@ -10,6 +10,7 @@ import {
   deleteReportSchema,
   editReportSchema,
   getReportsSchema,
+  unassignReportSchema,
 } from "../types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
@@ -18,7 +19,7 @@ const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
 const getReports = roleProcedure([reportingRole("read")])
   .input(getReportsSchema)
   .meta({ description: "Returns the list of reports" })
-  .mutation(({ ctx, input }) =>
+  .query(({ ctx, input }) =>
     withErrorHandling("getReports", () => {
       const roleSet = ctx.roles ?? new Set();
       const canViewAll = PolicyEngine.validateList(roleSet, ADMIN_REPORT_ROLES);
@@ -63,10 +64,20 @@ const assignReport = roleProcedure([reportingRole("assign")])
     withErrorHandling("assignReport", () => reportService.assignReport(input)),
   );
 
+const unassignReport = roleProcedure([reportingRole("assign")])
+  .input(unassignReportSchema)
+  .meta({ description: "Unassigns a report to a user" })
+  .mutation(({ input }) =>
+    withErrorHandling("unassignReport", () =>
+      reportService.unassignReport(input.reportId),
+    ),
+  );
+
 export const reportsRouter = router({
   getReports,
   createReport,
   updateReport,
   deleteReport,
   assignReport,
+  unassignReport,
 });
