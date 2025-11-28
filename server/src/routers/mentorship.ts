@@ -53,6 +53,14 @@ const declineMentorshipRequest = protectedProcedure
     }),
   );
 
+const acceptMentorshipRequest = protectedProcedure
+  .input(z.object({ matchId: z.number() }))
+  .mutation(({ input, ctx }) =>
+    withErrorHandling("acceptMentorshipRequest", async () => {
+      return await mentorshipService.acceptMentorshipRequest(input.matchId, ctx.auth.user.id);
+    }),
+  );
+
 const getMentorshipData = protectedProcedure
   .meta({
     description:
@@ -71,5 +79,6 @@ export const mentorshipRouter = router({
   createMentee,
   requestMentorship,
   declineMentorshipRequest,
+  acceptMentorshipRequest,
   getMentorshipData,
 });

@@ -150,18 +150,38 @@ export class MentorshipService {
   }
 
   /**
+   * Accept a mentorship request (mentor action)
+   */
+  async acceptMentorshipRequest(matchId: number, mentorUserId: string) {
+    // Verify the mentor owns this match and it's pending
+    const match = await db
+      .select()
+      .from(mentorshipMatches)
+      .where(
+        and(
+          eq(mentorshipMatches.matchId, matchId),
+          eq(mentorshipMatches.mentorUserId, mentorUserId),
+          eq(mentorshipMatches.status, "pending"),
+        ),
+      )
+      .limit(1);
+
+    if (match.length === 0) {
+      throw new Error("Mentorship request not found or not authorized to accept");
+    }
+
+    await db
+      .update(mentorshipMatches)
+      .set({ status: "accepted", matchedAt: new Date() })
+      .where(eq(mentorshipMatches.matchId, matchId));
+  }
+
+  /**
    * Build mentee data including recommendations
    */
   private async buildMenteeData(
     userId: string,
     menteeData: { mentee: GetMenteeOutput | null; activeMentors: GetMentorOutput[] },
-    userRecommendations: Array<{
-      recommendationId: number;
-      userId: string;
-      recommendedMentorIds: string[];
-      createdAt: string | Date;
-      expiresAt: string | Date | null;
-    }>,
   ): Promise<{
     profile: GetMenteeOutput | null;
     activeMentors: GetMentorOutput[];
@@ -185,6 +205,20 @@ export class MentorshipService {
           eq(mentorshipMatches.requestorUserId, userId),
         ),
       );
+
+    const userRecommendations = await db
+      .select()
+      .from(mentorRecommendations)
+      .where(
+        and(
+          eq(mentorRecommendations.userId, userId),
+          or(
+            isNull(mentorRecommendations.expiresAt),
+            sql`${mentorRecommendations.expiresAt} > NOW()`,
+          ),
+        ),
+      )
+      .limit(1);
     const pendingMentorIds = allMatches
       .filter(match => match.requestorUserId === userId && match.status === "pending")
       .map(match => match.mentorUserId)
@@ -223,9 +257,9 @@ export class MentorshipService {
       (await this.mentorRepo.getMentorsByUserIds(allMentorIds)).map(m => [m.userId, m])
     );
 
-    const mentorRecommendations: SuggestedMentor[] = [];
+    const mentorRecs: SuggestedMentor[] = [];
     for (const mentor of menteeData.activeMentors) {
-      mentorRecommendations.push({
+      mentorRecs.push({
         mentor,
         status: "active",
       });
@@ -233,7 +267,7 @@ export class MentorshipService {
     for (const mentorId of pendingMentorIds) {
       const mentor = mentorsMap.get(mentorId);
       if (mentor) {
-        mentorRecommendations.push({
+        mentorRecs.push({
           mentor,
           status: "pending",
         });
@@ -242,7 +276,7 @@ export class MentorshipService {
     for (const mentorId of suggestedMentorIds) {
       const mentor = mentorsMap.get(mentorId);
       if (mentor) {
-        mentorRecommendations.push({
+        mentorRecs.push({
           mentor,
           status: "suggested",
         });
@@ -251,7 +285,7 @@ export class MentorshipService {
     for (const mentorId of recommendedMentorIds) {
       const mentor = mentorsMap.get(mentorId);
       if (mentor) {
-        mentorRecommendations.push({
+        mentorRecs.push({
           mentor,
           status: "suggested",
         });
@@ -261,7 +295,7 @@ export class MentorshipService {
     return {
       profile: menteeData.mentee,
       activeMentors: menteeData.activeMentors.map(m => ({ ...m, strengths: m.strengths ?? [] })),
-      mentorRecommendations,
+      mentorRecommendations: mentorRecs,
     };
   }
 
@@ -271,26 +305,12 @@ export class MentorshipService {
       this.mentorRepo.getMentorWithActiveMentees(userId),
       this.menteeRepo.getMenteeWithActiveMentors(userId),
     ]);
-    const userRecommendations = await db
-      .select()
-      .from(mentorRecommendations)
-      .where(
-        and(
-          eq(mentorRecommendations.userId, userId),
-          or(
-            isNull(mentorRecommendations.expiresAt),
-            sql`${mentorRecommendations.expiresAt} > NOW()`,
-          ),
-        ),
-      )
-      .limit(1);
 
     const result: MentorshipDataOutput = {
       mentor: null,
       mentee: null,
     };
 
-    // Build mentor data
     if (mentorData.mentor) {
       result.mentor = {
         profile: mentorData.mentor,
@@ -298,8 +318,7 @@ export class MentorshipService {
       };
     }
 
-    // Build mentee data
-    const menteeResult = await this.buildMenteeData(userId, menteeData, allMatches, userRecommendations);
+    const menteeResult = await this.buildMenteeData(userId, menteeData);
     if (menteeResult) {
       result.mentee = menteeResult;
     }
