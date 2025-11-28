@@ -170,6 +170,18 @@ export function roleImplies(roleA: RoleKey, roleB: RoleKey): boolean {
  * // Returns: ["reporting:create", "reporting:read"]
  */
 export function getImpliedRoles(roleKey: RoleKey): RoleKey[] {
+  if (roleKey === "global:admin") {
+    // Return all permissions that ROLE_HIERARCHIES has (as fully composed RoleKey[])
+    const allRoles: RoleKey[] = [];
+    for (const [_namespace, actions] of Object.entries(ROLE_HIERARCHIES)) {
+      const namespace = _namespace as keyof typeof ROLE_HIERARCHIES;
+      for (const action of actions as string[]) {
+        allRoles.push(buildRoleKey(namespace, null, action));
+      }
+    }
+    return allRoles;
+  }
+
   const parsed = parseRoleKey(roleKey);
   const hierarchy = ROLE_HIERARCHIES[parsed.namespace];
 
