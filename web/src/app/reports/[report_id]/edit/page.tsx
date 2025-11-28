@@ -801,17 +801,28 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                       }
                     }}
                   >
-                    <SelectTrigger
-                      id={assignedToId}
-                      className="w-full pr-10 min-w-0"
-                    >
-                      <div className="flex-1 text-left min-w-0 truncate">
+                    <SelectTrigger id={assignedToId} className="w-full min-w-0">
+                      <div className="flex-1 text-left min-w-0 truncate pr-2">
                         {assignedUser
                           ? `${assignedUser.name} (${assignedUser.email})`
                           : assignedTo
                             ? "Loading user..."
                             : "Select a user to assign..."}
                       </div>
+                      {assignedUser && (
+                        <button
+                          type="button"
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setAssignedTo(null);
+                          }}
+                          className="mr-2 text-secondary/70 hover:text-secondary transition-colors flex-shrink-0 cursor-pointer"
+                          aria-label="Remove assigned user"
+                        >
+                          <RemoveIcon className="h-4 w-4" />
+                        </button>
+                      )}
                     </SelectTrigger>
                     <SelectContent>
                       <div className="p-2">
@@ -845,16 +856,6 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                       )}
                     </SelectContent>
                   </Select>
-                  {assignedUser && (
-                    <button
-                      type="button"
-                      onClick={() => setAssignedTo(null)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors"
-                      aria-label="Remove assigned user"
-                    >
-                      <RemoveIcon className="h-4 w-4" />
-                    </button>
-                  )}
                 </div>
               </div>
             )}
