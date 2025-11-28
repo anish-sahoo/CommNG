@@ -92,6 +92,11 @@ export const careerStageEnum = pgEnum("career_stage_enum", [
   "no-preference",
 ]);
 
+const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
+  "mentor",
+  "mentee",
+]);
+
 // pgvector support - custom type for vector columns
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -200,7 +205,7 @@ export const channels = pgTable(
     channelId: integer("channel_id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull(),
     description: text("description"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     metadata: jsonb("metadata"),
@@ -245,10 +250,10 @@ export const roles = pgTable(
     }),
     metadata: jsonb("metadata"),
     description: text("description"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -279,7 +284,7 @@ export const userRoles = pgTable(
     roleId: integer("role_id")
       .references(() => roles.roleId, { onDelete: "cascade" })
       .notNull(),
-    assignedAt: timestamp("assigned_at", { withTimezone: false })
+    assignedAt: timestamp("assigned_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     assignedBy: text("assigned_by").references(() => users.id, {
@@ -314,7 +319,7 @@ export const channelSubscriptions = pgTable(
     notificationsEnabled: boolean("notifications_enabled")
       .default(true)
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -341,7 +346,7 @@ export const messages = pgTable(
     }),
     message: text("message"),
     attachmentUrl: text("attachment_url"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -363,7 +368,7 @@ export const messageAttachments = pgTable(
     fileId: uuid("file_id")
       .references(() => files.fileId, { onDelete: "cascade" })
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -388,7 +393,7 @@ export const messageReactions = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     emoji: text("emoji").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -433,10 +438,10 @@ export const mentors = pgTable(
     >(), // Array of career stage enum values
     preferredMeetingFormat: meetingFormatEnum("preferred_meeting_format"),
     hoursPerMonthCommitment: integer("hours_per_month_commitment"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -460,10 +465,10 @@ export const mentorRecommendations = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     recommendedMentorIds: jsonb("recommended_mentor_ids").$type<string[]>().notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: false }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
   (table) => [uniqueIndex("ux_mentor_recommendations_user_id").on(table.userId)],
 );
@@ -476,7 +481,7 @@ export const mentorshipMatches = pgTable(
     requestorUserId: text("requestor_user_id").references(() => users.id),
     mentorUserId: text("mentor_user_id").references(() => users.id),
     status: matchStatusEnum("status").default("pending").notNull(),
-    matchedAt: timestamp("matched_at", { withTimezone: false })
+    matchedAt: timestamp("matched_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     message: text("message"), // Optional personalized message from mentee to mentor
@@ -507,7 +512,7 @@ export const pushSubscriptions = pgTable(
     auth: text("auth").notNull(),
     keys: jsonb("keys"),
     topics: jsonb("topics"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
     isActive: boolean("is_active").default(true).notNull(),
@@ -540,10 +545,10 @@ export const mentees = pgTable(
     mentorQualities: jsonb("mentor_qualities").$type<string[]>(), // What qualities look for
     preferredMeetingFormat: meetingFormatEnum("preferred_meeting_format"),
     hoursPerMonthCommitment: integer("hours_per_month_commitment"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -566,15 +571,15 @@ export const messageBlasts = pgTable(
     title: text("title").notNull(),
     content: text("content").notNull(),
     targetAudience: jsonb("target_audience"),
-    sentAt: timestamp("sent_at", { withTimezone: false }),
-    validUntil: timestamp("valid_until", { withTimezone: false })
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    validUntil: timestamp("valid_until", { withTimezone: true })
       .notNull()
       .default(sql`NOW() + INTERVAL '24 hours'`),
     status: messageBlastStatusEnum("status").default("draft").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -615,13 +620,13 @@ export const reports = pgTable("reports", {
   assignedBy: text("assigned_by").references(() => users.id, {
     onDelete: "set null",
   }),
-  createdAt: timestamp("created_at", { withTimezone: false })
+  createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: false })
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
-  resolvedAt: timestamp("resolved", { withTimezone: false }),
+  resolvedAt: timestamp("resolved", { withTimezone: true }),
 });
 
 export const reportAttachments = pgTable(
@@ -636,7 +641,7 @@ export const reportAttachments = pgTable(
     fileId: uuid("file_id")
       .references(() => files.fileId, { onDelete: "cascade" })
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -659,16 +664,16 @@ export const mentorshipEmbeddings = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    userType: text("user_type").notNull(), // "mentor" or "mentee"
+    userType: mentorshipUserTypeEnum("user_type").notNull(), // "mentor" or "mentee"
     // Store embeddings for different text fields
     whyInterestedEmbedding: vector("why_interested_embedding"), // For mentors
     hopeToGainEmbedding: vector("hope_to_gain_embedding"), // For mentees
     // Combined embedding for overall profile matching
     profileEmbedding: vector("profile_embedding"),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: false })
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
@@ -693,18 +698,18 @@ export const inviteCodes = pgTable(
     createdBy: text("created_by")
       .references(() => users.id, { onDelete: "set null" })
       .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: false })
+    createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: false }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedBy: text("used_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    usedAt: timestamp("used_at", { withTimezone: false }),
+    usedAt: timestamp("used_at", { withTimezone: true }),
     revokedBy: text("revoked_by").references(() => users.id, {
       onDelete: "set null",
     }),
-    revokedAt: timestamp("revoked_at", { withTimezone: false }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
   },
   (table) => [
     uniqueIndex("ux_invite_codes_code").on(table.code),

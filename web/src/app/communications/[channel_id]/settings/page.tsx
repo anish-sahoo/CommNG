@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/shadcn-io/dropzone";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -41,6 +41,7 @@ function parseChannelId(channelId: string): number | null {
 export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
+  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -252,7 +253,7 @@ export default function ChannelSettingsPage({
 
       // Invalidate cache so channel list updates
       await queryClient.invalidateQueries({
-        queryKey: ["channels", userId],
+        queryKey: trpc.comms.getAllChannels.queryKey(),
       });
 
       await queryClient.invalidateQueries({
