@@ -881,21 +881,25 @@ export default function EditReportPage({ params }: EditReportPageProps) {
             suppressHydrationWarning
           >
             Last edited:{" "}
-            {updatedAt &&
-              new Date(updatedAt).toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}{" "}
-            {updatedAt &&
-              new Date(updatedAt)
-                .toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })
-                .replace(":", "")}{" "}
-            EST
+            {updatedAt && (
+              <>
+                {new Date(updatedAt).toLocaleString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  timeZone: "America/New_York",
+                })}{" "}
+                {new Date(updatedAt)
+                  .toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                    timeZone: "America/New_York",
+                  })
+                  .replace(":", "")}{" "}
+                ET
+              </>
+            )}
           </p>
         </div>
       </section>
