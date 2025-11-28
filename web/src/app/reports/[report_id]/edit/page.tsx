@@ -884,7 +884,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
             Last edited:{" "}
             {updatedAt && (
               <>
-                {new Date(updatedAt).toLocaleString("en-US", {
+                {new Date(updatedAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   year: "numeric",
