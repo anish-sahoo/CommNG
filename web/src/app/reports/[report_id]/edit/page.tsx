@@ -34,7 +34,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { hasRole } from "@/lib/rbac";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import type { RoleKey } from "@/types/roles";
 
 const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
@@ -104,6 +104,7 @@ type EditReportPageProps = {
 
 export default function EditReportPage({ params }: EditReportPageProps) {
   const trpcClient = useTRPCClient();
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -378,12 +379,9 @@ export default function EditReportPage({ params }: EditReportPageProps) {
 
   /* ============ GETTING INFO FROM REPORTS + SETTING EXISTING VALUES ============ */
   // Fetch all reports
-  const { data: reports } = useQuery({
-    queryKey: ["reports", userId],
-    queryFn: async () => {
-      return await trpcClient.reports.getReports.query({ name: userId });
-    },
-  });
+  const { data: reports } = useQuery(
+    trpc.reports.getReports.queryOptions({ name: userId ?? "" }),
+  );
 
   // Find report ID - use a ref to track if we've initialized
   const initRef = useRef(false);
@@ -503,6 +501,11 @@ export default function EditReportPage({ params }: EditReportPageProps) {
       return;
     }
 
+    if (!category) {
+      setFormError("Category is required.");
+      return;
+    }
+
     try {
       const allFileIds = [
         ...existingAttachments.map((att) => att.fileId),
@@ -528,7 +531,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
         await trpcClient.reports.assignReport.mutate({
           reportId: reportId,
           assigneeId: assignedTo,
-          assignedBy: userId,
+          assignedBy: userId ?? "",
         });
       } else {
         // Update db to reflect unassigned report
@@ -759,7 +762,10 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => {
-                              if (attachment.status === "existing") {
+                              if (
+                                attachment.status === "existing" &&
+                                attachment.fileId
+                              ) {
                                 handleRemoveExistingAttachment(
                                   attachment.fileId,
                                 );

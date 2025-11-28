@@ -92,6 +92,11 @@ export const careerStageEnum = pgEnum("career_stage_enum", [
   "no-preference",
 ]);
 
+const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
+  "mentor",
+  "mentee",
+]);
+
 // pgvector support - custom type for vector columns
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
@@ -657,7 +662,7 @@ export const mentorshipEmbeddings = pgTable(
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    userType: text("user_type").notNull(), // "mentor" or "mentee"
+    userType: mentorshipUserTypeEnum("user_type").notNull(), // "mentor" or "mentee"
     // Store embeddings for different text fields
     whyInterestedEmbedding: vector("why_interested_embedding"), // For mentors
     hopeToGainEmbedding: vector("hope_to_gain_embedding"), // For mentees
