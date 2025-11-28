@@ -30,8 +30,8 @@ jobs:
         run: npm ci
         working-directory: web
 
-      - name: Run typecheck
-        run: npx tsc --noEmit
+      - name: Build and typecheck
+        run: npm run build
         working-directory: web
 
       - name: Setup Biome
