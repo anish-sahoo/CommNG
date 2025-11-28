@@ -6,11 +6,8 @@ on:
 
 jobs:
   web:
-    name: Web (Biome)
+    name: Web (Biome + Typecheck)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     permissions:
       contents: read
 
@@ -20,11 +17,22 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install dependencies
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install server dependencies
         run: npm ci
+        working-directory: server
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
 
       - name: Run typecheck
         run: npx tsc --noEmit
+        working-directory: web
 
       - name: Setup Biome
         uses: biomejs/setup-biome@v2
@@ -33,6 +41,7 @@ jobs:
 
       - name: Run Biome
         run: biome ci .
+        working-directory: web
 
   server:
     name: Server (Biome + Tests)
