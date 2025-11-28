@@ -30,8 +30,12 @@ jobs:
         run: npm ci
         working-directory: web
 
-      - name: Build and typecheck
-        run: npm run build
+      - name: Generate Next.js types
+        run: npx next typegen
+        working-directory: web
+
+      - name: Run typecheck
+        run: npx tsc --noEmit
         working-directory: web
 
       - name: Setup Biome
