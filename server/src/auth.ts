@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { allowedOrigins } from "./cors.js";
 import { account, session, users, verification } from "./data/db/schema.js";
 import { db } from "./data/db/sql.js";
 
@@ -38,9 +39,5 @@ export const auth = betterAuth({
   baseURL: process.env.BACKEND_URL,
   secret: process.env.BETTER_AUTH_SECRET,
   basePath: "/api/auth",
-  trustedOrigins: [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    process.env.BACKEND_URL || "",
-  ].filter(Boolean),
+  trustedOrigins: allowedOrigins,
 });

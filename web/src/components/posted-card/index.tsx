@@ -1,5 +1,4 @@
 "use client";
-import type { QueryKey } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";

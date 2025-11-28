@@ -3,15 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
-type Channel<T extends string = string> = {
+type ChannelRoute =
+  | "/communications"
+  | "/communications/all-channels"
+  | "/communications/[channel_id]";
+
+type Channel<T extends string = ChannelRoute> = {
   id: string;
   label: string;
-  href: Route<`/communications/${T}`>;
-  type: "all" | "channel";
+  href: Route<T>;
+  type: "link" | "channel";
   userPermission?: "admin" | "post" | "read" | null;
   postPermissionLevel?: "admin" | "everyone" | "custom";
 };
@@ -77,8 +81,7 @@ export const CommsNavBar = ({
     trpc.comms.getAllChannels.queryOptions(),
   );
 
-  const channelData =
-    Array.isArray(data) && data.length > 0 ? data : [DEMO_CHANNEL];
+  const channelData = Array.isArray(data) && data.length > 0 ? data : [];
 
   // Filter out channels where user has no permission (permission === null)
   const accessibleChannels = channelData.filter((channel) => {
@@ -90,17 +93,23 @@ export const CommsNavBar = ({
     return channel.userPermission !== null;
   });
 
-  const channels: Channel[] = [
+  const channels: Channel<ChannelRoute>[] = [
     {
-      id: "all",
-      label: "All Channels",
+      id: "my-channels",
+      label: "My Channels",
       href: "/communications",
-      type: "all",
+      type: "link",
+    },
+    {
+      id: "all-channels",
+      label: "All Channels",
+      href: "/communications/all-channels",
+      type: "link",
     },
     ...(accessibleChannels.map((channel) => ({
       id: channel.channelId.toString(),
       label: channel.name,
-      href: `/communications/${channel.channelId}` as const,
+      href: `/communications/${channel.channelId}` as Route<"/communications/[channel_id]">,
       type: "channel" as const,
       userPermission:
         "userPermission" in channel
@@ -126,7 +135,8 @@ export const CommsNavBar = ({
         ) : null}
         {channels.map((channel) => {
           const isActive =
-            channel.href === "/communications"
+            channel.href === "/communications" ||
+            channel.href === "/communications/all-channels"
               ? pathname === channel.href
               : pathname === channel.href ||
                 pathname.startsWith(`${channel.href}/`);

@@ -20,6 +20,8 @@ FROM node:24-alpine
 
 WORKDIR /app
 
+ENV IMAGE_TAG=""
+
 # Install wget for health checks
 RUN apk add --no-cache wget
 

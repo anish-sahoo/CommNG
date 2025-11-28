@@ -1,9 +1,10 @@
 "use client";
 
+import type { RoleKey } from "@server/data/roles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useId, useState } from "react";
+import { use, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
@@ -13,8 +14,14 @@ import { DeleteChannelModal } from "@/components/modal/delete-channel-modal";
 import { LeaveChannelModal } from "@/components/modal/leave-channel-modal";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -34,9 +41,11 @@ function parseChannelId(channelId: string): number | null {
 export default function ChannelSettingsPage({
   params,
 }: ChannelSettingsPageProps) {
+  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { roles } = useUserRoles();
 
   const ArrowRightIcon = icons.arrowRight;
   const LockIcon = icons.lock;
@@ -58,6 +67,14 @@ export default function ChannelSettingsPage({
   const [initialChannelDescription, setInitialChannelDescription] = useState<
     string | null
   >(null);
+  const [channelBannerFileId, setChannelBannerFileId] = useState<string | null>(
+    null,
+  );
+  const [initialBannerFileId, setInitialBannerFileId] = useState<string | null>(
+    null,
+  );
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerError, setBannerError] = useState<string | null>(null);
   const [initialNotificationSetting, setInitialNotificationSetting] = useState<
     string | null
   >(null);
@@ -65,6 +82,7 @@ export default function ChannelSettingsPage({
   const nameFieldId = useId();
   const descFieldId = useId();
   const notifFieldId = useId();
+  const bannerFieldId = useId();
   const backHref = `/communications/${channelId}` as const;
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
@@ -78,7 +96,7 @@ export default function ChannelSettingsPage({
 
   // Fetch all user subscriptions
   const { data: subscriptions } = useQuery({
-    queryKey: ["channelSubscriptions"],
+    queryKey: ["channelSubscriptions", userId],
     queryFn: async () => {
       return await trpcClient.comms.getUserSubscriptions.query();
     },
@@ -113,40 +131,110 @@ export default function ChannelSettingsPage({
 
   // Fetch all the channels this user has access to
   const { data: channels } = useQuery({
-    queryKey: ["channels"],
+    queryKey: ["channels", userId],
     queryFn: async () => {
       if (!parsedChannelId) return null;
       return await trpcClient.comms.getAllChannels.query();
     },
   });
 
+  const currentChannel = useMemo(
+    () => channels?.find((ch) => ch.channelId === parsedChannelId),
+    [channels, parsedChannelId],
+  );
+
   // Load channel data when it arrives
   useEffect(() => {
-    const channel = channels?.find((ch) => ch.channelId === parsedChannelId);
+    if (!currentChannel) {
+      return;
+    }
 
     // Set saved values
-    if (channel) {
-      setChannelName(channel.name || "");
+    setChannelName(currentChannel.name || "");
 
-      const description =
-        typeof channel.metadata?.description === "string"
-          ? channel.metadata.description
-          : "";
-      setChannelDescription(description);
+    const description =
+      typeof currentChannel.metadata?.description === "string"
+        ? currentChannel.metadata.description
+        : "";
+    setChannelDescription(description);
+    const imageFileId =
+      typeof currentChannel.metadata?.imageFileId === "string"
+        ? currentChannel.metadata.imageFileId
+        : null;
+    setChannelBannerFileId(imageFileId);
 
-      setIsAdmin(channel.userPermission === "admin");
-      setInitialChannelName((prev) => prev ?? (channel.name || ""));
-      setInitialChannelDescription((prev) => prev ?? description);
+    setInitialChannelName((prev) => prev ?? (currentChannel.name || ""));
+    setInitialChannelDescription((prev) => prev ?? description);
+    setInitialBannerFileId((prev) => prev ?? imageFileId);
+  }, [currentChannel]);
+
+  // Trust roles when deciding admin affordances to avoid stale channel cache
+  useEffect(() => {
+    if (!parsedChannelId) return;
+    const hasAdminRole =
+      roles?.includes(`channel:${parsedChannelId}:admin` as RoleKey) ?? false;
+    const hasChannelAdmin = currentChannel?.userPermission === "admin";
+    setIsAdmin(hasAdminRole || hasChannelAdmin);
+  }, [parsedChannelId, roles, currentChannel]);
+
+  // Reset admin-only affordances when switching users
+  useEffect(() => {
+    if (userId !== undefined) {
+      setIsAdmin(false);
     }
-  }, [channels, parsedChannelId]);
+  }, [userId]);
 
-  const isDirty =
+  const uploadBanner = async (file: File) => {
+    if (!isAdmin) return;
+    setBannerError(null);
+    setBannerUploading(true);
+    try {
+      const presign = await trpcClient.files.createPresignedUpload.mutate({
+        fileName: file.name,
+        contentType: file.type,
+        fileSize: file.size,
+      });
+
+      const res = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: file,
+      });
+      if (!res.ok) {
+        throw new Error("Upload failed. Please try again.");
+      }
+
+      await trpcClient.files.confirmUpload.mutate({
+        fileId: presign.fileId,
+        fileName: file.name,
+        storedName: presign.storedName,
+        contentType: file.type || undefined,
+      });
+
+      setChannelBannerFileId(presign.fileId);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not upload banner. Please try again.";
+      setBannerError(message);
+    } finally {
+      setBannerUploading(false);
+    }
+  };
+
+  const adminDirty =
     isAdmin &&
     ((initialChannelName !== null && channelName !== initialChannelName) ||
       (initialChannelDescription !== null &&
         channelDescription !== initialChannelDescription) ||
-      (initialNotificationSetting !== null &&
-        notificationSetting !== initialNotificationSetting));
+      initialBannerFileId !== channelBannerFileId);
+
+  const subscriptionDirty =
+    initialNotificationSetting !== null &&
+    notificationSetting !== initialNotificationSetting;
+
+  const isDirty = adminDirty || subscriptionDirty;
 
   /* ============ LEAVING THE CHANNEL ============ */
   const handleLeave = async () => {
@@ -165,11 +253,11 @@ export default function ChannelSettingsPage({
 
       // Invalidate cache so channel list updates
       await queryClient.invalidateQueries({
-        queryKey: ["channels"],
+        queryKey: trpc.comms.getAllChannels.queryKey(),
       });
 
       await queryClient.invalidateQueries({
-        queryKey: ["channelSubscriptions"],
+        queryKey: ["channelSubscriptions", userId],
       });
 
       // Return to the communications hub
@@ -190,13 +278,17 @@ export default function ChannelSettingsPage({
           metadata: {
             name: channelName,
             description: channelDescription,
+            imageFileId: channelBannerFileId ?? undefined,
           },
         });
 
         // Invalidate the cache to ensure the most recent data is used
         await queryClient.invalidateQueries({
-          queryKey: ["channels"],
+          queryKey: ["channels", userId],
         });
+        setInitialChannelName(channelName);
+        setInitialChannelDescription(channelDescription);
+        setInitialBannerFileId(channelBannerFileId);
       }
 
       await trpcClient.comms.updateSubscriptionSettings.mutate({
@@ -204,10 +296,11 @@ export default function ChannelSettingsPage({
         userId: userId,
         notificationsEnabled: notificationSetting === "option2",
       });
+      setInitialNotificationSetting(notificationSetting);
 
       // Invalidate the cache to ensure the most recent data is used
       await queryClient.invalidateQueries({
-        queryKey: ["channelSubscriptions"],
+        queryKey: ["channelSubscriptions", userId],
       });
       toast.success("Changes saved");
     } catch (error) {
@@ -298,6 +391,44 @@ export default function ChannelSettingsPage({
           </div>
         </div>
 
+        {/* Channel Banner (admin only) */}
+        {isAdmin && (
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 py-8 px-4">
+            <label
+              htmlFor={bannerFieldId}
+              className="text-sm font-medium text-secondary sm:w-48 shrink-0 sm:pt-2"
+            >
+              Channel Photo{" "}
+              <span className="text-secondary/60 font-normal">(optional)</span>
+            </label>
+            <div className="flex-1 space-y-2">
+              <Dropzone
+                disabled={!isAdmin || bannerUploading}
+                maxFiles={1}
+                className="w-full"
+                onDrop={(accepted) => {
+                  if (!accepted.length) return;
+                  const file = accepted[0];
+                  if (!file.type?.startsWith("image/")) {
+                    setBannerError("Please upload an image file.");
+                    return;
+                  }
+                  void uploadBanner(file);
+                }}
+              >
+                <DropzoneEmptyState />
+                <DropzoneContent />
+              </Dropzone>
+              {bannerError && (
+                <p className="text-sm text-destructive">{bannerError}</p>
+              )}
+              <p className="text-xs text-secondary/60">
+                Recommended: 1200×800, JPG or PNG.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Channel Members */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 py-8 px-4">
           <label
@@ -345,9 +476,32 @@ export default function ChannelSettingsPage({
         </div>
       </div>
 
-      {/* Save Changes Button */}
-      <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row sm:justify-end items-stretch sm:items-center px-4 pb-8 gap-3">
-        {isAdmin && (
+      {/* Danger Zone + Save Changes */}
+      <div className="border-t border-border px-4 py-8">
+        <div className="rounded-lg border border-error/40 bg-error/10 px-4 py-5 sm:px-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-error">Danger Zone</p>
+              <p className="text-sm text-secondary">
+                {isAdmin
+                  ? "Delete this channel permanently. This cannot be undone."
+                  : "Leave this channel and stop receiving notifications."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="lg"
+              className="text-sm font-semibold bg-error text-white hover:bg-error/90 focus-visible:ring-error/30 w-full sm:w-auto"
+              onClick={handleSelect}
+              aria-label={isAdmin ? "Delete channel" : "Leave channel"}
+            >
+              {isAdmin ? "Delete Channel" : "Leave Channel"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="border-t border-border mt-8 pt-8 flex flex-col sm:flex-row sm:justify-end items-stretch sm:items-center">
           <Button
             type="button"
             size="lg"
@@ -358,19 +512,7 @@ export default function ChannelSettingsPage({
           >
             Save Changes
           </Button>
-        )}
-
-        {/* Leave/Delete Channel Button */}
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="text-sm font-medium text-primary bg-transparent hover:border-primary px-6 w-full sm:w-auto"
-          onClick={handleSelect}
-          aria-label={isAdmin ? "Delete channel" : "Leave channel"}
-        >
-          {isAdmin ? "Delete Channel" : "Leave Channel"}
-        </Button>
+        </div>
       </div>
 
       {isAdmin ? (

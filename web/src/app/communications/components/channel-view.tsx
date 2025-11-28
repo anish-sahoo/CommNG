@@ -18,7 +18,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { type ChannelMessage, MessageList } from "./index";
 
@@ -163,7 +162,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const channelListRaw =
     Array.isArray(channelListQuery.data) && channelListQuery.data.length > 0
       ? channelListQuery.data
-      : [DEMO_CHANNEL];
+      : [];
 
   const channelList = channelListRaw;
 
@@ -410,7 +409,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       <TitleShell
         title={displayChannelName}
         backHref="/communications"
-        backAriaLabel="Back to all channels"
+        backAriaLabel="Back to my channels"
       >
         <div className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border bg-muted/30 p-8 text-center">
           <div className="flex flex-col gap-2">
@@ -442,7 +441,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     <TitleShell
       title={displayChannelName}
       backHref="/communications"
-      backAriaLabel="Back to all channels"
+      backAriaLabel="Back to my channels"
       actions={
         <>
           <div className="hidden items-center gap-3 sm:flex">
