@@ -10,9 +10,9 @@ import {
   type FileInputStreamOptions,
   type FilePath,
   StorageAdapter,
-} from "@/storage/storage-adapter.js";
-import { ForbiddenError } from "@/types/errors.js";
-import log from "@/utils/logger.js";
+} from "../storage/storage-adapter.js";
+import { ForbiddenError } from "../types/errors.js";
+import log from "../utils/logger.js";
 
 /**
  * Storage adapter for AWS S3 operations with presigned URL support

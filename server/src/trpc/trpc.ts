@@ -1,9 +1,9 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import { auth } from "@/auth.js";
-import { AuthRepository } from "@/data/repository/auth-repo.js";
-import type { RoleKey } from "@/data/roles.js";
-import { PolicyEngine } from "@/service/policy-engine.js";
+import { auth } from "../auth.js";
+import { AuthRepository } from "../data/repository/auth-repo.js";
+import type { RoleKey } from "../data/roles.js";
+import { PolicyEngine } from "../service/policy-engine.js";
 
 const authRepository = new AuthRepository();
 

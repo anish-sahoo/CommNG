@@ -1,5 +1,5 @@
 import { createClient } from "redis";
-import log from "@/utils/logger.js";
+import log from "../../utils/logger.js";
 
 // Build Redis connection configuration (including TLS detection)
 const buildRedisConfig = () => {

@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
-import { mentors } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { ConflictError, NotFoundError } from "@/types/errors.js";
+import { mentors } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
   CreateMentorOutput,
   GetMentorOutput,
-} from "@/types/mentor-types.js";
+} from "../../types/mentor-types.js";
 
 /**
  * Repository to handle database queries/communication related to mentors

@@ -1,14 +1,14 @@
-import type { channelSubscriptions, channels } from "@/data/db/schema.js";
-import type { CommsRepository } from "@/data/repository/comms-repo.js";
-import { channelRole } from "@/data/roles.js";
-import { policyEngine } from "@/service/policy-engine.js";
-import type { ChannelUpdateMetadata } from "@/types/comms-types.js";
+import type { channelSubscriptions, channels } from "../data/db/schema.js";
+import type { CommsRepository } from "../data/repository/comms-repo.js";
+import { channelRole } from "../data/roles.js";
+import { policyEngine } from "../service/policy-engine.js";
+import type { ChannelUpdateMetadata } from "../types/comms-types.js";
 import {
   BadRequestError,
   ForbiddenError,
   InternalServerError,
-} from "@/types/errors.js";
-import log from "@/utils/logger.js";
+} from "../types/errors.js";
+import log from "../utils/logger.js";
 
 /**
  * Service for communication-related business logic (channels, messages, subscriptions)
@@ -380,30 +380,28 @@ export class CommsService {
     // Check if user already has a role in this channel
     const hasRole = await policyEngine.validate(user_id, roleKey);
 
-    if (hasRole) {
-      throw new BadRequestError("You are already a member of this channel");
-    }
-
-    // Create read role and assign it to the user
-    await policyEngine.createAndAssignChannelRole(
-      user_id,
-      user_id,
-      roleKey,
-      "read",
-      "channel",
-      channel_id,
-    );
-
-    if (channelData?.postPermissionLevel === "everyone") {
-      const postRoleKey = channelRole("post", channel_id);
+    if (!hasRole) {
+      // Create read role and assign it to the user
       await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
-        postRoleKey,
-        "post",
+        roleKey,
+        "read",
         "channel",
         channel_id,
       );
+
+      if (channelData?.postPermissionLevel === "everyone") {
+        const postRoleKey = channelRole("post", channel_id);
+        await policyEngine.createAndAssignChannelRole(
+          user_id,
+          user_id,
+          postRoleKey,
+          "post",
+          "channel",
+          channel_id,
+        );
+      }
     }
 
     // Auto-subscribe the user with notifications enabled

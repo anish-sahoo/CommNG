@@ -91,7 +91,7 @@ export default function NewBroadcastPage() {
     <TitleShell
       title="Create Broadcast"
       backHref="/communications"
-      backAriaLabel="Back to all channels"
+      backAriaLabel="Back to my channels"
     >
       <BroadcastForm
         onSubmit={handleSubmit}

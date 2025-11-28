@@ -146,6 +146,28 @@ resource "aws_iam_role_policy" "ecs_task_secrets_runtime_access" {
   })
 }
 
+# Minimal Bedrock permissions for application code running in ECS tasks
+# resource "aws_iam_role_policy" "ecs_task_bedrock_access" {
+#   name = "${local.name_prefix}-ecs-task-bedrock-access"
+#   role = aws_iam_role.ecs_task.id
+
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           "bedrock:InvokeModel",
+#           "bedrock:InvokeModelWithResponseStream",
+#           "bedrock:DescribeModel",
+#           "bedrock:ListModels"
+#         ]
+#         Resource = "*"
+#       }
+#     ]
+#   })
+# }
+
 resource "aws_iam_role" "scheduler_lambda" {
   count = var.enable_infrastructure_scheduler ? 1 : 0
   name  = "${local.name_prefix}-scheduler-lambda-role"

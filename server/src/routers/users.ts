@@ -1,14 +1,17 @@
-import { AuthRepository } from "@/data/repository/auth-repo.js";
-import { UserRepository } from "@/data/repository/user-repo.js";
-import { UserService } from "@/service/user-service.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { procedure, protectedProcedure, router } from "@/trpc/trpc.js";
+import { AuthRepository } from "../data/repository/auth-repo.js";
+import { UserRepository } from "../data/repository/user-repo.js";
+import { UserService } from "../service/user-service.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   checkEmailExistsInputSchema,
   createUserProfileInputSchema,
   getUserDataInputSchema,
+  getUsersByIdsInputSchema,
+  searchUsersInputSchema,
   updateUserProfileInputSchema,
-} from "@/types/user-types.js";
+  updateUserVisibilityInputSchema,
+} from "../types/user-types.js";
 
 const userService = new UserService(new UserRepository());
 const authRepository = new AuthRepository();
@@ -61,6 +64,19 @@ const updateUserProfile = protectedProcedure
     });
   });
 
+const updateUserVisibility = protectedProcedure
+  .input(updateUserVisibilityInputSchema)
+  .meta({
+    description:
+      "Update user profile visibility settings (signal/email visibility). Users can only update their own settings.",
+  })
+  .mutation(async ({ ctx, input }) => {
+    return withErrorHandling("updateUserVisibility", async () => {
+      const userId = ctx.auth.user.id;
+      return await userService.updateUserVisibility(userId, input);
+    });
+  });
+
 const getUserRoles = protectedProcedure
   .meta({
     description:
@@ -74,10 +90,31 @@ const getUserRoles = protectedProcedure
     });
   });
 
+const searchUsers = protectedProcedure
+  .input(searchUsersInputSchema)
+  .meta({
+    description: "Search for users with names that include the given name",
+  })
+  .query(async ({ input }) => {
+    return userService.searchUsers(input.name);
+  });
+
+const getUsersByIds = protectedProcedure
+  .input(getUsersByIdsInputSchema)
+  .meta({
+    description: "Returns the public-facing data for all given users",
+  })
+  .query(async ({ input }) => {
+    return userService.getUsersByIds(input.user_ids);
+  });
+
 export const userRouter = router({
   getUserData,
   checkEmailExists,
   createUserProfile,
   updateUserProfile,
+  updateUserVisibility,
   getUserRoles,
+  searchUsers,
+  getUsersByIds,
 });

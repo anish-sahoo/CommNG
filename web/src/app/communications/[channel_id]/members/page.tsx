@@ -52,9 +52,7 @@ export default function ChannelMembersPage({
 
   // Fetch channel members
   const membersQuery = useQuery(
-    channelInput !== skipToken
-      ? trpc.comms.getChannelMembers.queryOptions(channelInput)
-      : { queryKey: ["skip"], queryFn: () => null },
+    trpc.comms.getChannelMembers.queryOptions(channelInput),
   );
 
   // Fetch channel info to check admin status

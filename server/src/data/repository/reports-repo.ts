@@ -4,13 +4,13 @@ import {
   type NewReport,
   reportAttachments,
   reports,
-} from "@/data/db/schema.js";
-import { ConflictError, NotFoundError } from "@/types/errors.js";
+} from "../../data/db/schema.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "@/types/reports-types.js";
+} from "../../types/reports-types.js";
 import { db } from "../db/sql.js";
 
 type Transaction = Parameters<typeof db.transaction>[0] extends (
@@ -238,9 +238,6 @@ export class ReportRepository {
 
   /**
    * Assign a report to another user and update the status.
-   */
-  /**
-   * Assign a report to another user and update the status.
    * @param reportId Report ID
    * @param assigneeId Assignee user ID
    * @param assignedBy User ID who assigned
@@ -332,5 +329,35 @@ export class ReportRepository {
         fileId,
       })),
     );
+  }
+
+  /**
+   * Unassign a report and revert status to Pending.
+   * @param reportId Report ID
+   * @returns Updated report object with attachments
+   * @throws NotFoundError if not found
+   */
+  async unassignReport(reportId: string) {
+    const [updated] = await db
+      .update(reports)
+      .set({
+        assignedTo: null,
+        assignedBy: null,
+        status: "Pending",
+        updatedAt: new Date(),
+      })
+      .where(eq(reports.reportId, reportId))
+      .returning(BASE_REPORT_FIELDS);
+
+    if (!updated) {
+      throw new NotFoundError("Report not found");
+    }
+
+    const attachmentMap = await this.getAttachmentsForReports(db, [reportId]);
+
+    return {
+      ...updated,
+      attachments: attachmentMap.get(reportId) ?? [],
+    };
   }
 }

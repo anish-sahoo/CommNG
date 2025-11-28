@@ -1,12 +1,12 @@
-import webpush from "web-push";
-import type { ActivePushSubscription } from "@/data/repository/notification-repo.js";
-import { NotificationRepository } from "@/data/repository/notification-repo.js";
-import type { TargetAudience } from "@/types/message-blast-types.js";
+import webpush, { WebPushError } from "web-push";
+import type { ActivePushSubscription } from "../data/repository/notification-repo.js";
+import { NotificationRepository } from "../data/repository/notification-repo.js";
+import type { TargetAudience } from "../types/message-blast-types.js";
 import type {
   NotificationPayload,
   SubscribeInput,
-} from "@/types/notification-types.js";
-import log from "@/utils/logger.js";
+} from "../types/notification-types.js";
+import log from "../utils/logger.js";
 
 /**
  * Service for managing web push notifications and subscriptions
@@ -37,6 +37,10 @@ export class NotificationService {
   async subscribe(userId: string, subscription: SubscribeInput) {
     // subscription is already validated by the router; persist it directly
     await this.repo.saveWebPushSubscription(userId, subscription);
+    log.info(
+      { userId, endpoint: subscription.endpoint },
+      "Saved web push subscription",
+    );
   }
 
   /**
@@ -62,9 +66,37 @@ export class NotificationService {
 
       try {
         await webpush.sendNotification(subscription, JSON.stringify(payload));
-      } catch (err) {
-        await this.repo.removeSubscriptionByEndpoint(row.endpoint);
-        log.error(err, "Error sending web-push notification");
+      } catch (err: unknown) {
+        if (err instanceof WebPushError) {
+          const status = err.statusCode;
+          if (status === 404 || status === 410) {
+            await this.repo.removeSubscriptionByEndpoint(row.endpoint);
+            log.info(
+              { endpoint: row.endpoint, status },
+              "Removed expired/unsubscribed web-push subscription",
+            );
+          } else if (status === 401) {
+            log.warn(
+              { endpoint: row.endpoint, status, err },
+              "Unauthorized web-push: check VAPID keys",
+            );
+          } else if (status === 429) {
+            log.warn(
+              { endpoint: row.endpoint, status, err },
+              "Rate limited by push service",
+            );
+          } else {
+            log.error(
+              { endpoint: row.endpoint, status, err },
+              "Error sending web-push notification",
+            );
+          }
+        } else {
+          log.error(
+            { endpoint: row.endpoint, err },
+            "Unexpected error sending web-push notification",
+          );
+        }
       }
     }
   }
@@ -97,9 +129,37 @@ export class NotificationService {
 
       try {
         await webpush.sendNotification(subscription, JSON.stringify(payload));
-      } catch (err) {
-        await this.repo.removeSubscriptionByEndpoint(row.endpoint);
-        log.error(err, "Error sending web-push notification");
+      } catch (err: unknown) {
+        if (err instanceof WebPushError) {
+          const status = err.statusCode;
+          if (status === 404 || status === 410) {
+            await this.repo.removeSubscriptionByEndpoint(row.endpoint);
+            log.info(
+              { endpoint: row.endpoint, status },
+              "Removed expired/unsubscribed web-push subscription",
+            );
+          } else if (status === 401) {
+            log.warn(
+              { endpoint: row.endpoint, status, err },
+              "Unauthorized web-push: check VAPID keys",
+            );
+          } else if (status === 429) {
+            log.warn(
+              { endpoint: row.endpoint, status, err },
+              "Rate limited by push service",
+            );
+          } else {
+            log.error(
+              { endpoint: row.endpoint, status, err },
+              "Error sending web-push notification",
+            );
+          }
+        } else {
+          log.error(
+            { endpoint: row.endpoint, err },
+            "Unexpected error sending web-push notification",
+          );
+        }
       }
     }
   }

@@ -2,23 +2,17 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express from "express";
-import { auth } from "@/auth.js";
-import { connectRedis } from "@/data/db/redis.js";
-import { connectPostgres } from "@/data/db/sql.js";
-import { policyEngine } from "@/service/policy-engine.js";
-import { appRouter } from "@/trpc/app_router.js";
-import { createContext } from "@/trpc/trpc.js";
-import log from "@/utils/logger.js";
+import { auth } from "./auth.js";
+import { allowedOrigins } from "./cors.js";
+import { connectRedis, getRedisClientInstance } from "./data/db/redis.js";
+import { connectPostgres } from "./data/db/sql.js";
+import { policyEngine } from "./service/policy-engine.js";
+import { appRouter } from "./trpc/app_router.js";
+import { createContext } from "./trpc/trpc.js";
+import log from "./utils/logger.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
-
-// Configure allowed origins for CORS
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  process.env.BACKEND_URL,
-].filter(Boolean);
 
 app.use(
   cors({
@@ -61,18 +55,37 @@ app.get("/api/health", (_req, res) => {
     log.warn("Health check: Connections still initializing");
     return res.status(200).json({
       status: "initializing",
-      postgres: isPostgresConnected,
-      redis: isRedisConnected,
+      db: {
+        postgres: isPostgresConnected,
+        redis: isRedisConnected,
+      },
       timestamp: new Date().toISOString(),
+      image: process.env.IMAGE_TAG || "unknown",
     });
   }
 
   res.status(200).json({
     status: "healthy",
-    postgres: isPostgresConnected,
-    redis: isRedisConnected,
+    db: {
+      postgres: isPostgresConnected,
+      redis: isRedisConnected,
+    },
     timestamp: new Date().toISOString(),
+    image: process.env.IMAGE_TAG || "unknown",
   });
+});
+
+// Flush Redis endpoint
+// TODO: remove this later
+app.get("/api/flush-redis", async (_req, res) => {
+  try {
+    const client = getRedisClientInstance();
+    await client.flushAll();
+    res.status(200).json({ success: true });
+  } catch (error) {
+    log.error({ error }, "Failed to flush Redis");
+    res.status(500).json({ success: false, error: "Failed to flush Redis" });
+  }
 });
 
 // Start the Express server first so health checks can pass

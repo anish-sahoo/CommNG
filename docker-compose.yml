@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:18
+    image: pgvector/pgvector:pg18-bookworm
     container_name: commng-postgres
     restart: unless-stopped
     env_file:

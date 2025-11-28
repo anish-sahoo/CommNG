@@ -1,10 +1,10 @@
-import { CommsRepository } from "@/data/repository/comms-repo.js";
-import { channelRole } from "@/data/roles.js";
-import { fileService } from "@/routers/files.js";
-import { CommsService } from "@/service/comms-service.js";
-import { policyEngine } from "@/service/policy-engine.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { ensureHasRole, protectedProcedure, router } from "@/trpc/trpc.js";
+import { CommsRepository } from "../data/repository/comms-repo.js";
+import { channelRole } from "../data/roles.js";
+import { fileService } from "../routers/files.js";
+import { CommsService } from "../service/comms-service.js";
+import { policyEngine } from "../service/policy-engine.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { ensureHasRole, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createChannelSchema,
   createSubscriptionSchema,
@@ -21,9 +21,9 @@ import {
   toggleReactionSchema,
   updateChannelSchema,
   updateSubscriptionSchema,
-} from "@/types/comms-types.js";
-import { ForbiddenError, InternalServerError } from "@/types/errors.js";
-import log from "@/utils/logger.js";
+} from "../types/comms-types.js";
+import { ForbiddenError, InternalServerError } from "../types/errors.js";
+import log from "../utils/logger.js";
 
 const commsRepo = new CommsRepository();
 const commsService = new CommsService(commsRepo);

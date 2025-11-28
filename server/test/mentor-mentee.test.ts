@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { MenteeRepository } from "@/data/repository/mentee-repo.js";
-import { MentorRepository } from "@/data/repository/mentor-repo.js";
+import { MenteeRepository } from "../src/data/repository/mentee-repo.js";
+import { MentorRepository } from "../src/data/repository/mentor-repo.js";
 
 // Mock the database
 vi.mock("../src/data/db/sql.js", () => ({

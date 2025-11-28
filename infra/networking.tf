@@ -242,7 +242,7 @@ resource "aws_acm_certificate_validation" "main" {
   certificate_arn = aws_acm_certificate.main[0].arn
 
   timeouts {
-    create = "5m"  # Short timeout - will fail fast if CNAME not added
+    create = "5m"
   }
 
   lifecycle {

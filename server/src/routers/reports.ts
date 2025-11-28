@@ -1,16 +1,17 @@
-import { ReportRepository } from "@/data/repository/reports-repo.js";
-import { reportingRole } from "@/data/roles.js";
-import { PolicyEngine } from "@/service/policy-engine.js";
-import { ReportService } from "@/service/reports-service.js";
-import { withErrorHandling } from "@/trpc/error_handler.js";
-import { roleProcedure, router } from "@/trpc/trpc.js";
+import { ReportRepository } from "../data/repository/reports-repo.js";
+import { reportingRole } from "../data/roles.js";
+import { PolicyEngine } from "../service/policy-engine.js";
+import { ReportService } from "../service/reports-service.js";
+import { withErrorHandling } from "../trpc/error_handler.js";
+import { roleProcedure, router } from "../trpc/trpc.js";
 import {
   assignReportSchema,
   createReportsSchema,
   deleteReportSchema,
   editReportSchema,
   getReportsSchema,
-} from "@/types/reports-types.js";
+  unassignReportSchema,
+} from "../types/reports-types.js";
 
 const reportService = new ReportService(new ReportRepository());
 const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
@@ -18,7 +19,7 @@ const ADMIN_REPORT_ROLES = [reportingRole("admin"), reportingRole("assign")];
 const getReports = roleProcedure([reportingRole("read")])
   .input(getReportsSchema)
   .meta({ description: "Returns the list of reports" })
-  .mutation(({ ctx, input }) =>
+  .query(({ ctx, input }) =>
     withErrorHandling("getReports", () => {
       const roleSet = ctx.roles ?? new Set();
       const canViewAll = PolicyEngine.validateList(roleSet, ADMIN_REPORT_ROLES);
@@ -63,10 +64,20 @@ const assignReport = roleProcedure([reportingRole("assign")])
     withErrorHandling("assignReport", () => reportService.assignReport(input)),
   );
 
+const unassignReport = roleProcedure([reportingRole("assign")])
+  .input(unassignReportSchema)
+  .meta({ description: "Unassigns a report to a user" })
+  .mutation(({ input }) =>
+    withErrorHandling("unassignReport", () =>
+      reportService.unassignReport(input.reportId),
+    ),
+  );
+
 export const reportsRouter = router({
   getReports,
   createReport,
   updateReport,
   deleteReport,
   assignReport,
+  unassignReport,
 });

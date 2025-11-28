@@ -3,7 +3,8 @@
 import type { AppRouter } from "@server/trpc/app_router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { type PropsWithChildren, useState } from "react";
+import { type PropsWithChildren, useEffect, useRef, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import { TRPCProvider } from "@/lib/trpc";
 
 function makeQueryClient() {
@@ -47,6 +48,20 @@ export function QueryProvider({ children }: PropsWithChildren) {
       ],
     }),
   );
+
+  const { data: sessionData } = authClient.useSession();
+  const currentUserId = sessionData?.user?.id ?? null;
+  const lastUserId = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Clear the query cache whenever the authenticated user changes to avoid
+    // showing data fetched under a previous session (e.g., admin data for a basic user).
+    if (lastUserId.current !== null && lastUserId.current !== currentUserId) {
+      queryClient.clear();
+    }
+    lastUserId.current = currentUserId;
+  }, [currentUserId, queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

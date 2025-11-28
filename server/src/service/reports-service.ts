@@ -1,9 +1,9 @@
-import type { ReportRepository } from "@/data/repository/reports-repo.js";
+import type { ReportRepository } from "../data/repository/reports-repo.js";
 import type {
   AssignReport,
   CreateReport,
   EditReport,
-} from "@/types/reports-types.js";
+} from "../types/reports-types.js";
 
 /**
  * Service for managing reports (create, edit, delete, assign)
@@ -68,5 +68,14 @@ export class ReportService {
    */
   async assignReport(input: AssignReport) {
     return await this.reportsRepo.assignReport(input);
+  }
+
+  /**
+   * Unassign a report from a user
+   * @param input Assignment data
+   * @returns Assignment object
+   */
+  async unassignReport(reportId: string) {
+    return await this.reportsRepo.unassignReport(reportId);
   }
 }

@@ -167,7 +167,7 @@ export default function BroadcastsPage() {
     <TitleShell
       title="Active Broadcast"
       backHref="/communications"
-      backAriaLabel="Back to all channels"
+      backAriaLabel="Back to my channels"
     >
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         {deleteError ? (

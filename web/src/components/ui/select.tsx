@@ -44,7 +44,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <icons.arrowDown className="size-6 text-accent" />
+        <icons.arrowDown className="size-4 text-accent" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

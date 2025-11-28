@@ -1,12 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import { pushSubscriptions, users } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import type { TargetAudience } from "@/types/message-blast-types.js";
+import { pushSubscriptions, users } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import type { TargetAudience } from "../../types/message-blast-types.js";
 import type {
   PushSubscriptionKeys,
   SubscribeInput,
-} from "@/types/notification-types.js";
-import log from "@/utils/logger.js";
+} from "../../types/notification-types.js";
+import log from "../../utils/logger.js";
 
 export type ActivePushSubscription = {
   endpoint: string;
@@ -34,20 +34,32 @@ export class NotificationRepository {
     const endpoint = subscription.endpoint;
     const keys: PushSubscriptionKeys = subscription.keys;
 
-    // remove any existing subscription with same endpoint
+    // atomically insert or update the subscription based on unique endpoint
+    // if there's already a subscription with the same endpoint, update the
+    // stored userId and auth/keys/topcis/isActive flag. This avoids a delete
+    // followed by insert which might create a small race condition.
     await db
-      .delete(pushSubscriptions)
-      .where(eq(pushSubscriptions.endpoint, endpoint));
-
-    await db.insert(pushSubscriptions).values({
-      userId,
-      endpoint,
-      p256dh: keys.p256dh,
-      auth: keys.auth,
-      keys: subscription,
-      topics: subscription.topics ?? null,
-      isActive: true,
-    });
+      .insert(pushSubscriptions)
+      .values({
+        userId,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        keys: subscription,
+        topics: subscription.topics ?? null,
+        isActive: true,
+      })
+      .onConflictDoUpdate({
+        target: [pushSubscriptions.endpoint],
+        set: {
+          userId,
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+          keys: subscription,
+          topics: subscription.topics ?? null,
+          isActive: true,
+        },
+      });
   }
 
   /**

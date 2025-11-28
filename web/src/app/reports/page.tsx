@@ -93,7 +93,7 @@ export default function ReportsPage() {
     enabled: Boolean(userId && hasReportingRead),
     queryFn: async () => {
       if (!userId) return [];
-      const response = await trpcClient.reports.getReports.mutate({
+      const response = await trpcClient.reports.getReports.query({
         name: userId,
       });
       return Array.isArray(response) ? response : [];
@@ -152,6 +152,38 @@ export default function ReportsPage() {
     return reportsToSort;
   }, [filteredReports, sortOption]);
 
+  const assignedUserIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sortedReports
+            .map((report) => report.assignedTo)
+            .filter(Boolean) as string[],
+        ),
+      ),
+    [sortedReports],
+  );
+
+  const { data: assignedUsers = {} } = useQuery({
+    queryKey: ["assignedUsers", assignedUserIds],
+    enabled: assignedUserIds.length > 0,
+    queryFn: async () => {
+      try {
+        const userList = await trpcClient.user.getUsersByIds.query({
+          user_ids: assignedUserIds,
+        });
+        const users: Record<string, string> = {};
+        userList.forEach((user) => {
+          users[user.id] = user.name;
+        });
+        return users;
+      } catch (error) {
+        console.error("Failed to fetch assigned users:", error);
+        return {};
+      }
+    },
+  });
+
   const tableItems = useMemo(
     () =>
       sortedReports.map((report) => ({
@@ -166,9 +198,11 @@ export default function ReportsPage() {
                 report.attachments.length === 1 ? "" : "s"
               }`
             : undefined,
-        issuedTo: report.assignedTo ?? undefined,
+        issuedTo: report.assignedTo
+          ? assignedUsers[report.assignedTo]
+          : undefined,
       })),
-    [sortedReports],
+    [sortedReports, assignedUsers],
   );
 
   const activeSortLabel = useMemo(() => {

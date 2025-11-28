@@ -1,8 +1,8 @@
-import type { MessageBlastRepository } from "@/data/repository/message-blast-repo.js";
-import type { UserRepository } from "@/data/repository/user-repo.js";
-import notificationService from "@/service/notification-service.js";
-import type { CreateMessageBlastInput } from "@/types/message-blast-types.js";
-import log from "@/utils/logger.js";
+import type { MessageBlastRepository } from "../data/repository/message-blast-repo.js";
+import type { UserRepository } from "../data/repository/user-repo.js";
+import notificationService from "../service/notification-service.js";
+import type { CreateMessageBlastInput } from "../types/message-blast-types.js";
+import log from "../utils/logger.js";
 
 /**
  * Service for creating and managing message blasts (broadcast messages)

@@ -7,7 +7,6 @@ import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
 
-// ProfilePage allows users to view their information as well as edit and change the settings
 type UserProfileExtras = {
   location?: string | null;
   about?: string | null;
@@ -31,6 +30,19 @@ export default function ProfilePage() {
         throw new Error("User ID is missing");
       }
       return trpcClient.user.getUserData.query({ user_id: userId });
+    },
+  });
+
+  const imageId = userData?.image ?? null;
+
+  const { data: fileData } = useQuery({
+    queryKey: ["file", imageId],
+    enabled: !!imageId,
+    queryFn: async () => {
+      if (!imageId) {
+        throw new Error("File ID is missing");
+      }
+      return trpcClient.files.getFile.query({ fileId: imageId });
     },
   });
 
@@ -88,7 +100,6 @@ export default function ProfilePage() {
   const branch = userData.branch ?? "";
   const unit = userData.department ?? "";
   const signalNumber = userData.phoneNumber ?? "";
-  const image = userData.image ?? undefined;
 
   const location = profile.location ?? "";
   const about = profile.about ?? "";
@@ -96,6 +107,8 @@ export default function ProfilePage() {
   const interests: string[] = Array.isArray(profile.interests)
     ? (profile.interests ?? [])
     : [];
+
+  const avatarSrc = fileData?.data;
 
   const renderSignalContactText = () => (
     <span className="text-sm font-medium text-secondary">
@@ -111,9 +124,7 @@ export default function ProfilePage() {
           description: renderSignalContactText(),
         });
         return;
-      } catch (error) {
-        console.error("Unable to copy Signal number", error);
-      }
+      } catch (_error) {}
     }
 
     toast.info("Signal contact unavailable", {
@@ -154,9 +165,10 @@ export default function ProfilePage() {
     branch,
     unit,
     location,
+    avatarSrc,
+    avatarAlt: `${name} profile photo`,
     interests,
     about,
-    image,
     contactActions,
     headerActions: [
       {

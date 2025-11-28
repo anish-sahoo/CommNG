@@ -101,47 +101,9 @@ export class MentorshipEmbeddingRepository {
   /**
    * Get embeddings for a user by user ID and type
    * @param input Get embedding input (userId and userType)
-   * @returns Embedding record
-   * @throws NotFoundError if embedding not found
-   */
-  async getEmbedding(
-    input: GetMentorshipEmbeddingInput,
-  ): Promise<GetMentorshipEmbeddingOutput> {
-    const [embedding] = await db
-      .select({
-        embeddingId: mentorshipEmbeddings.embeddingId,
-        userId: mentorshipEmbeddings.userId,
-        userType: mentorshipEmbeddings.userType,
-        whyInterestedEmbedding: mentorshipEmbeddings.whyInterestedEmbedding,
-        hopeToGainEmbedding: mentorshipEmbeddings.hopeToGainEmbedding,
-        profileEmbedding: mentorshipEmbeddings.profileEmbedding,
-        createdAt: mentorshipEmbeddings.createdAt,
-        updatedAt: mentorshipEmbeddings.updatedAt,
-      })
-      .from(mentorshipEmbeddings)
-      .where(
-        and(
-          eq(mentorshipEmbeddings.userId, input.userId),
-          eq(mentorshipEmbeddings.userType, input.userType),
-        ),
-      )
-      .limit(1);
-
-    if (!embedding) {
-      throw new NotFoundError(
-        `Embedding not found for user ${input.userId} with type ${input.userType}`,
-      );
-    }
-
-    return embedding;
-  }
-
-  /**
-   * Get embeddings for a user by user ID and type (returns null if not found)
-   * @param input Get embedding input (userId and userType)
    * @returns Embedding record or null if not found
    */
-  async getEmbeddingOrNull(
+  async getEmbedding(
     input: GetMentorshipEmbeddingInput,
   ): Promise<GetMentorshipEmbeddingOutput | null> {
     const [embedding] = await db
