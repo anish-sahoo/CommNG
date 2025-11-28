@@ -92,7 +92,7 @@ export const careerStageEnum = pgEnum("career_stage_enum", [
   "no-preference",
 ]);
 
-const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
+export const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
   "mentor",
   "mentee",
 ]);
