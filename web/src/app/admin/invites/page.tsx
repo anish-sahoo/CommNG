@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
 import { Info } from "lucide-react";
 import { useState } from "react";
+import NavigationShell from "@/components/layouts/navigation-shell";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { useHasRole } from "@/hooks/useHasRole";
 import { useTRPC } from "@/lib/trpc";
@@ -31,17 +32,19 @@ export default function AdminInvitesPage() {
   // Redirect if user doesn't have permission
   if (!hasPermission) {
     return (
-      <TitleShell
-        title="Access Denied"
-        backHref="/communications"
-        backAriaLabel="Back to communications"
-      >
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-          <p className="text-sm text-red-800">
-            You do not have permission to create invite codes.
-          </p>
-        </div>
-      </TitleShell>
+      <NavigationShell showCommsNav={false}>
+        <TitleShell
+          title="Access Denied"
+          backHref="/admin"
+          backAriaLabel="Back to admin"
+        >
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+            <p className="text-sm text-red-800">
+              You do not have permission to create invite codes.
+            </p>
+          </div>
+        </TitleShell>
+      </NavigationShell>
     );
   }
 
@@ -96,47 +99,49 @@ export default function AdminInvitesPage() {
   };
 
   return (
-    <TitleShell
-      title="Create Invite Code"
-      backHref="/communications"
-      backAriaLabel="Back to communications"
-    >
-      <div className="mx-auto max-w-4xl space-y-6">
-        {/* Info Section */}
-        {!successResult && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-blue-900">
-                  About Invite Codes
-                </h3>
-                <p className="mt-1 text-sm text-blue-800">
-                  Invite codes allow you to grant specific permissions to new
-                  users. Select a preset to quickly configure common permission
-                  sets, then customize as needed.
-                </p>
+    <NavigationShell showCommsNav={false}>
+      <TitleShell
+        title="Create Invite Code"
+        backHref="/admin"
+        backAriaLabel="Back to admin"
+      >
+        <div className="mx-auto max-w-4xl space-y-6">
+          {/* Info Section */}
+          {!successResult && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-start gap-3">
+                <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-blue-900">
+                    About Invite Codes
+                  </h3>
+                  <p className="mt-1 text-sm text-blue-800">
+                    Invite codes allow you to grant specific permissions to new
+                    users. Select a preset to quickly configure common
+                    permission sets, then customize as needed.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Form or Success Display */}
-        {successResult ? (
-          <InviteSuccess
-            code={successResult.code}
-            roleKeys={successResult.roleKeys}
-            expiresAt={successResult.expiresAt}
-            onCreateAnother={handleCreateAnother}
-          />
-        ) : (
-          <InviteForm
-            onSubmit={handleSubmit}
-            submitting={createInvite.isPending}
-            error={error}
-          />
-        )}
-      </div>
-    </TitleShell>
+          {/* Form or Success Display */}
+          {successResult ? (
+            <InviteSuccess
+              code={successResult.code}
+              roleKeys={successResult.roleKeys}
+              expiresAt={successResult.expiresAt}
+              onCreateAnother={handleCreateAnother}
+            />
+          ) : (
+            <InviteForm
+              onSubmit={handleSubmit}
+              submitting={createInvite.isPending}
+              error={error}
+            />
+          )}
+        </div>
+      </TitleShell>
+    </NavigationShell>
   );
 }
