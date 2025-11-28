@@ -37,10 +37,10 @@ describe("Mentor/Mentee Endpoints", () => {
     const result = await mentorRepo.createMentor(
       "test-user",
       "Leadership development",
-      "Captain",
       5,
       { clearance: "Secret" },
       "requested",
+      "Captain",
     );
 
     expect(result).toEqual({
