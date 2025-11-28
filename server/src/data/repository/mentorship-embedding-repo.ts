@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
-import { mentorshipEmbeddings } from "@/data/db/schema.js";
-import { db } from "@/data/db/sql.js";
-import { ConflictError, NotFoundError } from "@/types/errors.js";
+import { mentorshipEmbeddings } from "../../data/db/schema.js";
+import { db } from "../../data/db/sql.js";
+import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
   CreateMentorshipEmbeddingInput,
   CreateMentorshipEmbeddingOutput,
@@ -9,7 +9,7 @@ import type {
   GetMentorshipEmbeddingOutput,
   UpdateMentorshipEmbeddingInput,
   UpdateMentorshipEmbeddingOutput,
-} from "@/types/mentorship-embedding-types.js";
+} from "../../types/mentorship-embedding-types.js";
 
 /**
  * Repository to handle database queries/communication related to mentorship embeddings
