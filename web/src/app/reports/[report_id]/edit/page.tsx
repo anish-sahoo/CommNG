@@ -524,7 +524,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
       });
 
       // Update db to reflect a user has been assigned
-      if (assignedTo !== null) {
+      if (assignedTo !== undefined) {
         await trpcClient.reports.assignReport.mutate({
           reportId: reportId,
           assigneeId: assignedTo,
@@ -815,7 +815,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                           onPointerDown={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            setAssignedTo(null);
+                            setAssignedTo(undefined);
                           }}
                           className="mr-2 text-secondary/70 hover:text-secondary transition-colors flex-shrink-0 cursor-pointer"
                           aria-label="Remove assigned user"
