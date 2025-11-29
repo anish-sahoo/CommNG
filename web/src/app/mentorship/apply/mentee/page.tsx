@@ -315,9 +315,11 @@ export default function MentorshipApplyMenteePage() {
               | "no-preference"
           : undefined;
 
-      const hoursPerMonthCommitment = desiredMentorHours
-        ? Number.parseInt(desiredMentorHours, 10)
-        : undefined;
+      const hoursPerMonthCommitment = (() => {
+        if (!desiredMentorHours) return undefined;
+        const parsed = Number.parseInt(desiredMentorHours, 10);
+        return Number.isNaN(parsed) ? undefined : parsed;
+      })();
 
       await createMentee.mutateAsync({
         userId,
