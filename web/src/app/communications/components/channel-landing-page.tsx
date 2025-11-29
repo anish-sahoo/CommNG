@@ -44,7 +44,9 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
   const trpcClient = useTRPCClient();
   const [search, setSearch] = useState("");
   const AddIcon = icons.add;
+
   const isMyView = variant === "my";
+  const fromParam = isMyView ? "my" : "all";
 
   const { data, isLoading } = useQuery(
     trpc.comms.getAllChannels.queryOptions(),
@@ -265,7 +267,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
                   className="flex w-full justify-center"
                 >
                   <ChannelCard
-                    href={`/communications/${channel.channelId}`}
+                    href={`/communications/${channel.channelId}?from=${fromParam}`}
                     title={channel.name}
                     description={description}
                     iconName={iconName}
