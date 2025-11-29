@@ -1,4 +1,5 @@
 "use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -12,6 +13,11 @@ import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dropzone,
+  DropzoneContent,
+  DropzoneEmptyState,
+} from "@/components/ui/shadcn-io/dropzone";
 import { Textarea } from "@/components/ui/textarea";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
 
@@ -43,6 +49,8 @@ type PostedCardProps = {
   }) => void;
 };
 
+type AttachmentStatus = "idle" | "uploading" | "uploaded" | "error";
+
 const UserIcon = icons.user;
 
 const Avatar = () => (
@@ -65,18 +73,28 @@ export const PostedCard = ({
   const trpcClient = useTRPCClient();
   const queryClient = useQueryClient();
 
-  const channelMessagesQueryKey = useMemo(() => {
-    // TRPC builds a read-only tuple for each query; casting once keeps stable reference React Query can use for invalidations
-    return trpc.comms.getChannelMessages.queryKey({
-      channelId,
-    });
-  }, [channelId, trpc]);
+  const channelMessagesQueryKey = useMemo(
+    () =>
+      trpc.comms.getChannelMessages.queryKey({
+        channelId,
+      }),
+    [channelId, trpc],
+  );
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editContent, setEditContent] = useState(content);
   const [editError, setEditError] = useState<string | null>(null);
+  const [editAttachments, setEditAttachments] = useState<
+    AttachmentDescriptor[]
+  >(attachments ?? []);
+  const [attachmentStatus, setAttachmentStatus] =
+    useState<AttachmentStatus>("idle");
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+
   const editPost = useMutation(trpc.comms.editPost.mutationOptions());
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deletePost = useMutation(trpc.comms.deletePost.mutationOptions());
 
   const handleEditPost = useCallback(
     async (newContent: string) => {
@@ -84,9 +102,10 @@ export const PostedCard = ({
 
       editPost.mutate(
         {
-          channelId: channelId,
+          channelId,
           messageId: postId,
           content: newContent,
+          attachmentFileIds: editAttachments.map((a) => a.fileId),
         },
         {
           onSuccess: async () => {
@@ -101,18 +120,22 @@ export const PostedCard = ({
         },
       );
     },
-    [channelId, postId, editPost, queryClient, channelMessagesQueryKey],
+    [
+      channelId,
+      postId,
+      editPost,
+      queryClient,
+      channelMessagesQueryKey,
+      editAttachments,
+    ],
   );
-
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const deletePost = useMutation(trpc.comms.deletePost.mutationOptions());
 
   const handleDeletePost = useCallback(() => {
     setDeleteError(null);
 
     deletePost.mutate(
       {
-        channelId: channelId,
+        channelId,
         messageId: postId,
       },
       {
@@ -137,11 +160,8 @@ export const PostedCard = ({
     async (fileId: string, fileName: string) => {
       try {
         const fileData = await trpcClient.files.getFile.query({ fileId });
-
-        // The file service hands back a signed URL/string, so delegating to an <a> avoids buffering the blob in JS memory
-        // Create a temporary anchor element to trigger download
         const link = document.createElement("a");
-        link.href = fileData.data; // This is the S3 URL or data URL
+        link.href = fileData.data;
         link.download = fileName;
         link.target = "_blank";
         document.body.appendChild(link);
@@ -162,6 +182,9 @@ export const PostedCard = ({
       onClick: () => {
         setEditContent(content);
         setEditError(null);
+        setAttachmentError(null);
+        setAttachmentStatus("idle");
+        setEditAttachments(attachments ?? []);
         setIsEditModalOpen(true);
       },
       separator: true,
@@ -178,13 +201,22 @@ export const PostedCard = ({
   ];
 
   const handleSaveEdit = async () => {
-    if (editContent.trim().length === 0 || editPost.isPending) return;
+    if (
+      editContent.trim().length === 0 ||
+      editPost.isPending ||
+      attachmentStatus === "uploading"
+    ) {
+      return;
+    }
     await handleEditPost(editContent);
   };
 
   const handleCancelEdit = () => {
     setEditContent(content);
     setEditError(null);
+    setAttachmentError(null);
+    setAttachmentStatus("idle");
+    setEditAttachments(attachments ?? []);
     setIsEditModalOpen(false);
   };
 
@@ -192,6 +224,65 @@ export const PostedCard = ({
     setDeleteError(null);
     setIsDeleteModalOpen(false);
   };
+
+  const handleAttachmentDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      setAttachmentError(null);
+
+      if (!acceptedFiles.length) return;
+
+      setAttachmentStatus("uploading");
+
+      try {
+        const uploaded: AttachmentDescriptor[] = [];
+
+        for (const file of acceptedFiles) {
+          const presign = await trpcClient.files.createPresignedUpload.mutate({
+            fileName: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+          });
+
+          const uploadResponse = await fetch(presign.uploadUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": file.type || "application/octet-stream",
+            },
+            body: file,
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error("File upload failed. Please try again.");
+          }
+
+          await trpcClient.files.confirmUpload.mutate({
+            fileId: presign.fileId,
+            fileName: file.name,
+            storedName: presign.storedName,
+            contentType: file.type || undefined,
+          });
+
+          uploaded.push({
+            fileId: presign.fileId,
+            fileName: file.name,
+            contentType: file.type || undefined,
+          });
+        }
+
+        if (uploaded.length) {
+          setEditAttachments((prev) => [...prev, ...uploaded]);
+        }
+
+        setAttachmentStatus("uploaded");
+      } catch (error) {
+        setAttachmentStatus("error");
+        setAttachmentError(
+          error instanceof Error ? error.message : "Please try again.",
+        );
+      }
+    },
+    [trpcClient],
+  );
 
   return (
     <>
@@ -324,7 +415,8 @@ export const PostedCard = ({
               disabled={
                 editContent.trim().length === 0 ||
                 editPost.isPending ||
-                characterCount > maxLength
+                characterCount > maxLength ||
+                attachmentStatus === "uploading"
               }
             >
               {editPost.isPending ? "Saving…" : "Save Changes"}
@@ -356,6 +448,48 @@ export const PostedCard = ({
             >
               {characterCount}/{maxLength}
             </span>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-subheader font-semibold text-secondary">
+              Attachments
+            </p>
+            <Dropzone
+              onDrop={handleAttachmentDrop}
+              onError={(error) => setAttachmentError(error.message)}
+              src={[]}
+              maxFiles={5}
+              disabled={editPost.isPending || attachmentStatus === "uploading"}
+            >
+              <DropzoneEmptyState />
+              <DropzoneContent />
+            </Dropzone>
+
+            {attachmentStatus === "uploading" && (
+              <p className="text-xs text-secondary/70">
+                Uploading attachments…
+              </p>
+            )}
+            {attachmentStatus === "uploaded" && (
+              <p className="text-xs text-primary">Attachments ready to save.</p>
+            )}
+            {attachmentError && (
+              <p className="text-sm text-destructive">{attachmentError}</p>
+            )}
+
+            {editAttachments.length > 0 ? (
+              <ul className="space-y-1 text-xs text-secondary">
+                {editAttachments.map((a) => (
+                  <li key={a.fileId} className="truncate">
+                    {a.fileName}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-secondary/70">
+                No attachments selected.
+              </p>
+            )}
           </div>
         </div>
       </Modal>

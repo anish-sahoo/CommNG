@@ -10,18 +10,23 @@ const cards = [
   {
     title: "Leadership and Professional Growth",
     src: professional_growth,
+    quote:
+      "”Men and women make history and not the other way around. In periods where there is no leadership, society stands still. Progress occurs when courageous, skillful leaders seize the opportunity to change things for the better.” —Harry S. Truman",
   },
   {
     title: "Service and Community Responsibility",
     src: service_responsibility,
+    quote:
+      "“How wonderful it is that nobody need wait a single moment before starting to improve the world.” – Anne Frank",
   },
   {
     title: "Camaraderie and Mutual Support",
     src: camaraderie,
+    quote:
+      "“What is not good for the beehive cannot be good for the bee.” – Marcus Aurelius",
   },
 ];
 
-// MentorshipLanding is the marketing entry for the mentorship program, steering users toward mentor/mentee applications with thematic imagery.
 export default function MentorshipLanding() {
   return (
     <TitleShell
@@ -41,51 +46,88 @@ export default function MentorshipLanding() {
           Mentorship Journey
         </header>
 
-        <div className="mx-auto grid w-full app-content-width grid-cols-1 gap-8 md:grid-cols-3 md:gap-10">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-6 sm:flex-row">
+          <Link href={"/mentorship/apply/mentor"} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              size="lg"
+              className="
+                inline-flex w-full items-center justify-center gap-3
+                px-12 py-5 text-xl font-semibold sm:text-2xl
+                bg-primary text-white
+                transition-colors
+                hover:bg-accent hover:text-white
+                border-0
+              "
+            >
+              <span>Apply to be a</span>
+              <span className="font-bold">Mentor</span>
+            </Button>
+          </Link>
+
+          <Link href={"/mentorship/apply/mentee"} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              size="lg"
+              className="
+                inline-flex w-full items-center justify-center gap-3
+                px-12 py-5 text-xl font-semibold sm:text-2xl
+                bg-primary text-white
+                transition-colors
+                hover:bg-accent hover:text-white
+                border-0
+              "
+            >
+              <span>Apply to be a</span>
+              <span className="font-bold">Mentee</span>
+            </Button>
+          </Link>
+        </div>
+
+        <div className="mx-auto flex w-full app-content-width flex-col gap-12">
           {cards.map((card) => (
             <article
               key={card.title}
-              className="flex flex-col items-center gap-4 text-center"
+              className="
+                grid grid-cols-1 gap-4
+                md:grid-cols-[auto_minmax(0,1fr)]
+                md:gap-10
+                md:items-start
+                md:ml-6
+              "
             >
-              <div className="relative aspect-[5/5] w-full max-w-[16rem] overflow-hidden rounded-3xl bg-muted shadow-lg shadow-black/10 sm:max-w-[18rem] md:aspect-square lg:max-w-[22rem] xl:max-w-[26rem] 2xl:max-w-[30rem]">
+              <div className="relative mx-auto h-44 w-44 overflow-hidden rounded-3xl bg-muted shadow-lg shadow-black/10 sm:h-48 sm:w-48 md:mx-0 md:col-start-1 md:row-start-1 md:row-span-2">
                 <Image
                   src={card.src}
                   alt={card.title}
                   fill
                   className="object-cover"
-                  sizes="(min-width: 1024px) 260px, (min-width: 640px) 220px, 80vw"
+                  sizes="(min-width: 1280px) 192px, (min-width: 1024px) 176px, (min-width: 640px) 176px, 176px"
                 />
               </div>
-              <h3 className="text-lg font-semibold text-secondary sm:text-xl">
+
+              <h3
+                className="
+                  text-center text-xl font-semibold text-secondary sm:text-4xl
+                  md:text-left md:col-start-2 md:row-start-1
+                  md:mt-3
+                "
+              >
                 {card.title}
               </h3>
+
+              <p
+                className="
+                  whitespace-pre-line
+                  text-center text-lg leading-relaxed text-secondary/80
+                  md:text-left md:col-start-2 md:row-start-2
+                  md:-mt-18
+                "
+              >
+                {card.quote}
+              </p>
             </article>
           ))}
-        </div>
-
-        <div className="mx-auto flex w-full max-w-xl flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link href={"/mentorship/apply/mentor"}>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="inline-flex items-center gap-1"
-            >
-              <span>Apply to be a</span>
-              <span className="font-semibold">Mentor</span>
-            </Button>
-          </Link>
-          <Link href={"/mentorship/apply/mentee"}>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="inline-flex items-center gap-1"
-            >
-              <span>Apply to be a</span>
-              <span className="font-semibold">Mentee</span>
-            </Button>
-          </Link>
         </div>
       </section>
     </TitleShell>
