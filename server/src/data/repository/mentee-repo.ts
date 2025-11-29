@@ -1,5 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { mentees, mentors, mentorshipMatches } from "../../data/db/schema.js";
+import {
+  mentees,
+  mentors,
+  mentorshipMatches,
+  users,
+} from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
 import type {
@@ -111,6 +116,7 @@ export class MenteeRepository {
       .select({
         menteeId: mentees.menteeId,
         userId: mentees.userId,
+        // Mentee profile fields
         learningGoals: mentees.learningGoals,
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
@@ -124,8 +130,19 @@ export class MenteeRepository {
         hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
         createdAt: mentees.createdAt,
         updatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentees)
+      .innerJoin(users, eq(users.id, mentees.userId))
       .where(eq(mentees.menteeId, menteeId))
       .limit(1);
 
@@ -146,6 +163,7 @@ export class MenteeRepository {
       .select({
         menteeId: mentees.menteeId,
         userId: mentees.userId,
+        // Mentee profile fields
         learningGoals: mentees.learningGoals,
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
@@ -159,8 +177,19 @@ export class MenteeRepository {
         hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
         createdAt: mentees.createdAt,
         updatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentees)
+      .innerJoin(users, eq(users.id, mentees.userId))
       .where(eq(mentees.userId, userId))
       .limit(1);
 
@@ -283,6 +312,7 @@ export class MenteeRepository {
       .select({
         menteeId: mentees.menteeId,
         userId: mentees.userId,
+        // Mentee profile fields
         learningGoals: mentees.learningGoals,
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
@@ -296,8 +326,19 @@ export class MenteeRepository {
         hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
         createdAt: mentees.createdAt,
         updatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentees)
+      .innerJoin(users, eq(users.id, mentees.userId))
       .where(eq(mentees.status, status));
   }
 
@@ -313,6 +354,7 @@ export class MenteeRepository {
       .select({
         menteeId: mentees.menteeId,
         userId: mentees.userId,
+        // Mentee profile fields
         learningGoals: mentees.learningGoals,
         experienceLevel: mentees.experienceLevel,
         preferredMentorType: mentees.preferredMentorType,
@@ -326,8 +368,19 @@ export class MenteeRepository {
         hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
         createdAt: mentees.createdAt,
         updatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentees)
+      .innerJoin(users, eq(users.id, mentees.userId))
       .where(inArray(mentees.userId, userIds));
   }
 
