@@ -108,6 +108,20 @@ export type GetMenteeOutput = {
   hoursPerMonthCommitment?: number | null;
   createdAt: string | Date;
   updatedAt: string | Date;
+
+  /**
+   * Enriched user profile fields for mentorship UI.
+   * These are joined from the associated `users` record.
+   */
+  name?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  imageFileId?: string | null;
+  rank?: string | null;
+  positionType?: string | null;
+  detailedPosition?: string | null;
+  detailedRank?: string | null;
+  location?: string | null;
 };
 
 export type UpdateMenteeOutput = {
