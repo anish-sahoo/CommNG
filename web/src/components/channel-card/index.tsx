@@ -27,7 +27,6 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
   const Icon = icons[iconName];
   const trpcClient = useTRPCClient();
 
-  // Initialize with imageFileId if it's already a URL (pre-fetched)
   const initialImageUrl =
     imageFileId &&
     (imageFileId.startsWith("/") || imageFileId.startsWith("http"))
@@ -37,17 +36,13 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
   const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl);
 
   useEffect(() => {
-    if (!imageFileId) {
-      return;
-    }
+    if (!imageFileId) return;
 
-    // If it's a direct path/URL (including pre-fetched URLs), use it directly
     if (imageFileId.startsWith("/") || imageFileId.startsWith("http")) {
       setImageUrl(imageFileId);
       return;
     }
 
-    // Otherwise, fetch from the files API (fallback for when not pre-fetched)
     const fetchImage = async () => {
       try {
         const fileData = await trpcClient.files.getFile.query({
@@ -63,15 +58,6 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
     void fetchImage();
   }, [imageFileId, trpcClient]);
 
-  const truncatedTitle =
-    title.length > 22 ? `${title.slice(0, 22).trim()}…` : title;
-
-  const truncatedDescription =
-    description.length > 52
-      ? `${description.slice(0, 52).trim()}…`
-      : description;
-
-  // Check if image is from S3 (external URL with signed parameters)
   const isS3Image = imageUrl?.includes("amazonaws.com") ?? false;
 
   return (
@@ -103,17 +89,17 @@ const ChannelCard: React.FC<ChannelCardProps> = ({
         <div className="flex items-center gap-2 leading-tight">
           {Icon && <Icon className="h-5 w-5 text-accent" />}
           <h3
-            className="text-subheader text-lg font-semibold text-background whitespace-nowrap truncate"
+            className="text-subheader text-lg font-semibold text-background truncate"
             title={title}
           >
-            {truncatedTitle}
+            {title}
           </h3>
         </div>
         <p
           className="text-body text-background/80 leading-snug line-clamp-2"
           title={description}
         >
-          {truncatedDescription}
+          {description}
         </p>
       </Link>
     </div>

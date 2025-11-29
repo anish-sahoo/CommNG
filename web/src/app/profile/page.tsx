@@ -1,9 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { toast } from "sonner";
 import { TitleShell } from "@/components/layouts/title-shell";
 import ProfileCard, { type ProfileCardProps } from "@/components/profile-card";
+import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
 
@@ -55,9 +57,14 @@ export default function ProfilePage() {
           </span>
         }
       >
-        <p className="text-body text-secondary/80">
-          You must be signed in to view your profile.
-        </p>
+        <div className="space-y-4">
+          <p className="text-body text-secondary/80">
+            You must be signed in to view your profile.
+          </p>
+          <Button asChild>
+            <Link href="/login">Log in</Link>
+          </Button>
+        </div>
       </TitleShell>
     );
   }
