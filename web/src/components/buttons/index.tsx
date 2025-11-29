@@ -12,6 +12,7 @@ type SelectableButtonProps = {
   onClick?: React.MouseEventHandler<HTMLButtonElement>;
   selectable?: boolean;
   defaultSelected?: boolean;
+  disabled?: boolean;
 };
 
 export const SelectableButton = forwardRef<
@@ -26,6 +27,7 @@ export const SelectableButton = forwardRef<
       onClick,
       selectable = true,
       defaultSelected = false,
+      disabled = false,
     },
     ref,
   ) => {
@@ -43,6 +45,7 @@ export const SelectableButton = forwardRef<
         type="button"
         variant="outline"
         onClick={handleClick}
+        disabled={disabled}
         aria-pressed={selected}
         data-selected={selected}
         className={cn(
