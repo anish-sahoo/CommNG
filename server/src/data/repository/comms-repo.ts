@@ -131,7 +131,18 @@ export class CommsRepository {
         ),
       );
 
-    return members;
+    const memberMap = new Map<string, typeof members[0]>();
+    const roleRank: Record<string, number> = { admin: 3, post: 2, read: 1 };
+
+    for (const member of members) {
+      const existing = memberMap.get(member.userId);
+
+      if (!existing || (roleRank[member.action] || 0) > (roleRank[existing?.action] || 0)) {
+        memberMap.set(member.userId, member);
+      }
+    }
+
+    return Array.from(memberMap.values());
   }
 
   /**
