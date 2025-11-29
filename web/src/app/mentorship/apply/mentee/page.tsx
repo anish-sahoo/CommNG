@@ -199,6 +199,7 @@ export default function MentorshipApplyMenteePage() {
   const [selectedMeetingFormats, setSelectedMeetingFormats] = useState<
     string[]
   >([]);
+  const [hopeToGainOrder, setHopeToGainOrder] = useState<string[]>([]);
   const [multiLineText, setMultiLineText] = useState("");
   const [desiredMentorHours, setDesiredMentorHours] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -216,9 +217,35 @@ export default function MentorshipApplyMenteePage() {
     setIsSubmitting(true);
 
     try {
+      // Map meeting formats to backend enum
+      const preferredMeetingFormat =
+        selectedMeetingFormats.length > 0
+          ? (selectedMeetingFormats[0] === "online"
+              ? "virtual"
+              : selectedMeetingFormats[0]) as
+              | "in-person"
+              | "virtual"
+              | "hybrid"
+              | "no-preference"
+          : undefined;
+
+      const hoursPerMonthCommitment = desiredMentorHours
+        ? Number.parseInt(desiredMentorHours, 10)
+        : undefined;
+
       await createMentee.mutateAsync({
         userId,
-        // Other fields will be wired in later commits
+        personalInterests:
+          selectedInterests.length > 0
+            ? selectedInterests.join(", ")
+            : undefined,
+        roleModelInspiration: multiLineText.trim() || undefined,
+        hopeToGainResponses:
+          hopeToGainOrder.length > 0 ? hopeToGainOrder : undefined,
+        mentorQualities:
+          selectedQualities.length > 0 ? selectedQualities : undefined,
+        preferredMeetingFormat,
+        hoursPerMonthCommitment,
       });
 
       router.push("/mentorship");
@@ -361,7 +388,7 @@ export default function MentorshipApplyMenteePage() {
                 value: "diversity",
               },
             ]}
-            onChange={() => {}}
+            onChange={setHopeToGainOrder}
           />
         </section>
 
