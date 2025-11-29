@@ -9,7 +9,7 @@ import { useTRPC } from "@/lib/trpc";
 export default function MentorshipDashboard() {
   const trpc = useTRPC();
   const { data, isLoading, isError, error } =
-    trpc.mentors.getMentorshipData.useQuery();
+    trpc.mentor.getMentorshipData.useQuery();
 
   const hasMentorProfile = Boolean(data?.mentor);
   const hasMenteeProfile = Boolean(data?.mentee);

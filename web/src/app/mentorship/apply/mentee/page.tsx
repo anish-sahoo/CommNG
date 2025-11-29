@@ -213,7 +213,7 @@ export default function MentorshipApplyMenteePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createMentee = useMutation(trpc.mentees.createMentee.mutationOptions());
+  const createMentee = useMutation(trpc.mentee.createMentee.mutationOptions());
 
   const uploadResume = useCallback(
     async (file: File) => {

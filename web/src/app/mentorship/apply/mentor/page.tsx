@@ -184,7 +184,7 @@ export default function MentorshipApplyMentorPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const createMentor = useMutation(trpc.mentors.createMentor.mutationOptions());
+  const createMentor = useMutation(trpc.mentor.createMentor.mutationOptions());
 
   const uploadResume = useCallback(
     async (file: File) => {
