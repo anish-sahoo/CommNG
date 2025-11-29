@@ -604,7 +604,7 @@ export default function HelpPage() {
           </li>
           <li>
             Admins can open any report and assign it with the
-            <span className="font-semibold"> Assign </span>
+            <span className="font-semibold"> Assign To </span>
             dropdown; updates save immediately.
           </li>
           <li>
@@ -616,10 +616,92 @@ export default function HelpPage() {
     },
   ];
 
+  const mentorshipSections: Array<{
+    id:
+      | "mentorship-apply"
+      | "mentorship-dashboard"
+      | "mentorship-requests"
+      | "mentorship-resources";
+    title: string;
+    content: ReactNode;
+  }> = [
+    {
+      id: "mentorship-apply",
+      title: "Apply as a mentor or mentee",
+      content: (
+        <ol className="list-decimal space-y-2 pl-5 text-sm text-secondary">
+          <li>
+            From the Mentorship page, choose{" "}
+            <span className="font-semibold">Apply to be a Mentor</span> or{" "}
+            <span className="font-semibold">Apply to be a Mentee</span>.
+          </li>
+          <li>
+            Complete the onboarding form thoughtfully; plan 20–25 minutes to
+            finish it in one sitting.
+          </li>
+          <li>
+            Submit to create your profile. You will be routed to the Mentorship
+            dashboard after completion.
+          </li>
+        </ol>
+      ),
+    },
+    {
+      id: "mentorship-dashboard",
+      title: "Your dashboard and matches",
+      content: (
+        <ul className="list-disc space-y-2 pl-5 text-sm text-secondary">
+          <li>
+            The dashboard reflects your mentor and mentee profiles once
+            submitted.
+          </li>
+          <li>
+            Matches arrive over time; you can view contact info for your mentor
+            or mentee to schedule conversations directly.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "mentorship-requests",
+      title: "Handling mentee requests (mentors)",
+      content: (
+        <ul className="list-disc space-y-2 pl-5 text-sm text-secondary">
+          <li>
+            If you are a mentor, incoming mentee requests will show on your
+            dashboard.
+          </li>
+          <li>
+            Review the request details and choose to accept or decline.
+          </li>
+        </ul>
+      ),
+    },
+    {
+      id: "mentorship-resources",
+      title: "Resources and support",
+      content: (
+        <ul className="list-disc space-y-2 pl-5 text-sm text-secondary">
+          <li>
+            Use the linked resources in the sidebar to prep for meetings and
+            guide your conversations.
+          </li>
+          <li>
+            Contact details for your mentor/mentee are visible so you can reach
+            out and set up sessions.
+          </li>
+        </ul>
+      ),
+    },
+  ];
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () => {
       const initialState: Record<string, boolean> = {};
       for (const section of contentSections) {
+        initialState[section.id] = true;
+      }
+      for (const section of mentorshipSections) {
         initialState[section.id] = true;
       }
       for (const section of reportSections) {
@@ -637,9 +719,11 @@ export default function HelpPage() {
     setOpenSections((prev) => {
       const shouldOpen = Object.values(prev).every((open) => !open);
       const nextState: Record<string, boolean> = {};
-      [...contentSections, ...reportSections].forEach((section) => {
-        nextState[section.id] = shouldOpen;
-      });
+      [...contentSections, ...mentorshipSections, ...reportSections].forEach(
+        (section) => {
+          nextState[section.id] = shouldOpen;
+        }
+      );
       return nextState;
     });
   };
@@ -796,7 +880,36 @@ export default function HelpPage() {
         <TabsContent value="mentorship" className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-secondary">Mentorship</h2>
-            <p className="text-sm text-secondary">Content coming soon.</p>
+            <p className="text-sm text-secondary">
+              Apply as a mentor or mentee, complete the onboarding form, then
+              manage matches and requests from your dashboard.
+            </p>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {mentorshipSections.map((section) => (
+              <Collapsible
+                key={section.id}
+                open={openSections[section.id] ?? true}
+                defaultOpen
+                onOpenChange={(open) => handleSectionToggle(section.id, open)}
+                className="rounded-xl border border-border/60 bg-background/60 p-4"
+              >
+                <CollapsibleTrigger className="flex w-full items-center gap-3 text-left text-base font-semibold text-secondary">
+                  <ArrowRightIcon
+                    className={cn(
+                      "h-5 w-5 text-secondary transition-transform",
+                      openSections[section.id] ? "rotate-90" : "rotate-0"
+                    )}
+                    aria-hidden="true"
+                  />
+                  {section.title}
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3">
+                  {section.content}
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
           </div>
         </TabsContent>
 
