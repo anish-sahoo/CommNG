@@ -24,6 +24,7 @@ export default function HelpPage() {
   const MoveRightIcon = icons.moveRight;
   const AddIcon = icons.add;
   const AcknowledgeIcon = icons.done;
+  const AnnounceIcon = icons.announce;
   const BellIcon = icons.bell;
   const ArrowRightIcon = icons.arrowRight;
   const ArrowLeftIcon = icons.arrowLeft;
@@ -37,7 +38,7 @@ export default function HelpPage() {
 
   const getTabId = useCallback(
     (value: (typeof tabsOrder)[number]) => `help-tab-${value}`,
-    [],
+    []
   );
 
   const scrollTabIntoView = useCallback(
@@ -59,7 +60,7 @@ export default function HelpPage() {
         });
       }
     },
-    [getTabId],
+    [getTabId]
   );
 
   useEffect(() => {
@@ -135,33 +136,15 @@ export default function HelpPage() {
       ),
     },
     {
-      title: "Scan for broadcasts",
-      description: (
-        <>
-          In the communications header, the{" "}
-          <span className="font-semibold">bell icon</span> shows a red dot when
-          there is an active broadcast. Click it to open{" "}
-          <span className="font-semibold">Broadcasts</span>; any message you
-          have not acknowledged will open automatically. The bell opens your
-          active broadcast list, while the modal appears automatically when a
-          new alert needs acknowledgment.
-        </>
-      ),
-      cue: (
-        <CueDisplay
-          leadingIcon={BellIcon}
-          buttonIcon={BellIcon}
-          buttonLabel="Broadcasts"
-        />
-      ),
-    },
-    {
       title: "Explore your channels",
       description: (
         <>
-          Channel cards list every space you can access. Use the{" "}
-          <span className="font-semibold">Search channels</span> field in the
-          header to filter quickly.
+          Open <span className="font-semibold">My Channels</span> to see spaces
+          you are already part of. Use{" "}
+          <span className="font-semibold">All Channels</span> to browse and join
+          new ones, then search or filter to find what you need. Some channels
+          are read-only; request posting permission from the channel admin if
+          you need to publish.
         </>
       ),
     },
@@ -170,8 +153,7 @@ export default function HelpPage() {
       description: (
         <>
           Open a channel to see recent updates and attachments. If you need
-          posting access, contact the channel admin listed in the channel
-          header.
+          posting access, contact the channel admin.
         </>
       ),
     },
@@ -362,78 +344,71 @@ export default function HelpPage() {
       ),
       note: "If you see a permission warning, request posting access from your channel admin.",
     },
-    {
-      title: "Review Broadcast Alerts",
-      steps: [
-        {
-          id: "alerts-indicator",
-          content:
-            "When broadcasts are posted, a modal will appear with the relevant title and description.",
-        },
-        {
-          id: "alerts-ack",
-          content: (
-            <>
-              Read the alert details. Select{" "}
-              <span className="font-semibold">Acknowledge</span> to dismiss and
-              record acknowledgment.
-            </>
-          ),
-        },
-        {
-          id: "alerts-review",
-          content: (
-            <>
-              Re-open the broadcast list any time from the{" "}
-              <span className="font-semibold">Broadcasts</span> bell icon if you
-              need to reference instructions again.
-            </>
-          ),
-        },
-      ],
-      cue: (
+  ];
+
+  const BroadcastsContent = () => (
+    <div className="space-y-6 text-sm text-secondary">
+      <div className="space-y-2">
+        <h3 className="text-base font-semibold text-secondary">
+          View and acknowledge broadcasts
+        </h3>
+        <ol className="list-decimal space-y-2 pl-5">
+          <li>
+            When you sign in, any active broadcast opens automatically in a
+            modal.
+          </li>
+          <li>
+            Click <span className="font-semibold">Acknowledge</span> to dismiss
+            it after reading. The alert stays available in the bell while it
+            remains active.
+          </li>
+          <li>
+            Watch the bell in Communications; a red dot means an active
+            broadcast is available to review.
+          </li>
+          <li>
+            Open <span className="font-semibold">Broadcasts</span> from the bell
+            to re-read any still-active alerts.
+          </li>
+        </ol>
         <CueDisplay
-          leadingIcon={AcknowledgeIcon}
-          buttonLabel="Acknowledge"
-          buttonVariant="outline"
+          leadingIcon={BellIcon}
+          buttonIcon={BellIcon}
+          buttonLabel="Active Broadcasts"
         />
-      ),
-    },
-    {
-      title: "Send a Broadcast (Managers)",
-      steps: [
-        {
-          id: "broadcast-open",
-          content: (
-            <>
-              From the communications overview, open{" "}
-              <span className="font-semibold">Broadcasts</span> or select{" "}
-              <span className="font-semibold">Broadcast</span> from the create
-              menu if you have permissions.
-            </>
-          ),
-        },
-        {
-          id: "broadcast-compose",
-          content:
-            "Select a target group, add a clear subject line, and write the message body. Pick when the alert should expire.",
-        },
-        {
-          id: "broadcast-send",
-          content:
-            "Submit the broadcast. The system instantly sends it to the selected audience and updates the active list for follow-up or deletion.",
-        },
-      ],
-      cue: (
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="text-base font-semibold text-secondary">
+          Send a broadcast (managers)
+        </h3>
+        <ol className="list-decimal space-y-2 pl-5">
+          <li>
+            From Communications, open{" "}
+            <span className="font-semibold">Broadcasts</span>, then select the{" "}
+            <span className="font-semibold">megaphone</span> action to start a
+            new alert.
+          </li>
+          <li>
+            Choose the audience, add a clear subject, write the message body,
+            and set an expiration.
+          </li>
+          <li>
+            Send the broadcast. It publishes immediately and appears in the
+            active list for follow-up or deletion.
+          </li>
+        </ol>
         <CueDisplay
-          leadingIcon={AddIcon}
-          buttonIcon={AddIcon}
+          leadingIcon={AnnounceIcon}
+          buttonIcon={AnnounceIcon}
           buttonLabel="New Broadcast"
         />
-      ),
-      note: "Only users with broadcast permissions will see the creation option.",
-    },
-  ];
+        <p className="text-xs italic text-secondary">
+          Only users with broadcast permissions see the creation option.
+        </p>
+      </div>
+    </div>
+  );
 
   const OnboardingContent = () => (
     <>
@@ -508,7 +483,7 @@ export default function HelpPage() {
   );
 
   const contentSections: Array<{
-    id: "onboarding" | "roles" | "tasks";
+    id: "onboarding" | "broadcasts" | "roles" | "tasks";
     title: string;
     content: ReactNode;
   }> = [
@@ -516,6 +491,11 @@ export default function HelpPage() {
       id: "onboarding",
       title: "Onboarding for New Users",
       content: <OnboardingContent />,
+    },
+    {
+      id: "broadcasts",
+      title: "Broadcasts",
+      content: <BroadcastsContent />,
     },
     {
       id: "roles",
@@ -638,7 +618,7 @@ export default function HelpPage() {
         initialState[section.id] = true;
       }
       return initialState;
-    },
+    }
   );
 
   const handleSectionToggle = (id: string, open: boolean) => {
@@ -791,7 +771,7 @@ export default function HelpPage() {
                   <ArrowRightIcon
                     className={cn(
                       "h-5 w-5 text-secondary transition-transform",
-                      openSections[section.id] ? "rotate-90" : "rotate-0",
+                      openSections[section.id] ? "rotate-90" : "rotate-0"
                     )}
                     aria-hidden="true"
                   />
@@ -830,14 +810,14 @@ export default function HelpPage() {
                 onOpenChange={(open) => handleSectionToggle(section.id, open)}
                 className={cn(
                   "rounded-xl border border-border/60 bg-background/60 p-4",
-                  section.id === "reports-admin" ? "lg:col-span-2" : "",
+                  section.id === "reports-admin" ? "lg:col-span-2" : ""
                 )}
               >
                 <CollapsibleTrigger className="flex w-full items-center gap-3 text-left text-base font-semibold text-secondary">
                   <ArrowRightIcon
                     className={cn(
                       "h-5 w-5 text-secondary transition-transform",
-                      openSections[section.id] ? "rotate-90" : "rotate-0",
+                      openSections[section.id] ? "rotate-90" : "rotate-0"
                     )}
                     aria-hidden="true"
                   />
