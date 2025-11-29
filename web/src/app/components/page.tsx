@@ -430,10 +430,10 @@ const Components = () => {
             <CollapsibleCard
               name="Brandon Johnson"
               rank="E-1"
-              job="DoorDash Driver"
               location="Hadley, MA"
               information="I'm eager to learn from those who've walked the path before me, so I can grow faster and avoid mistakes along the way."
-              contact="617-222-3333"
+              phone="617-222-3333"
+              email="b.johnson@example.com"
             />
           </section>
 
