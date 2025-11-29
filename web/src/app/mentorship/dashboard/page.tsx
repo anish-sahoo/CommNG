@@ -87,6 +87,33 @@ export default function MentorshipDashboard() {
               </span>
             </li>
           </ul>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {!hasMentorProfile && (
+              <Link href="/mentorship/apply/mentor">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center gap-1"
+                >
+                  Apply to be a Mentor
+                </Button>
+              </Link>
+            )}
+            {!hasMenteeProfile && (
+              <Link href="/mentorship/apply/mentee">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center gap-1"
+                >
+                  Apply to be a Mentee
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
