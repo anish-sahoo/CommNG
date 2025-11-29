@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
@@ -82,8 +81,7 @@ export const CommsNavBar = ({
     trpc.comms.getAllChannels.queryOptions(),
   );
 
-  const channelData =
-    Array.isArray(data) && data.length > 0 ? data : [DEMO_CHANNEL];
+  const channelData = Array.isArray(data) && data.length > 0 ? data : [];
 
   // Filter out channels where user has no permission (permission === null)
   const accessibleChannels = channelData.filter((channel) => {

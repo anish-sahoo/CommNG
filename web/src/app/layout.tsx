@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
 import "./globals.css";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import NotificationSubscriber from "@/components/providers/notification-subscriber";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -34,7 +35,7 @@ export default function RootLayout({
       <body className="min-h-screen w-full max-w-full overflow-x-hidden">
         <QueryProvider>
           <NotificationSubscriber />
-          {children}
+          <AuthGuard>{children}</AuthGuard>
         </QueryProvider>
         <Toaster />
       </body>

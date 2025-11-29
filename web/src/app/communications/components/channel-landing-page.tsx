@@ -14,7 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DEMO_CHANNEL } from "@/lib/demo-channel";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +57,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
     if (Array.isArray(data) && data.length > 0) {
       return data;
     }
-    return [DEMO_CHANNEL];
+    return [];
   }, [data]);
 
   const myChannels = useMemo(() => {
