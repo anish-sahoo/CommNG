@@ -277,6 +277,30 @@ export default function MentorshipApplyMentorPage() {
     }
 
     try {
+      // Map meeting formats to backend enum
+      const preferredMeetingFormat =
+        selectedMeetingFormats.length > 0
+          ? (selectedMeetingFormats[0] === "online"
+              ? "virtual"
+              : selectedMeetingFormats[0]) as
+              | "in-person"
+              | "virtual"
+              | "hybrid"
+              | "no-preference"
+          : undefined;
+
+      // Map career stages to backend enum (fix transitioning-soldiers -> transitioning)
+      const preferredMenteeCareerStages =
+        selectedCareerStages.length > 0
+          ? selectedCareerStages.map((stage) =>
+              stage === "transitioning-soldiers" ? "transitioning" : stage,
+            )
+          : undefined;
+
+      const hoursPerMonthCommitment = availableMentorHours
+        ? Number.parseInt(availableMentorHours, 10)
+        : undefined;
+
       await createMentor.mutateAsync({
         userId,
         resumeFileId: resume?.status === "uploaded" ? resume.fileId : undefined,
@@ -288,19 +312,9 @@ export default function MentorshipApplyMentorPage() {
         whyInterestedResponses:
           whyInterestedOrder.length > 0 ? whyInterestedOrder : undefined,
         careerAdvice: multiLineText.trim() || undefined,
-        preferredMenteeCareerStages:
-          selectedCareerStages.length > 0 ? selectedCareerStages : undefined,
-        preferredMeetingFormat:
-          selectedMeetingFormats.length > 0
-            ? (selectedMeetingFormats[0] as
-                | "in-person"
-                | "virtual"
-                | "hybrid"
-                | "no-preference")
-            : undefined,
-        hoursPerMonthCommitment: availableMentorHours
-          ? parseInt(availableMentorHours, 10)
-          : undefined,
+        preferredMenteeCareerStages,
+        preferredMeetingFormat,
+        hoursPerMonthCommitment,
       });
 
       setIsSubmitted(true);
