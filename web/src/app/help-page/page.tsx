@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import {
@@ -10,11 +10,16 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { useCommunicationsSections } from "./sections/communications";
-import { useMentorshipSections } from "./sections/mentorship";
-import { useReportSections } from "./sections/reports";
+import { communicationsSections } from "./sections/communications";
+import { mentorshipSections } from "./sections/mentorship";
+import { reportSections } from "./sections/reports";
 
 type Section = { id: string; title: string; content: React.ReactNode };
+const allSections: Section[] = [
+  ...communicationsSections,
+  ...mentorshipSections,
+  ...reportSections,
+];
 
 export default function HelpPage() {
   const ArrowRightIcon = icons.arrowRight;
@@ -24,15 +29,6 @@ export default function HelpPage() {
   const [activeTab, setActiveTab] =
     useState<(typeof tabsOrder)[number]>("communications");
   const tabsScrollRef = useRef<HTMLDivElement | null>(null);
-
-  const communicationsSections = useCommunicationsSections();
-  const mentorshipSections = useMentorshipSections();
-  const reportSections = useReportSections();
-
-  const allSections: Section[] = useMemo(
-    () => [...communicationsSections, ...mentorshipSections, ...reportSections],
-    [communicationsSections, mentorshipSections, reportSections],
-  );
 
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () => {
