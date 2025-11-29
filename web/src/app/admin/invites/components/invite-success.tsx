@@ -1,7 +1,8 @@
 "use client";
 
 import type { RoleKey } from "@server/data/roles";
-import { Check, Clock, Copy } from "lucide-react";
+import { Check, Clock, Copy, List } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,12 +121,18 @@ export function InviteSuccess({
         </div>
       </div>
 
-      {/* Action Button */}
-      <div className="flex justify-end border-t border-green-200 pt-4">
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end border-t border-green-200 pt-4">
+        <Link href="/admin/invites" className="w-full sm:w-auto">
+          <Button type="button" variant="outline" className="w-full sm:w-auto">
+            <List className="mr-2 h-4 w-4" />
+            View All Codes
+          </Button>
+        </Link>
         <Button
           type="button"
           onClick={onCreateAnother}
-          variant="outline"
+          variant="default"
           className="w-full sm:w-auto"
         >
           Create Another Invite
