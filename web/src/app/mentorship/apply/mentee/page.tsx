@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { TRPCClientError } from "@trpc/client";
+import { useRouter } from "next/navigation";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
@@ -11,6 +14,8 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { authClient } from "@/lib/auth-client";
+import { useTRPC } from "@/lib/trpc";
 
 //Static arrays for select options
 const mentorInterestOptions: MultiSelectOption[] = [
@@ -181,6 +186,11 @@ const rankOptions = [
 ];
 
 export default function MentorshipApplyMenteePage() {
+  const trpc = useTRPC();
+  const router = useRouter();
+  const { data: sessionData } = authClient.useSession();
+  const userId = sessionData?.user?.id ?? null;
+
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [menteeRankSelection, setMenteeRankSelection] = useState<string>("");
   const [files, setFiles] = useState<File[] | undefined>();
@@ -191,6 +201,39 @@ export default function MentorshipApplyMenteePage() {
   >([]);
   const [multiLineText, setMultiLineText] = useState("");
   const [desiredMentorHours, setDesiredMentorHours] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createMentee = useMutation(trpc.mentees.createMentee.mutationOptions());
+
+  const handleSubmit = async () => {
+    if (!userId) {
+      setFormError("You must be logged in to submit this application.");
+      return;
+    }
+
+    setFormError(null);
+    setIsSubmitting(true);
+
+    try {
+      await createMentee.mutateAsync({
+        userId,
+        // Other fields will be wired in later commits
+      });
+
+      router.push("/mentorship");
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        setFormError(error.message);
+      } else if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Failed to submit application. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col flex-wrap w-full relative items-left justify-center sm:gap-16 px-8 sm:px-10 lg:px-20 py-10 mx-4">
@@ -366,7 +409,17 @@ export default function MentorshipApplyMenteePage() {
           />
         </section>
 
-        <SelectableButton text="Submit" className="mb-4 bg-accent text-white" />
+        <div className="flex flex-col gap-2">
+          {formError && (
+            <p className="text-sm text-red-600 mb-2">{formError}</p>
+          )}
+          <SelectableButton
+            text={isSubmitting ? "Submitting..." : "Submit"}
+            className="mb-4 bg-accent text-white"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
     </div>
   );
