@@ -1,8 +1,7 @@
 import { commsRouter } from "../routers/comms.js";
 import { filesRouter } from "../routers/files.js";
 import { inviteCodeRouter } from "../routers/invite-codes.js";
-import { menteeRouter } from "../routers/mentees.js";
-import { mentorRouter } from "../routers/mentors.js";
+import { mentorshipRouter } from "../routers/mentorship.js";
 import { messageBlastRouter } from "../routers/message-blasts.js";
 import { notificationsRouter } from "../routers/notifications.js";
 import { reportsRouter } from "../routers/reports.js";
@@ -12,8 +11,7 @@ import { router } from "../trpc/trpc.js";
 
 export const appRouter = router({
   comms: commsRouter,
-  mentor: mentorRouter,
-  mentee: menteeRouter,
+  mentorship: mentorshipRouter,
   reports: reportsRouter,
   user: userRouter,
   files: filesRouter,

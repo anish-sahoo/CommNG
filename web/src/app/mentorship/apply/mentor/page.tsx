@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { TRPCClientError } from "@trpc/client";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
@@ -11,6 +14,15 @@ import {
   DropzoneContent,
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
+import { authClient } from "@/lib/auth-client";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
+
+type ResumeState = null | {
+  file: File;
+  status: "uploading" | "uploaded" | "error";
+  fileId?: string;
+  error?: string;
+};
 
 //Static arrays for select options
 const positionOptions = [
@@ -147,12 +159,19 @@ const rankOptions = [
 ];
 
 export default function MentorshipApplyMentorPage() {
+  const trpc = useTRPC();
+  const trpcClient = useTRPCClient();
+  const router = useRouter();
+  const { data: sessionData } = authClient.useSession();
+  const userId = sessionData?.user?.id ?? null;
+
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
-  const [files, setFiles] = useState<File[] | undefined>();
+  const [resume, setResume] = useState<ResumeState>(null);
   const [selectedQualities, setSelectedQualities] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [multiLineText, setMultiLineText] = useState("");
+  const [whyInterestedOrder, setWhyInterestedOrder] = useState<string[]>([]);
   const [selectedCareerStages, setSelectedCareerStages] = useState<string[]>(
     [],
   );
@@ -161,6 +180,202 @@ export default function MentorshipApplyMentorPage() {
   >([]);
   const [desiredMentorHours, setDesiredMentorHours] = useState("");
   const [availableMentorHours, setAvailableMentorHours] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Aligned with server `appRouter.mentorship.createMentor`
+  const createMentor = useMutation(
+    trpc.mentorship.createMentor.mutationOptions(),
+  );
+
+  const uploadResume = useCallback(
+    async (file: File) => {
+      setResume({
+        file,
+        status: "uploading",
+      });
+
+      try {
+        const presign = await trpcClient.files.createPresignedUpload.mutate({
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        });
+
+        const uploadResponse = await fetch(presign.uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("We couldn't upload that file. Please try again.");
+        }
+
+        await trpcClient.files.confirmUpload.mutate({
+          fileId: presign.fileId,
+          fileName: file.name,
+          storedName: presign.storedName,
+          contentType: file.type || undefined,
+        });
+
+        setResume({
+          file,
+          status: "uploaded",
+          fileId: presign.fileId,
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "We couldn't upload that file.";
+        setResume({
+          file,
+          status: "error",
+          error: message,
+        });
+      }
+    },
+    [trpcClient],
+  );
+
+  const cleanupUnusedResume = useCallback(async () => {
+    // Only cleanup if resume was uploaded but form was not submitted
+    if (resume?.status === "uploaded" && resume.fileId && !isSubmitted) {
+      try {
+        await trpcClient.files.deleteFile.mutate({
+          fileId: resume.fileId,
+        });
+      } catch (error) {
+        // Silently fail - cleanup is best effort
+        console.error("Failed to cleanup unused resume:", error);
+      }
+    }
+  }, [resume, isSubmitted, trpcClient]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!userId) {
+      setFormError("You must be logged in to submit this application.");
+      return;
+    }
+
+    setFormError(null);
+    setIsSubmitting(true);
+
+    // Check if resume is still uploading
+    if (resume?.status === "uploading") {
+      setFormError("Please wait for the resume upload to complete.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Check if resume upload failed
+    if (resume?.status === "error") {
+      setFormError("Please fix the resume upload error before submitting.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      // Map meeting formats to backend enum
+      const preferredMeetingFormat =
+        selectedMeetingFormats.length > 0
+          ? ((selectedMeetingFormats[0] === "online"
+              ? "virtual"
+              : selectedMeetingFormats[0]) as
+              | "in-person"
+              | "virtual"
+              | "hybrid"
+              | "no-preference")
+          : undefined;
+
+      // Map career stages to backend enum (fix transitioning-soldiers -> transitioning)
+      type PreferredMenteeCareerStage =
+        | "new-soldiers"
+        | "junior-ncos"
+        | "senior-ncos"
+        | "junior-officers"
+        | "senior-officers"
+        | "transitioning"
+        | "no-preference";
+
+      const preferredMenteeCareerStages:
+        | PreferredMenteeCareerStage[]
+        | undefined =
+        selectedCareerStages.length > 0
+          ? selectedCareerStages.map((stage) =>
+              stage === "transitioning-soldiers"
+                ? "transitioning"
+                : (stage as PreferredMenteeCareerStage),
+            )
+          : undefined;
+
+      const hoursPerMonthCommitment = (() => {
+        if (!availableMentorHours) return undefined;
+        const parsed = Number.parseInt(availableMentorHours, 10);
+        return Number.isNaN(parsed) ? undefined : parsed;
+      })();
+
+      await createMentor.mutateAsync({
+        userId,
+        resumeFileId: resume?.status === "uploaded" ? resume.fileId : undefined,
+        strengths: selectedQualities,
+        personalInterests:
+          selectedInterests.length > 0
+            ? selectedInterests.join(", ")
+            : undefined,
+        whyInterestedResponses:
+          whyInterestedOrder.length > 0 ? whyInterestedOrder : undefined,
+        careerAdvice: multiLineText.trim() || undefined,
+        preferredMenteeCareerStages,
+        preferredMeetingFormat,
+        hoursPerMonthCommitment,
+      });
+
+      setIsSubmitted(true);
+      router.push("/mentorship/dashboard");
+    } catch (error) {
+      if (error instanceof TRPCClientError) {
+        const message = error.message || "Failed to submit application.";
+
+        if (message.includes("Mentor profile already exists for this user")) {
+          setFormError(
+            "You already have a mentor profile set up. Visit the mentorship dashboard to view it.",
+          );
+        } else {
+          setFormError(message);
+        }
+      } else if (error instanceof Error) {
+        setFormError(error.message);
+      } else {
+        setFormError("Failed to submit application. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    userId,
+    resume,
+    selectedQualities,
+    selectedInterests,
+    whyInterestedOrder,
+    multiLineText,
+    selectedCareerStages,
+    selectedMeetingFormats,
+    availableMentorHours,
+    createMentor,
+    router,
+  ]);
+
+  // Cleanup unused resume on unmount
+  useEffect(() => {
+    return () => {
+      void cleanupUnusedResume();
+    };
+  }, [cleanupUnusedResume]);
 
   const mentorQualityOptions: MultiSelectOption[] = [
     { label: "Adaptability", value: "adaptability" },
@@ -269,10 +484,12 @@ export default function MentorshipApplyMentorPage() {
           <Dropzone
             className="mb-3 max-w-3xl"
             onDrop={(files) => {
-              setFiles(files);
+              if (files.length > 0) {
+                void uploadResume(files[0]);
+              }
             }}
-            src={files}
-            maxFiles={5}
+            src={resume ? [resume.file] : undefined}
+            maxFiles={1}
           >
             <DropzoneEmptyState />
             <DropzoneContent />
@@ -341,7 +558,7 @@ export default function MentorshipApplyMentorPage() {
                 value: "diversity",
               },
             ]}
-            onChange={() => {}}
+            onChange={setWhyInterestedOrder}
           />
         </section>
 
@@ -420,7 +637,17 @@ export default function MentorshipApplyMentorPage() {
           />
         </section>
 
-        <SelectableButton text="Submit" className="mb-4 bg-accent text-white" />
+        <div className="flex flex-col gap-2">
+          {formError && (
+            <p className="text-sm text-red-600 mb-2">{formError}</p>
+          )}
+          <SelectableButton
+            text={isSubmitting ? "Submitting..." : "Submit"}
+            className="mb-4 bg-accent text-white"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          />
+        </div>
       </div>
     </div>
   );

@@ -92,7 +92,7 @@ export const careerStageEnum = pgEnum("career_stage_enum", [
   "no-preference",
 ]);
 
-const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
+export const mentorshipUserTypeEnum = pgEnum("mentorship_user_type_enum", [
   "mentor",
   "mentee",
 ]);
@@ -456,20 +456,27 @@ export const mentors = pgTable(
   ],
 );
 
-// MENTORSHIP REQUESTS
-export const mentorMatchingRequests = pgTable(
-  "mentor_matching_requests",
+// MENTOR RECOMMENDATIONS
+export const mentorRecommendations = pgTable(
+  "mentor_recommendations",
   {
-    requestId: integer("request_id").primaryKey().generatedAlwaysAsIdentity(),
+    recommendationId: integer("recommendation_id")
+      .primaryKey()
+      .generatedAlwaysAsIdentity(),
     userId: text("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    requestPreferences: text("request_preferences"),
+    recommendedMentorIds: jsonb("recommended_mentor_ids")
+      .$type<string[]>()
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
   },
-  (table) => [index("ix_mentor_matching_requests_user_id").on(table.userId)],
+  (table) => [
+    uniqueIndex("ux_mentor_recommendations_user_id").on(table.userId),
+  ],
 );
 
 // MENTORSHIP MATCHES
@@ -483,6 +490,7 @@ export const mentorshipMatches = pgTable(
     matchedAt: timestamp("matched_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    message: text("message"), // Optional personalized message from mentee to mentor
   },
   (table) => [
     uniqueIndex("ux_mentorship_matches_pair").on(

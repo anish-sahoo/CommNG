@@ -1,7 +1,13 @@
-import { eq } from "drizzle-orm";
-import { mentors } from "../../data/db/schema.js";
+import { and, eq, inArray } from "drizzle-orm";
+import {
+  mentees,
+  mentors,
+  mentorshipMatches,
+  users,
+} from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import { ConflictError, NotFoundError } from "../../types/errors.js";
+import type { GetMenteeOutput } from "../../types/mentee-types.js";
 import type {
   CreateMentorOutput,
   GetMentorOutput,
@@ -113,6 +119,7 @@ export class MentorRepository {
       .select({
         mentorId: mentors.mentorId,
         userId: mentors.userId,
+        // Mentor profile fields
         mentorshipPreferences: mentors.mentorshipPreferences,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
@@ -127,8 +134,19 @@ export class MentorRepository {
         hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
         createdAt: mentors.createdAt,
         updatedAt: mentors.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentors)
+      .innerJoin(users, eq(users.id, mentors.userId))
       .where(eq(mentors.mentorId, mentorId))
       .limit(1);
 
@@ -149,6 +167,7 @@ export class MentorRepository {
       .select({
         mentorId: mentors.mentorId,
         userId: mentors.userId,
+        // Mentor profile fields
         mentorshipPreferences: mentors.mentorshipPreferences,
         yearsOfService: mentors.yearsOfService,
         eligibilityData: mentors.eligibilityData,
@@ -163,8 +182,19 @@ export class MentorRepository {
         hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
         createdAt: mentors.createdAt,
         updatedAt: mentors.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentors)
+      .innerJoin(users, eq(users.id, mentors.userId))
       .where(eq(mentors.userId, userId))
       .limit(1);
 
@@ -173,5 +203,91 @@ export class MentorRepository {
     }
 
     return mentor;
+  }
+
+  /**
+   * Get mentors by a list of user IDs
+   * @param userIds Array of user IDs
+   * @returns Array of mentor profiles
+   */
+  async getMentorsByUserIds(userIds: string[]): Promise<GetMentorOutput[]> {
+    if (userIds.length === 0) return [];
+
+    return await db
+      .select({
+        mentorId: mentors.mentorId,
+        userId: mentors.userId,
+        // Mentor profile fields
+        mentorshipPreferences: mentors.mentorshipPreferences,
+        yearsOfService: mentors.yearsOfService,
+        eligibilityData: mentors.eligibilityData,
+        status: mentors.status,
+        resumeFileId: mentors.resumeFileId,
+        strengths: mentors.strengths,
+        personalInterests: mentors.personalInterests,
+        whyInterestedResponses: mentors.whyInterestedResponses,
+        careerAdvice: mentors.careerAdvice,
+        preferredMenteeCareerStages: mentors.preferredMenteeCareerStages,
+        preferredMeetingFormat: mentors.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
+        createdAt: mentors.createdAt,
+        updatedAt: mentors.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
+      })
+      .from(mentors)
+      .innerJoin(users, eq(users.id, mentors.userId))
+      .where(inArray(mentors.userId, userIds));
+  }
+
+  /**
+   * Get mentor profile with their active (matched) mentees
+   * @param userId Mentor user ID
+   * @returns Object with mentor profile and array of active mentees
+   */
+  async getMentorWithActiveMentees(userId: string): Promise<{
+    mentor: GetMentorOutput | null;
+    activeMentees: GetMenteeOutput[];
+  }> {
+    // Get mentor profile
+    const mentor = await this.getMentorByUserId(userId);
+
+    // Get active mentees via join
+    const activeMentees = await db
+      .select({
+        menteeId: mentees.menteeId,
+        userId: mentees.userId,
+        learningGoals: mentees.learningGoals,
+        experienceLevel: mentees.experienceLevel,
+        preferredMentorType: mentees.preferredMentorType,
+        status: mentees.status,
+        resumeFileId: mentees.resumeFileId,
+        personalInterests: mentees.personalInterests,
+        roleModelInspiration: mentees.roleModelInspiration,
+        hopeToGainResponses: mentees.hopeToGainResponses,
+        mentorQualities: mentees.mentorQualities,
+        preferredMeetingFormat: mentees.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
+        createdAt: mentees.createdAt,
+        updatedAt: mentees.updatedAt,
+      })
+      .from(mentorshipMatches)
+      .innerJoin(mentees, eq(mentees.userId, mentorshipMatches.requestorUserId))
+      .where(
+        and(
+          eq(mentorshipMatches.mentorUserId, userId),
+          eq(mentorshipMatches.status, "accepted"),
+        ),
+      );
+
+    return { mentor, activeMentees };
   }
 }

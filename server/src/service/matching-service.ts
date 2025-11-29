@@ -1,113 +1,138 @@
-import { eq, sql } from "drizzle-orm";
-import { mentees, mentorMatchingRequests, mentors } from "../data/db/schema.js";
+import {
+  RANDOM_ALGORITHM,
+  recommendationQuery,
+} from "../data/db/recommendation-queries.js";
 import { db } from "../data/db/sql.js";
+import { MentorshipEmbeddingRepository } from "../data/repository/mentorship-embedding-repo.js";
+import type { CreateMentorshipEmbeddingInput } from "../types/mentorship-embedding-types.js";
+import type { SuggestedMentor } from "../types/mentorship-types.js";
+import { buildText } from "../utils/embedding.js";
 import log from "../utils/logger.js";
+import { embeddingService } from "./embedding-service.js";
 
 /**
  * Service to handle mentorship matching logic
  */
 export class MatchingService {
   // Maximum number of match requests to fan out per trigger
-  private static readonly MAX_MATCH_REQUESTS = 10;
-  /**
-   * Trigger matching process when a mentor is created
-   */
-  async triggerMatchingForNewMentor(mentorUserId: string): Promise<void> {
-    log.info({ mentorUserId }, "Triggering matching process for new mentor");
+  static readonly MAX_MATCH_REQUESTS = 10;
+  private readonly embeddingRepo = new MentorshipEmbeddingRepository();
 
-    // Find a random subset of active mentees up to MAX_MATCH_REQUESTS
-    const selectedMentees = await db
-      .select()
-      .from(mentees)
-      .where(eq(mentees.status, "active"))
-      .orderBy(sql`RANDOM()`)
-      .limit(MatchingService.MAX_MATCH_REQUESTS);
-
-    log.info(
-      { count: selectedMentees.length },
-      "Found active mentees for matching",
-    );
-
-    // For each selected mentee, create a matching request
-    const failedMenteeUserIds: string[] = [];
-    for (const mentee of selectedMentees) {
-      try {
-        await this.createMatchingRequest(mentee.userId, mentorUserId);
-      } catch (_error) {
-        failedMenteeUserIds.push(mentee.userId);
-      }
-    }
-
-    if (failedMenteeUserIds.length > 0) {
-      log.error(
-        { failedMenteeUserIds, mentorUserId },
-        "Failed to create matching requests",
-      );
-    }
-  }
-
-  /**
-   * Trigger matching process when a mentee is created
-   */
-  async triggerMatchingForNewMentee(menteeUserId: string): Promise<void> {
-    log.info({ menteeUserId }, "Triggering matching process for new mentee");
-
-    // Find a random subset of available mentors up to MAX_MATCH_REQUESTS
-    const selectedMentors = await db
-      .select()
-      .from(mentors)
-      .where(eq(mentors.status, "approved"))
-      .orderBy(sql`RANDOM()`)
-      .limit(MatchingService.MAX_MATCH_REQUESTS);
-
-    log.info(
-      { count: selectedMentors.length },
-      "Found available mentors for matching",
-    );
-
-    // For each selected mentor, create a matching request
-    const failedMentorUserIds: string[] = [];
-    for (const mentor of selectedMentors) {
-      try {
-        await this.createMatchingRequest(menteeUserId, mentor.userId);
-      } catch (_error) {
-        failedMentorUserIds.push(mentor.userId);
-      }
-    }
-
-    if (failedMentorUserIds.length > 0) {
-      log.error(
-        { menteeUserId, failedMentorUserIds },
-        "Failed to create matching requests",
-      );
-    }
-  }
-
-  /**
-   * Create a matching request between a mentee and mentor
-   */
-  private async createMatchingRequest(
-    menteeUserId: string,
-    mentorUserId: string,
+  private async embedAndSave(
+    userId: string,
+    userType: "mentor" | "mentee",
+    texts: string[],
   ): Promise<void> {
-    // Check if matching request already exists
-    const existingRequest = await db
-      .select()
-      .from(mentorMatchingRequests)
-      .where(eq(mentorMatchingRequests.userId, menteeUserId))
-      .limit(1);
+    const embeddings = await embeddingService.embedBatch(texts);
+    const data: CreateMentorshipEmbeddingInput = {
+      userId,
+      userType,
+      whyInterestedEmbedding: embeddings[0],
+      ...(userType === "mentor"
+        ? { profileEmbedding: embeddings[1] }
+        : {
+            hopeToGainEmbedding: embeddings[1],
+            profileEmbedding: embeddings[2],
+          }),
+    };
+    await this.embeddingRepo.createOrUpdateEmbedding(data);
+  }
 
-    if (existingRequest.length > 0) {
-      log.debug({ menteeUserId }, "Matching request already exists for mentee");
-      return;
+  async createOrUpdateMentorEmbeddings(input: {
+    userId: string;
+    whyInterestedResponses?: string[] | string | undefined;
+    strengths?: string[] | undefined;
+    personalInterests?: string | string[] | undefined;
+    careerAdvice?: string | undefined;
+  }): Promise<void> {
+    try {
+      const { userId } = input;
+      const whyInterestedText = buildText(input.whyInterestedResponses, "");
+      const strengthsText = buildText(input.strengths);
+      const personalInterestsText = buildText(input.personalInterests);
+      const profileText =
+        [strengthsText, personalInterestsText, input.careerAdvice]
+          .filter(Boolean)
+          .join(" ") || "mentor-profile";
+      const texts = [whyInterestedText, profileText];
+      await this.embedAndSave(userId, "mentor", texts);
+      log.info(
+        { userId },
+        "Created or updated mentor embeddings (match service)",
+      );
+    } catch (error) {
+      log.error(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Failed to create/update mentor embeddings (match service)",
+      );
+      throw error;
     }
+  }
 
-    // Create new matching request
-    await db.insert(mentorMatchingRequests).values({
-      userId: menteeUserId,
-      requestPreferences: `Auto-generated request for mentor: ${mentorUserId}`,
-    });
+  async createOrUpdateMenteeEmbeddings(input: {
+    userId: string;
+    learningGoals?: string | undefined;
+    personalInterests?: string | undefined;
+    roleModelInspiration?: string | undefined;
+    hopeToGainResponses?: string[] | undefined;
+    mentorQualities?: string[] | undefined;
+  }): Promise<void> {
+    try {
+      const { userId } = input;
+      const whyInterestedText =
+        [input.learningGoals, input.roleModelInspiration]
+          .filter(Boolean)
+          .join(" ") || "mentee-why-interested";
+      const hopeText = buildText(input.hopeToGainResponses, "");
+      const profileParts = [
+        input.personalInterests,
+        input.roleModelInspiration,
+        buildText(input.mentorQualities),
+      ].filter(Boolean);
+      const profileText = profileParts.join(" ") || "mentee-profile";
+      const texts = [whyInterestedText, hopeText, profileText];
+      await this.embedAndSave(userId, "mentee", texts);
+      log.info(
+        { userId },
+        "Created or updated mentee embeddings (match service)",
+      );
+    } catch (error) {
+      log.error(
+        { error: error instanceof Error ? error.message : String(error) },
+        "Failed to create/update mentee embeddings (match service)",
+      );
+      throw error;
+    }
+  }
 
-    log.info({ menteeUserId, mentorUserId }, "Created matching request");
+  async generateMentorRecommendations(
+    userId: string,
+  ): Promise<SuggestedMentor[]> {
+    log.info({ userId }, "generate recommendation");
+    const result = await db.execute(
+      recommendationQuery(RANDOM_ALGORITHM, MatchingService.MAX_MATCH_REQUESTS),
+    );
+    return result.rows.map((row) => ({
+      mentor: {
+        mentorId: row.mentor_id,
+        userId: row.user_id,
+        mentorshipPreferences: row.mentorship_preferences,
+        yearsOfService: row.years_of_service,
+        eligibilityData: row.eligibility_data,
+        status: row.status,
+        resumeFileId: row.resume_file_id,
+        strengths: row.strengths,
+        personalInterests: row.personal_interests,
+        whyInterestedResponses: row.why_interested_responses,
+        careerAdvice: row.career_advice,
+        preferredMenteeCareerStages: row.preferred_mentee_career_stages,
+        preferredMeetingFormat: row.preferred_meeting_format,
+        hoursPerMonthCommitment: row.hours_per_month_commitment,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      },
+      status: "suggested",
+      hasRequested: row.has_requested,
+    })) as SuggestedMentor[];
   }
 }

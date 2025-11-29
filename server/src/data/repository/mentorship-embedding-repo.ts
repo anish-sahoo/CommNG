@@ -67,7 +67,7 @@ export class MentorshipEmbeddingRepository {
         throw new ConflictError("Failed to update embedding");
       }
 
-      return updated;
+      return updated as unknown as CreateMentorshipEmbeddingOutput;
     }
 
     // Create new embedding
@@ -95,7 +95,7 @@ export class MentorshipEmbeddingRepository {
       throw new ConflictError("Failed to create embedding");
     }
 
-    return created;
+    return created as unknown as CreateMentorshipEmbeddingOutput;
   }
 
   /**
@@ -126,7 +126,9 @@ export class MentorshipEmbeddingRepository {
       )
       .limit(1);
 
-    return embedding || null;
+    return embedding
+      ? (embedding as unknown as GetMentorshipEmbeddingOutput)
+      : null;
   }
 
   /**
@@ -178,7 +180,7 @@ export class MentorshipEmbeddingRepository {
       );
     }
 
-    return updated;
+    return updated as unknown as UpdateMentorshipEmbeddingOutput;
   }
 
   /**
@@ -212,7 +214,7 @@ export class MentorshipEmbeddingRepository {
   async getEmbeddingsByUserId(
     userId: string,
   ): Promise<GetMentorshipEmbeddingOutput[]> {
-    return await db
+    return (await db
       .select({
         embeddingId: mentorshipEmbeddings.embeddingId,
         userId: mentorshipEmbeddings.userId,
@@ -224,6 +226,8 @@ export class MentorshipEmbeddingRepository {
         updatedAt: mentorshipEmbeddings.updatedAt,
       })
       .from(mentorshipEmbeddings)
-      .where(eq(mentorshipEmbeddings.userId, userId));
+      .where(
+        eq(mentorshipEmbeddings.userId, userId),
+      )) as unknown as GetMentorshipEmbeddingOutput[];
   }
 }
