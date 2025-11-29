@@ -30,7 +30,7 @@ const adminFeatures: AdminFeature[] = [
     id: "invites",
     title: "Invite Codes",
     description:
-      "Create and manage invite codes to grant permissions to new users. Configure role presets and customize access levels.",
+      "Create and manage invite codes to grant permissions to new users. View all active codes and revoke access when needed.",
     href: "/admin/invites",
     icon: UserPlus,
     requiredRole: "global:create-invite",
