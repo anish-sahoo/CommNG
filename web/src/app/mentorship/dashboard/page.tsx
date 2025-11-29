@@ -1,20 +1,17 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useTRPC } from "@/lib/trpc";
 
 // MentorshipDashboard shows a basic view of the user's mentorship state using real backend data.
 export default function MentorshipDashboard() {
   const trpc = useTRPC();
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useQuery(trpc.mentorship.getMentorshipData.queryOptions());
+  const { data, isLoading, isError, error } = useQuery(
+    trpc.mentorship.getMentorshipData.queryOptions(),
+  );
 
   const hasMentorProfile = Boolean(data?.mentor?.profile);
   const hasMenteeProfile = Boolean(data?.mentee?.profile);
