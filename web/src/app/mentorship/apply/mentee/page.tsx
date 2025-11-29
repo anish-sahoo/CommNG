@@ -324,10 +324,10 @@ export default function MentorshipApplyMenteePage() {
         return Number.isNaN(parsed) ? undefined : parsed;
       })();
 
-        await createMentee.mutateAsync({
-          userId,
-          resumeFileId:
-            resume?.status === "uploaded" ? resume.fileId : undefined,
+      await createMentee.mutateAsync({
+        userId,
+        resumeFileId:
+          resume?.status === "uploaded" ? resume.fileId : undefined,
         personalInterests:
           selectedInterests.length > 0
             ? selectedInterests.join(", ")
