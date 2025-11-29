@@ -234,7 +234,12 @@ describe("inviteCodeRouter", () => {
       mockAuthRepo.getAllImpliedRolesForUser.mockResolvedValue(
         new Set([GLOBAL_CREATE_INVITE_KEY]),
       );
-      mockInviteCodeRepo.listInviteCodes.mockResolvedValue(mockCodes);
+      mockInviteCodeRepo.listInviteCodes.mockResolvedValue({
+        data: mockCodes,
+        totalCount: 2,
+        hasMore: false,
+        hasPrevious: false,
+      });
 
       const caller = inviteCodeRouter.createCaller(ctx);
 
@@ -244,7 +249,7 @@ describe("inviteCodeRouter", () => {
         offset: 0,
       });
 
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
       expect(result.data[0]?.status).toBe("active");
     });
 

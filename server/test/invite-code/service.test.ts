@@ -327,7 +327,7 @@ describe("InviteCodeService", () => {
 
       const result = await service.listInviteCodes("admin-id", "active", 50, 0);
 
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
       expect(mockInviteCodeRepo.listInviteCodes).toHaveBeenCalledWith(
         "active",
         50,
