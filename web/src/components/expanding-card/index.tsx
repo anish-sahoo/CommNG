@@ -11,11 +11,11 @@ import {
 export type CollapsibleCardProps = {
   name: string;
   rank: string;
-  job: string;
   location: string;
   personalInterests?: string;
   information: string;
-  contact: string;
+  email: string;
+  phone: string;
 };
 
 const UserIcon = icons.user;
@@ -30,11 +30,11 @@ const Avatar = () => (
 export default function CollapsibleCard({
   name,
   rank,
-  job,
   location,
   personalInterests,
   information,
-  contact,
+  email,
+  phone,
 }: CollapsibleCardProps) {
   const [Expandable, setExpandable] = useState(false);
 
@@ -63,7 +63,7 @@ export default function CollapsibleCard({
                     Expandable ? "text-white/90" : "text-muted-foreground"
                   }`}
                 >
-                  {rank}, {job}
+                  {rank}
                 </div>
               </div>
             </div>
@@ -89,7 +89,10 @@ export default function CollapsibleCard({
               </div>
             )}
             <div className="pt-4 border-t">
-              <span className="font-semibold">Contact: </span> {contact}
+              <span className="font-semibold">Email: </span> {email}
+            </div>
+            <div className="pt-4 border-t">
+              <span className="font-semibold">Phone: </span> {phone}
             </div>
           </div>
         </CollapsibleContent>
