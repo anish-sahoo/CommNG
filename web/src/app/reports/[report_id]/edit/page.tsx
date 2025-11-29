@@ -34,7 +34,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { hasRole } from "@/lib/rbac";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import type { RoleKey } from "@/types/roles";
 
 const CATEGORY_OPTIONS: { label: string; value: ReportCategory }[] = [
@@ -104,6 +104,7 @@ type EditReportPageProps = {
 
 export default function EditReportPage({ params }: EditReportPageProps) {
   const trpcClient = useTRPCClient();
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -378,12 +379,9 @@ export default function EditReportPage({ params }: EditReportPageProps) {
 
   /* ============ GETTING INFO FROM REPORTS + SETTING EXISTING VALUES ============ */
   // Fetch all reports
-  const { data: reports } = useQuery({
-    queryKey: ["reports", userId],
-    queryFn: async () => {
-      return await trpcClient.reports.getReports.query({ name: userId });
-    },
-  });
+  const { data: reports } = useQuery(
+    trpc.reports.getReports.queryOptions({ name: userId ?? "" }),
+  );
 
   // Find report ID - use a ref to track if we've initialized
   const initRef = useRef(false);
@@ -503,6 +501,11 @@ export default function EditReportPage({ params }: EditReportPageProps) {
       return;
     }
 
+    if (!category) {
+      setFormError("Category is required.");
+      return;
+    }
+
     try {
       const allFileIds = [
         ...existingAttachments.map((att) => att.fileId),
@@ -524,11 +527,11 @@ export default function EditReportPage({ params }: EditReportPageProps) {
       });
 
       // Update db to reflect a user has been assigned
-      if (assignedTo !== null) {
+      if (assignedTo !== undefined) {
         await trpcClient.reports.assignReport.mutate({
           reportId: reportId,
           assigneeId: assignedTo,
-          assignedBy: userId,
+          assignedBy: userId ?? "",
         });
       } else {
         // Update db to reflect unassigned report
@@ -759,7 +762,10 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => {
-                              if (attachment.status === "existing") {
+                              if (
+                                attachment.status === "existing" &&
+                                attachment.fileId
+                              ) {
                                 handleRemoveExistingAttachment(
                                   attachment.fileId,
                                 );
@@ -801,10 +807,7 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                       }
                     }}
                   >
-                    <SelectTrigger
-                      id={assignedToId}
-                      className="w-full pr-10 min-w-0"
-                    >
+                    <SelectTrigger id={assignedToId} className="w-full min-w-0">
                       <div className="flex-1 text-left min-w-0 truncate">
                         {assignedUser
                           ? `${assignedUser.name} (${assignedUser.email})`
@@ -845,11 +848,16 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                       )}
                     </SelectContent>
                   </Select>
+
+                  {/* Clear button with absolute positioning - outside Select */}
                   {assignedUser && (
                     <button
                       type="button"
-                      onClick={() => setAssignedTo(null)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setAssignedTo(undefined);
+                      }}
+                      className="absolute right-10 top-1/2 -translate-y-1/2 text-secondary/70 hover:text-secondary transition-colors z-10"
                       aria-label="Remove assigned user"
                     >
                       <RemoveIcon className="h-4 w-4" />
@@ -858,7 +866,6 @@ export default function EditReportPage({ params }: EditReportPageProps) {
                 </div>
               </div>
             )}
-
             {formError ? (
               <p className="text-sm text-error">{formError}</p>
             ) : null}
@@ -881,21 +888,25 @@ export default function EditReportPage({ params }: EditReportPageProps) {
             suppressHydrationWarning
           >
             Last edited:{" "}
-            {updatedAt &&
-              new Date(updatedAt).toLocaleString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}{" "}
-            {updatedAt &&
-              new Date(updatedAt)
-                .toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })
-                .replace(":", "")}{" "}
-            EST
+            {updatedAt && (
+              <>
+                {new Date(updatedAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  timeZone: "America/New_York",
+                })}{" "}
+                {new Date(updatedAt)
+                  .toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                    timeZone: "America/New_York",
+                  })
+                  .replace(":", "")}{" "}
+                ET
+              </>
+            )}
           </p>
         </div>
       </section>

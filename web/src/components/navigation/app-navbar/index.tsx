@@ -73,8 +73,10 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
   const HelpIcon = icons.help;
   const BellIcon = icons.bell;
   const MegaphoneIcon = icons.announce;
+  const AdminIcon = icons.settings;
   const isProfileActive = pathname.startsWith("/profile");
   const isHelpActive = pathname.startsWith("/help-page");
+  const isAdminActive = pathname.startsWith("/admin");
   const isBroadcastsActive = pathname.startsWith("/communications/broadcasts");
   const isCreateBroadcastActive = pathname.startsWith(
     "/communications/broadcasts/new",
@@ -172,6 +174,26 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
             Help
           </span>
         </Link>
+
+        <Protected requiredRole="global:create-invite">
+          <Link
+            href="/admin"
+            aria-label="Admin"
+            aria-current={isAdminActive ? "page" : undefined}
+            className={cn(
+              circleButtonClasses,
+              isAdminActive
+                ? "border-accent bg-accent text-primary"
+                : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+            )}
+            onClick={onNavigate}
+          >
+            <AdminIcon className="h-6 w-6" />
+            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+              Admin
+            </span>
+          </Link>
+        </Protected>
 
         <Link
           href="/profile"

@@ -1,50 +1,143 @@
 "use client";
 
-import { mentorshipResources } from "@/app/mentorship/dashboard/resources";
-import YourMenteeSection from "@/app/mentorship/dashboard/your-mentee";
-import YourMentorSection from "@/app/mentorship/dashboard/your-mentor";
-import { TitleShell } from "@/components/layouts/title-shell";
-import LinkedCard from "@/components/linked-card";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { useTRPC } from "@/lib/trpc";
 
+// MentorshipDashboard shows a basic view of the user's mentorship state using real backend data.
 export default function MentorshipDashboard() {
+  const trpc = useTRPC();
+  const { data, isLoading, isError, error } = useQuery(
+    trpc.mentorship.getMentorshipData.queryOptions(),
+  );
+
+  const hasMentorProfile = Boolean(data?.mentor?.profile);
+  const hasMenteeProfile = Boolean(data?.mentee?.profile);
+
+  const acceptedMatchesCount = useMemo(() => {
+    const menteeSide = data?.mentee?.activeMentors.length ?? 0;
+    const mentorSide = data?.mentor?.activeMentees.length ?? 0;
+    return menteeSide + mentorSide;
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-6 py-16 text-center">
+        <h1 className="text-3xl font-semibold text-primary sm:text-4xl">
+          Your Mentorship
+        </h1>
+        <p className="text-secondary">Loading your mentorship information…</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-16 text-center">
+        <h1 className="text-3xl font-semibold text-primary sm:text-4xl">
+          Your Mentorship
+        </h1>
+        <div className="rounded-3xl border-3 border-dashed border-red-500 bg-card px-8 py-12 shadow-sm sm:px-12">
+          <p className="text-lg text-secondary pb-4 sm:text-xl">
+            We couldn&apos;t load your mentorship information.
+          </p>
+          <p className="text-sm text-red-600 mb-4">
+            {error?.message ?? "Please try again later."}
+          </p>
+          <Link href="/mentorship">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="inline-flex items-center gap-1"
+            >
+              Back to Mentorship
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <TitleShell
-      title={
-        <div className="flex flex-col gap-2">
-          <h1 className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Mentorship Dashboard
-          </h1>
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-16 text-center">
+      <h1 className="text-3xl font-semibold text-primary sm:text-4xl">
+        Your Mentorship
+      </h1>
+      <div className="rounded-3xl border-3 border-primary bg-card px-8 py-12 shadow-sm sm:px-12 text-left space-y-4">
+        <p className="text-lg text-secondary sm:text-xl">
+          This page shows a basic summary of your mentorship status using data
+          from your mentor/mentee applications.
+        </p>
+
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold text-primary">
+            Your Profiles
+          </h2>
+          <ul className="list-disc list-inside text-sm text-secondary space-y-1">
+            <li>
+              Mentor profile:{" "}
+              <span className="font-semibold">
+                {hasMentorProfile ? "Created" : "Not created"}
+              </span>
+            </li>
+            <li>
+              Mentee profile:{" "}
+              <span className="font-semibold">
+                {hasMenteeProfile ? "Created" : "Not created"}
+              </span>
+            </li>
+          </ul>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {!hasMentorProfile && (
+              <Link href="/mentorship/apply/mentor">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center gap-1"
+                >
+                  Apply to be a Mentor
+                </Button>
+              </Link>
+            )}
+            {!hasMenteeProfile && (
+              <Link href="/mentorship/apply/mentee">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="inline-flex items-center gap-1"
+                >
+                  Apply to be a Mentee
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
-      }
-      scrollableContent={false}
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="flex flex-col">
-          <div className="mb-10">
-            <h1 className="text-2xl text-header font-semibold mb-5">
-              Your Mentor
-            </h1>
-            <YourMentorSection />
-          </div>
-          <h1 className="text-2xl text-header font-semibold mb-5">
-            Your Mentee
-          </h1>
-          <YourMenteeSection />
+
+        <div className="space-y-2">
+          <h2 className="text-base font-semibold text-primary">Matches</h2>
+          <p className="text-sm text-secondary">
+            Accepted matches:{" "}
+            <span className="font-semibold">{acceptedMatchesCount}</span>
+          </p>
         </div>
-        <div className="flex flex-col">
-          <div className="text-2xl text-header font-semibold mb-5">
-            Resources
-          </div>
-          <div className="flex flex-col gap-3">
-            {mentorshipResources.map((resource) => (
-              <LinkedCard href={resource.link} key={resource.link}>
-                <div>
-                  <h1>{resource.title}</h1>
-                  <h2 className="font-medium italic">{resource.author}</h2>
-                </div>
-              </LinkedCard>
-            ))}
-          </div>
+
+        <div className="pt-4">
+          <Link href="/mentorship">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="inline-flex items-center gap-1"
+            >
+              Back to Mentorship
+            </Button>
+          </Link>
         </div>
       </div>
     </TitleShell>
