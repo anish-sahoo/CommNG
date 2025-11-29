@@ -23,6 +23,12 @@ import type { MatchingService } from "./matching-service.js";
 
 /**
  * Service to handle mentorship data aggregation
+ *
+ * NOTE: Mentor and mentee profiles returned from this service are backed by
+ * `GetMentorOutput` and `GetMenteeOutput`, which now include enriched user
+ * profile fields (name, rank / position, image file id, contact, location).
+ * Callers can rely on those fields being present when a related `users`
+ * record exists, without making additional user lookups.
  */
 export class MentorshipService {
   constructor(
