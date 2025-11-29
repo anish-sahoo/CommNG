@@ -80,13 +80,13 @@ export default function AdminPage() {
         >
           <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
             {/* Header Section */}
-            <div className="flex items-start gap-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <ShieldCheck className="mt-0.5 h-6 w-6 flex-shrink-0 text-blue-600" />
+            <div className="flex items-start gap-4 rounded-lg border border-primary bg-white p-4">
+              <ShieldCheck className="mt-0.5 h-6 w-6 flex-shrink-0 text-primary" />
               <div className="flex-1">
-                <h2 className="text-lg font-semibold text-blue-900">
+                <h2 className="text-lg font-semibold text-primary">
                   Administration Tools
                 </h2>
-                <p className="mt-1 text-sm text-blue-800">
+                <p className="mt-1 text-sm text-primary">
                   Manage system configuration, user access, and administrative
                   functions. These tools require elevated permissions.
                 </p>

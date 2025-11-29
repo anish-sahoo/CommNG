@@ -108,14 +108,14 @@ export default function AdminInvitesPage() {
         <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
           {/* Info Section */}
           {!successResult && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <div className="rounded-lg border border-primary bg-white p-4">
               <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
+                <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-blue-900">
                     About Invite Codes
                   </h3>
-                  <p className="mt-1 text-sm text-blue-800">
+                  <p className="mt-1 text-sm text-primary">
                     Invite codes allow you to grant specific permissions to new
                     users. Select a preset to quickly configure common
                     permission sets, then customize as needed.
