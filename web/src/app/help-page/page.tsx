@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { CueDisplay } from "./components/cue-display";
 import { useCommunicationsSections } from "./sections/communications";
 import { useMentorshipSections } from "./sections/mentorship";
 import { useReportSections } from "./sections/reports";
@@ -188,9 +187,11 @@ export default function HelpPage() {
                 <button
                   type="button"
                   aria-label={
-                    anySectionOpen ? "Collapse all sections" : "Expand all sections"
+                    anySectionOpen
+                      ? "Collapse all sections"
+                      : "Expand all sections"
                   }
-                  className="hidden rounded-full border border-border bg-background px-3 py-2 text-sm text-secondary shadow-sm hover:border-primary sm:inline-flex"
+                  className="hidden rounded-full border border-border bg-background px-3 py-2 text-sm text-secondary shadow-sm hover:bg-primary hover:text-background sm:inline-flex"
                   onClick={toggleAllSections}
                 >
                   {anySectionOpen ? "Collapse all" : "Expand all"}
@@ -203,7 +204,9 @@ export default function HelpPage() {
         <div className="sm:hidden px-1 pb-2">
           <button
             type="button"
-            aria-label={anySectionOpen ? "Collapse all sections" : "Expand all sections"}
+            aria-label={
+              anySectionOpen ? "Collapse all sections" : "Expand all sections"
+            }
             className="w-full rounded-full border border-border bg-background px-3 py-2 text-sm text-secondary shadow-sm hover:border-primary"
             onClick={toggleAllSections}
           >

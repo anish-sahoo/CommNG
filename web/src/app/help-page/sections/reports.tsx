@@ -39,7 +39,9 @@ export function useReportSections() {
                 <span className="font-semibold">Resolved</span>; admins also see
                 the assignee column.
               </li>
-              <li>Click any report row to open and edit your submission directly.</li>
+              <li>
+                Click any report row to open and edit your submission directly.
+              </li>
             </ul>
             <div className="flex flex-wrap gap-2 pt-2">
               <CueDisplay

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { icons } from "@/components/icons";
 import { CueDisplay } from "../components/cue-display";
 
@@ -10,7 +9,6 @@ const AnnounceIcon = icons.announce;
 const BellIcon = icons.bell;
 const CommunicationsIcon = icons.communications;
 const MenuIcon = icons.menu;
-const SearchIcon = icons.search;
 
 type Section = {
   id: string;
@@ -396,93 +394,90 @@ export function useCommunicationsSections() {
     </div>
   );
 
-  const contentSections: Section[] = useMemo(
-    () => [
-      {
-        id: "onboarding",
-        title: "Onboarding for New Users",
-        content: <OnboardingContent />,
-      },
-      {
-        id: "broadcasts",
-        title: "Broadcasts",
-        content: (
-          <div className="space-y-6 text-sm text-secondary">
-            <div className="space-y-2">
-              <h3 className="text-base font-semibold text-secondary">
-                View and acknowledge broadcasts
-              </h3>
-              <ol className="list-decimal space-y-2 pl-5">
-                <li>
-                  When you sign in, any active broadcast opens automatically in
-                  a modal.
-                </li>
-                <li>
-                  Click <span className="font-semibold">Acknowledge</span> to
-                  dismiss it after reading. The alert stays available in the
-                  bell while it remains active.
-                </li>
-                <li>
-                  Watch the bell in Communications; a red dot means an active
-                  broadcast is available to review.
-                </li>
-                <li>
-                  Open <span className="font-semibold">Broadcasts</span> from
-                  the bell to re-read any still-active alerts.
-                </li>
-              </ol>
-              <CueDisplay
-                leadingIcon={BellIcon}
-                buttonIcon={BellIcon}
-                buttonLabel="Broadcasts"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-base font-semibold text-secondary">
-                Send a broadcast (managers)
-              </h3>
-              <ol className="list-decimal space-y-2 pl-5">
-                <li>
-                  From Communications, open{" "}
-                  <span className="font-semibold">Broadcasts</span>, then select
-                  the <span className="font-semibold">megaphone</span> action to
-                  start a new alert.
-                </li>
-                <li>
-                  Choose the audience, add a clear subject, write the message
-                  body, and set an expiration.
-                </li>
-                <li>
-                  Send the broadcast. It publishes immediately and appears in
-                  the active list for follow-up or deletion.
-                </li>
-              </ol>
-              <CueDisplay
-                leadingIcon={AnnounceIcon}
-                buttonIcon={AnnounceIcon}
-                buttonLabel="New Broadcast"
-              />
-              <p className="text-xs italic text-secondary">
-                Only users with broadcast permissions see the creation option.
-              </p>
-            </div>
+  const contentSections: Section[] = [
+    {
+      id: "onboarding",
+      title: "Onboarding for New Users",
+      content: <OnboardingContent />,
+    },
+    {
+      id: "broadcasts",
+      title: "Broadcasts",
+      content: (
+        <div className="space-y-6 text-sm text-secondary">
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold text-secondary">
+              View and acknowledge broadcasts
+            </h3>
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>
+                When you sign in, any active broadcast opens automatically in a
+                modal.
+              </li>
+              <li>
+                Click <span className="font-semibold">Acknowledge</span> to
+                dismiss it after reading. The alert stays available in the bell
+                while it remains active.
+              </li>
+              <li>
+                Watch the bell in Communications; a red dot means an active
+                broadcast is available to review.
+              </li>
+              <li>
+                Open <span className="font-semibold">Broadcasts</span> from the
+                bell to re-read any still-active alerts.
+              </li>
+            </ol>
+            <CueDisplay
+              leadingIcon={BellIcon}
+              buttonIcon={BellIcon}
+              buttonLabel="Broadcasts"
+            />
           </div>
-        ),
-      },
-      {
-        id: "roles",
-        title: "Roles and Permissions",
-        content: <RolesContent />,
-      },
-      {
-        id: "tasks",
-        title: "Key Communications Tasks",
-        content: <TasksContent />,
-      },
-    ],
-    [],
-  );
+
+          <div className="space-y-2">
+            <h3 className="text-base font-semibold text-secondary">
+              Send a broadcast (managers)
+            </h3>
+            <ol className="list-decimal space-y-2 pl-5">
+              <li>
+                From Communications, open{" "}
+                <span className="font-semibold">Broadcasts</span>, then select
+                the <span className="font-semibold">megaphone</span> action to
+                start a new alert.
+              </li>
+              <li>
+                Choose the audience, add a clear subject, write the message
+                body, and set an expiration.
+              </li>
+              <li>
+                Send the broadcast. It publishes immediately and appears in the
+                active list for follow-up or deletion.
+              </li>
+            </ol>
+            <CueDisplay
+              leadingIcon={AnnounceIcon}
+              buttonIcon={AnnounceIcon}
+              buttonLabel="New Broadcast"
+            />
+            <p className="text-xs italic text-secondary">
+              Only users with broadcast permissions see the creation option.
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "roles",
+      title: "Roles and Permissions",
+      content: <RolesContent />,
+    },
+    {
+      id: "tasks",
+      title: "Key Communications Tasks",
+      content: <TasksContent />,
+    },
+  ];
 
   return contentSections;
 }
