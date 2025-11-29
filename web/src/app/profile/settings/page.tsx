@@ -1,11 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -17,10 +26,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { authClient } from "@/lib/auth-client";
 import { useTRPCClient } from "@/lib/trpc";
 
-// ProfileSettingsPage allows users to update their password, and contact visibility
 export default function ProfileSettingsPage() {
   const router = useRouter();
   const trpc = useTRPCClient();
+
+  const BackIcon = icons.arrowLeft;
 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
@@ -45,6 +55,11 @@ export default function ProfileSettingsPage() {
     "private",
   );
 
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingLeaveAction, setPendingLeaveAction] = useState<
+    (() => void) | null
+  >(null);
+
   const currentPasswordFieldId = useId();
   const newPasswordFieldId = useId();
   const confirmPasswordFieldId = useId();
@@ -61,6 +76,28 @@ export default function ProfileSettingsPage() {
 
     return errors;
   };
+
+  const hasUnsavedPasswordChanges = useMemo(
+    () =>
+      currentPassword.length > 0 ||
+      newPassword.length > 0 ||
+      confirmPassword.length > 0,
+    [currentPassword, newPassword, confirmPassword],
+  );
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedPasswordChanges) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    if (hasUnsavedPasswordChanges) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedPasswordChanges]);
 
   const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,7 +161,7 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleSignOutInternal = async () => {
     setIsSigningOut(true);
     const res = await authClient.signOut();
 
@@ -172,11 +209,43 @@ export default function ProfileSettingsPage() {
     }
   };
 
+  const requestLeave = (action: () => void) => {
+    if (hasUnsavedPasswordChanges) {
+      setPendingLeaveAction(() => action);
+      setShowLeaveConfirm(true);
+      return;
+    }
+    action();
+  };
+
+  const handleBackClick = () => {
+    requestLeave(() => router.push("/profile"));
+  };
+
+  const handleSignOutClick = () => {
+    requestLeave(() => {
+      void handleSignOutInternal();
+    });
+  };
+
   return (
     <TitleShell
-      title="Profile Settings"
-      backHref="/profile"
-      backAriaLabel="Back to profile"
+      title={
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleBackClick}
+            aria-label="Back to profile"
+            className="text-accent hover:text-accent/80 transition"
+          >
+            <BackIcon className="h-6 w-6" />
+          </button>
+
+          <span className="flex items-center text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+            Profile settings
+          </span>
+        </div>
+      }
     >
       <div className="flex flex-col gap-8">
         <form onSubmit={handleChangePassword} className="flex flex-col gap-6">
@@ -372,14 +441,14 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
 
-        <div className="border-t border-border flex flex-col sm:flex-row sm:items-center gap-4 py-6 px-4">
-          <div className="sm:w-48 shrink-0" />
-          <div className="flex-1 max-w-xl">
+        <div className="border-t border-border py-6 px-4">
+          <div className="flex justify-center">
             <Button
               type="button"
+              variant="destructive"
               className="inline-flex items-center gap-2 px-6"
               disabled={isSigningOut}
-              onClick={handleSignOut}
+              onClick={handleSignOutClick}
               aria-label="Log out of your account"
             >
               {isSigningOut && <Spinner />}
@@ -388,6 +457,40 @@ export default function ProfileSettingsPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Unsaved password changes</DialogTitle>
+            <DialogDescription>
+              You have started updating your password but have not saved it yet.
+              Are you sure you would like to leave? Your changes will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowLeaveConfirm(false);
+                setPendingLeaveAction(null);
+              }}
+            >
+              Keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const action = pendingLeaveAction;
+                setShowLeaveConfirm(false);
+                setPendingLeaveAction(null);
+                action?.();
+              }}
+            >
+              Discard changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TitleShell>
   );
 }

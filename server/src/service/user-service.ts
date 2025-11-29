@@ -33,6 +33,10 @@ export class UserService {
     return this.usersRepo.getUserData(user_id);
   }
 
+  async searchUsers(name: string) {
+    return this.usersRepo.searchUsers(name);
+  }
+
   /**
    * Check if a user exists by email
    * @param email User email
@@ -151,5 +155,15 @@ export class UserService {
     }
 
     return updated;
+  }
+
+  /**
+   * Get all user data by IDs (cached)
+   * @param user_ids Array of user IDs
+   * @returns List of user data objects
+   */
+  // @Cache((user_ids: string[]) => `users:${user_ids.join(",")}:data`)
+  async getUsersByIds(user_ids: string[]) {
+    return this.usersRepo.getUsersByIds(user_ids);
   }
 }

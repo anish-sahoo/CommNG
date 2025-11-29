@@ -10,12 +10,14 @@ export type MentorshipMatch = {
   mentorUserId: string;
   status: MatchStatus;
   matchedAt: string | Date;
+  message?: string; // Optional personalized message from mentee to mentor
 };
 
 // For mentee's "Your Mentor" section
 export type SuggestedMentor = {
   mentor: GetMentorOutput;
-  hasRequested: boolean; // Whether the mentee has requested this mentor
+  status: "active" | "pending" | "suggested"; // active means matched
+  hasRequested?: boolean;
 };
 
 export type MatchedMentor = {
@@ -33,6 +35,13 @@ export type PendingMenteeRequest = {
   matchedAt: string | Date;
 };
 
+export type PendingMentorRequest = {
+  mentor: GetMentorOutput;
+  matchId: number;
+  status: MatchStatus;
+  matchedAt: string | Date;
+};
+
 export type MatchedMentee = {
   mentee: GetMenteeOutput;
   matchId: number;
@@ -40,21 +49,24 @@ export type MatchedMentee = {
   matchedAt: string | Date;
 };
 
+/**
+ * Aggregated mentorship data returned to the frontend.
+ *
+ * NOTE: `GetMentorOutput` and `GetMenteeOutput` now include selected fields
+ * from the associated `users` record (name, contact, rank/position, image,
+ * location). Callers can rely on those fields being present when a user
+ * profile exists, without making additional user API calls.
+ */
 export type MentorshipDataOutput = {
-  // User's own profiles
-  mentor: GetMentorOutput | null;
-  mentee: GetMenteeOutput | null;
-
-  // Legacy matches array (all matches user is involved in)
-  matches: MentorshipMatch[];
-
-  // MENTEE VIEW: "Your Mentor" section
-  suggestedMentors?: SuggestedMentor[]; // Case 2: Suggested mentors with request status
-  matchedMentors?: MatchedMentor[]; // Case 3: Accepted matches with full mentor info
-
-  // MENTOR VIEW: "Your Mentee" section
-  pendingMenteeRequests?: PendingMenteeRequest[]; // Case 2: Mentees who requested this mentor (status: pending)
-  matchedMentees?: MatchedMentee[]; // Case 3: Accepted mentees (status: accepted, can coexist with pending)
+  mentor: {
+    activeMentees: GetMenteeOutput[];
+    profile: GetMentorOutput | null;
+  } | null;
+  mentee: {
+    mentorRecommendations: SuggestedMentor[];
+    activeMentors: GetMentorOutput[];
+    profile: GetMenteeOutput | null;
+  } | null;
 };
 
 export const getMentorshipDataInputSchema = z.object({
