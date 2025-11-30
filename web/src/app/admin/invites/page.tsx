@@ -111,12 +111,12 @@ export default function InviteCodesListPage() {
                 />
               </div>
               <Link href="/admin/invites/create" className="shrink-0">
-                <Button size="sm" className="hidden sm:flex">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="gap-2 hidden sm:flex">
+                  <Plus className="h-5 w-5" />
                   New Code
                 </Button>
-                <Button size="sm" className="sm:hidden">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="gap-2 sm:hidden">
+                  <Plus className="h-5 w-5" />
                   New Invite
                 </Button>
               </Link>

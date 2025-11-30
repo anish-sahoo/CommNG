@@ -73,7 +73,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
   const HelpIcon = icons.help;
   const BellIcon = icons.bell;
   const MegaphoneIcon = icons.announce;
-  const AdminIcon = icons.settings;
+  const AdminIcon = icons.admin;
   const isProfileActive = pathname.startsWith("/profile");
   const isHelpActive = pathname.startsWith("/help-page");
   const isAdminActive = pathname.startsWith("/admin");

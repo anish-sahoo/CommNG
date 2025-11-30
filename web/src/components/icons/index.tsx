@@ -31,6 +31,7 @@ import {
   UserPlus,
   Users,
   X,
+  ShieldUser,
 } from "lucide-react";
 
 export const icons = {
@@ -65,6 +66,7 @@ export const icons = {
   help: CircleQuestionMark,
   sort: ArrowRightLeft,
   externalLink: ExternalLink,
+  admin: ShieldUser,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;
