@@ -52,7 +52,7 @@ export default function ProfileSettingsPage() {
     "private" | "public"
   >("private");
   const [emailVisibility, setEmailVisibility] = useState<"private" | "public">(
-    "private"
+    "private",
   );
 
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -82,7 +82,7 @@ export default function ProfileSettingsPage() {
       currentPassword.length > 0 ||
       newPassword.length > 0 ||
       confirmPassword.length > 0,
-    [currentPassword, newPassword, confirmPassword]
+    [currentPassword, newPassword, confirmPassword],
   );
 
   useEffect(() => {
@@ -117,14 +117,14 @@ export default function ProfileSettingsPage() {
 
     if (newPassword === currentPassword) {
       setFormError(
-        "New password cannot be the same as your current password. Please try again."
+        "New password cannot be the same as your current password. Please try again.",
       );
       return;
     }
 
     if (newPassword !== confirmPassword) {
       setFormError(
-        "New password and confirmation do not match. Please try again."
+        "New password and confirmation do not match. Please try again.",
       );
       return;
     }
@@ -192,7 +192,7 @@ export default function ProfileSettingsPage() {
 
   const saveVisibility = async (
     nextSignal: "private" | "public",
-    nextEmail: "private" | "public"
+    nextEmail: "private" | "public",
   ) => {
     try {
       setIsSavingVisibility(true);
@@ -330,8 +330,8 @@ export default function ProfileSettingsPage() {
                     <li
                       className={showReqError(
                         /[!@#$%^&*(),.?":{}|<>_\-+=/\\[\];'`~]/.test(
-                          newPassword
-                        )
+                          newPassword,
+                        ),
                       )}
                     >
                       At least one special character

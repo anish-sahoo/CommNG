@@ -29,7 +29,7 @@ type ChannelPostPermission = "admin" | "everyone" | "custom";
 export type ChannelLandingVariant = "my" | "all";
 
 function resolveChannelCardIcon(
-  level?: ChannelPostPermission | null
+  level?: ChannelPostPermission | null,
 ): IconName {
   return level === "admin" ? "announce" : "communications";
 }
@@ -49,7 +49,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
   const fromParam = isMyView ? "my" : "all";
 
   const { data, isLoading } = useQuery(
-    trpc.comms.getAllChannels.queryOptions()
+    trpc.comms.getAllChannels.queryOptions(),
   );
 
   // Pre-fetch all channel images in parallel
@@ -86,7 +86,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
       .filter(
         // Seeded metadata already stores a direct pathname/URL; skip those to avoid double-fetching assets the browser can load on its own
         (fileId): fileId is string =>
-          !!fileId && !fileId.startsWith("/") && !fileId.startsWith("http")
+          !!fileId && !fileId.startsWith("/") && !fileId.startsWith("http"),
       );
 
     if (fileIdsToFetch.length === 0) return;
@@ -97,7 +97,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
         fileIdsToFetch.map(async (fileId) => {
           const fileData = await trpcClient.files.getFile.query({ fileId });
           return { fileId, url: fileData.data };
-        })
+        }),
       );
 
       const newImageUrls = new Map<string, string>();
@@ -114,7 +114,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
 
   const baseChannels = useMemo(
     () => (isMyView ? myChannels : rawChannels),
-    [isMyView, myChannels, rawChannels]
+    [isMyView, myChannels, rawChannels],
   );
 
   const channels = useMemo(() => {
@@ -123,7 +123,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
     }
     const query = search.trim().toLowerCase();
     return baseChannels.filter((channel) =>
-      channel.name.toLowerCase().includes(query)
+      channel.name.toLowerCase().includes(query),
     );
   }, [baseChannels, search]);
 
@@ -148,7 +148,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
           size="icon"
           className={cn(
             "relative rounded-full border border-border bg-card text-primary transition hover:bg-primary/10 shadow-none",
-            triggerClassName
+            triggerClassName,
           )}
           aria-label="Open create menu"
         >
@@ -189,8 +189,8 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
   const emptyStateMessage = search
     ? `No channels match "${search.trim()}".`
     : isMyView
-    ? "You haven't joined any channels yet."
-    : "No channels are available right now.";
+      ? "You haven't joined any channels yet."
+      : "No channels are available right now.";
 
   return (
     <TitleShell
@@ -251,7 +251,7 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
                 "Demo communications channel";
               const postPermissionLevel =
                 "postPermissionLevel" in channel
-                  ? channel.postPermissionLevel ?? null
+                  ? (channel.postPermissionLevel ?? null)
                   : null;
               const iconName = resolveChannelCardIcon(postPermissionLevel);
               // Prioritize loading the first 3 images for better LCP
