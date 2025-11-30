@@ -32,7 +32,10 @@ export function StatusTabs({ value, onValueChange }: StatusTabsProps) {
             onValueChange(val as (typeof options)[number]["value"])
           }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger
+            className="w-full"
+            aria-label="Filter invite codes by status"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -52,8 +55,9 @@ export function StatusTabs({ value, onValueChange }: StatusTabsProps) {
           onValueChange={(val) =>
             onValueChange(val as (typeof options)[number]["value"])
           }
+          aria-label="Filter invite codes by status"
         >
-          <TabsList>
+          <TabsList aria-label="Invite code status filters">
             {options.map((option) => (
               <TabsTrigger key={option.value} value={option.value}>
                 {option.label}

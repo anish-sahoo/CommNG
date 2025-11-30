@@ -104,7 +104,15 @@ export function InviteCards({ inviteCodes, onRevoke }: InviteCardsProps) {
                   <span className="font-medium">Created</span>
                 </div>
                 <div className="text-foreground">
-                  {formatRelativeTime(inviteCode.createdAt)}
+                  <span className="sr-only">
+                    Created {formatFullDateTime(inviteCode.createdAt)}
+                  </span>
+                  <time
+                    dateTime={new Date(inviteCode.createdAt).toISOString()}
+                    aria-hidden="true"
+                  >
+                    {formatRelativeTime(inviteCode.createdAt)}
+                  </time>
                 </div>
                 <div className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {formatFullDateTime(inviteCode.createdAt)}
@@ -116,7 +124,15 @@ export function InviteCards({ inviteCodes, onRevoke }: InviteCardsProps) {
                   <span className="font-medium">Expires</span>
                 </div>
                 <div className="text-foreground">
-                  {formatRelativeTime(inviteCode.expiresAt)}
+                  <span className="sr-only">
+                    Expires {formatFullDateTime(inviteCode.expiresAt)}
+                  </span>
+                  <time
+                    dateTime={new Date(inviteCode.expiresAt).toISOString()}
+                    aria-hidden="true"
+                  >
+                    {formatRelativeTime(inviteCode.expiresAt)}
+                  </time>
                 </div>
                 <div className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {formatFullDateTime(inviteCode.expiresAt)}

@@ -111,12 +111,12 @@ export default function InviteCodesListPage() {
                 />
               </div>
               <Link href="/admin/invites/create" className="shrink-0">
-                <Button size="sm" className="hidden sm:flex">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Code
+                <Button size="sm" className="gap-2 hidden sm:flex">
+                  <Plus className="h-5 w-5" />
+                  New Code
                 </Button>
-                <Button size="sm" className="sm:hidden">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="sm" className="gap-2 sm:hidden">
+                  <Plus className="h-5 w-5" />
                   New Invite
                 </Button>
               </Link>
@@ -131,8 +131,12 @@ export default function InviteCodesListPage() {
 
             {/* Error State */}
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-                <p className="text-sm text-red-800">
+              <div
+                className="rounded-lg border border-red-200 bg-red-50 p-6"
+                role="alert"
+                aria-live="assertive"
+              >
+                <p className="text-sm text-error">
                   Failed to load invite codes. Please try again.
                 </p>
               </div>

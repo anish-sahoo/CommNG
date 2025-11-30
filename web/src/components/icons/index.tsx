@@ -24,6 +24,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldUser,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -65,6 +66,7 @@ export const icons = {
   help: CircleQuestionMark,
   sort: ArrowRightLeft,
   externalLink: ExternalLink,
+  admin: ShieldUser,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

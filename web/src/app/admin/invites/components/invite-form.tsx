@@ -159,7 +159,11 @@ export function InviteForm({
 
       {/* Error Display */}
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 p-3"
+          role="alert"
+          aria-live="assertive"
+        >
           <p className="text-sm text-red-800">{error}</p>
         </div>
       ) : null}

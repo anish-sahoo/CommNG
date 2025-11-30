@@ -43,6 +43,8 @@ export default function NewChannelPostPage({
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const contentFieldId = useId();
+  const attachmentsLabelId = useId();
+  const attachmentsHintId = useId();
 
   type AttachmentItem = {
     id: string;
@@ -299,20 +301,35 @@ export default function NewChannelPostPage({
             showCharCount={true}
             counterColor="text-primary"
           />
-          <div className="space-y-3">
+          <fieldset
+            className="space-y-3"
+            aria-labelledby={attachmentsLabelId}
+            aria-describedby={attachmentsHintId}
+          >
+            <legend id={attachmentsLabelId} className="sr-only">
+              Attachments
+            </legend>
+            <p id={attachmentsHintId} className="sr-only">
+              Add up to 10 files. Drag and drop or press enter to browse for
+              files. Uploads must finish before posting.
+            </p>
             <Dropzone
               onDrop={handleDrop}
               onError={(error) => setAttachmentError(error.message)}
               src={attachments.map((attachment) => attachment.file)}
               maxFiles={10}
               disabled={createPost.isPending || hasUploadingAttachments}
+              ariaLabel="Upload attachments"
+              ariaDescription="Attach up to 10 files by clicking or dragging them here. Wait for uploads to finish before posting."
             >
               <DropzoneEmptyState />
               <DropzoneContent />
             </Dropzone>
 
             {attachmentError && (
-              <p className="text-sm text-destructive">{attachmentError}</p>
+              <p className="text-sm text-destructive" role="alert">
+                {attachmentError}
+              </p>
             )}
 
             {attachments.length > 0 ? (
@@ -369,10 +386,12 @@ export default function NewChannelPostPage({
                 ))}
               </div>
             ) : null}
-          </div>
+          </fieldset>
 
           {submissionError && (
-            <p className="text-sm text-destructive">{submissionError}</p>
+            <p className="text-sm text-destructive" role="alert">
+              {submissionError}
+            </p>
           )}
         </div>
         <div className="flex p-3 items-center justify-end gap-3">
