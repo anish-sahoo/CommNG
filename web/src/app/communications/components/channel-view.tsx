@@ -64,6 +64,7 @@ function areMessagesEqual(a: ChannelMessage[], b: ChannelMessage[]): boolean {
       left.authorName !== right.authorName ||
       left.authorRank !== right.authorRank ||
       left.authorRole !== right.authorRole ||
+      left.authorImage !== right.authorImage ||
       (left.attachments?.length ?? 0) !== (right.attachments?.length ?? 0) ||
       (left.reactions?.length ?? 0) !== (right.reactions?.length ?? 0)
     ) {
@@ -225,6 +226,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
       authorName: message.authorName ?? undefined,
       authorRank: message.authorRank ?? undefined,
       authorRole: message.authorDepartment ?? undefined,
+      authorImage: message.authorImage ?? null,
       content: message.message ?? "",
       createdAt: message.createdAt,
       attachments: message.attachments ?? [],

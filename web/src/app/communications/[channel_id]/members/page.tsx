@@ -3,6 +3,7 @@
 import { skipToken, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Avatar } from "@/components/avatar";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { RemoveMemberModal } from "@/components/modal/remove-member-modal";
@@ -19,7 +20,6 @@ type ChannelMembersPageProps = {
 
 const UserPlusIcon = icons.personAdd;
 const TrashIcon = icons.trash;
-const UserIcon = icons.user;
 
 export default function ChannelMembersPage({
   params,
@@ -78,6 +78,7 @@ export default function ChannelMembersPage({
       isCurrentUser: member.userId === currentUserId,
       userId: member.userId,
       action: member.action,
+      image: member.image,
     }));
   }, [membersQuery.data, currentUserId]);
 
@@ -198,9 +199,7 @@ export default function ChannelMembersPage({
                   key={member.id}
                   className="flex items-center gap-4 px-6 py-4"
                 >
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
-                    <UserIcon className="h-7 w-7" />
-                  </div>
+                  <Avatar avatarUrl={member.image} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-body font-semibold text-secondary">

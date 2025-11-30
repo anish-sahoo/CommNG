@@ -3,11 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { Avatar } from "@/components/avatar";
 import {
   DropdownButtons,
   type DropdownMenuItemConfig,
 } from "@/components/dropdown";
-import { icons } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
@@ -36,7 +36,7 @@ type MessageReaction = {
 type PostedCardProps = {
   channelId: number;
   postId: number;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   name: string;
   rank: string;
   content: string;
@@ -51,17 +51,10 @@ type PostedCardProps = {
 
 type AttachmentStatus = "idle" | "uploading" | "uploaded" | "error";
 
-const UserIcon = icons.user;
-
-const Avatar = () => (
-  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
-    <UserIcon className="h-7 w-7" />
-  </div>
-);
-
 export const PostedCard = ({
   channelId,
   postId,
+  avatarUrl,
   name,
   rank,
   content,
@@ -297,7 +290,7 @@ export const PostedCard = ({
         </div>
         <div className="flex items-start gap-4 px-2 pt-6 sm:px-4 sm:pt-4">
           <div className="flex justify-start sm:pt-2">
-            <Avatar />
+            <Avatar avatarUrl={avatarUrl} />
           </div>
           <div className="flex flex-col gap-2 w-full">
             <div className="text-secondary text-base font-semibold sm:text-subheader">

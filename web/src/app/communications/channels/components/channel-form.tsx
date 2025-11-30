@@ -10,6 +10,7 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { useTRPCClient } from "@/lib/trpc";
+import { resizeImage } from "@/utils/resize";
 
 export type CreateChannelValues = {
   title: string;
@@ -83,24 +84,35 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
     async (id: string, file: File) => {
       setPhoto({ id, file, status: "uploading", error: undefined });
       try {
+        // Resize image if it's an image file
+        let processedFile = file;
+        if (file.type.startsWith("image/")) {
+          processedFile = await resizeImage(file, {
+            maxSizeMB: 2,
+            maxWidthOrHeight: 1200,
+          });
+        }
+
         const presign = await trpcClient.files.createPresignedUpload.mutate({
-          fileName: file.name,
-          contentType: file.type,
-          fileSize: file.size,
+          fileName: processedFile.name,
+          contentType: processedFile.type,
+          fileSize: processedFile.size,
         });
 
         const res = await fetch(presign.uploadUrl, {
           method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
+          headers: {
+            "Content-Type": processedFile.type || "application/octet-stream",
+          },
+          body: processedFile,
         });
         if (!res.ok) throw new Error("File upload failed. Please try again.");
 
         await trpcClient.files.confirmUpload.mutate({
           fileId: presign.fileId,
-          fileName: file.name,
+          fileName: processedFile.name,
           storedName: presign.storedName,
-          contentType: file.type || undefined,
+          contentType: processedFile.type || undefined,
         });
 
         setPhoto({
