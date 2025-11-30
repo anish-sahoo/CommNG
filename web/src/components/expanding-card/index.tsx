@@ -47,8 +47,8 @@ export default function CollapsibleCard({
                 : "rounded-xl hover:bg-muted/50"
             }`}
           >
-            <div className="flex items-center justify-center">
-              <div className="relative z-10 h-16 w-16 shrink-0 overflow-hidden rounded-full border-3 border-card bg-neutral text-secondary shadow-lg sm:h-16 sm:w-16">
+            <div className="flex items-center justify-center gap-4">
+              <div className="relative z-10 h-16 w-16 shrink-0 overflow-hidden rounded-full border-3 border-card bg-neutral text-secondary sm:h-16 sm:w-16">
                 {avatarSrc ? (
                   <Image
                     src={avatarSrc}

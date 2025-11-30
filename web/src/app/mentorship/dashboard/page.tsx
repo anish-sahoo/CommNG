@@ -104,30 +104,20 @@ export default function MentorshipDashboard() {
     const activeMentors = data?.mentee?.activeMentors ?? [];
     const mentorRecommendations = data?.mentee?.mentorRecommendations ?? [];
 
-    if (activeMentors.length > 0) {
-      const matchedMentors: CollapsibleCardProps[] = activeMentors.map(
-        (item: any) => ({
-          name: item.name,
-          rank: item.rank ?? "Unknown rank",
-          location: item.location ?? "Not provided",
-          personalInterests: Array.isArray(item.personalInterests)
-            ? item.personalInterests.join(", ")
-            : item.personalInterests ?? "",
-          information: item.careerAdvice || "",
-          email: item.email ?? "Not provided",
-          phone: item.phoneNumber ?? "Not provided",
-          avatarSrc: item.imageFileId || "",
-        }),
-      );
-
-      return (
-        <div className="flex flex-col gap-4">
-          {matchedMentors.map((mentor: CollapsibleCardProps) => (
-            <CollapsibleCard key={mentor.name} {...mentor} />
-          ))}
-        </div>
-      );
-    }
+    const matchedMentors: CollapsibleCardProps[] = activeMentors.map(
+      (item: any) => ({
+        name: item.name,
+        rank: item.rank ?? "Unknown rank",
+        location: item.location ?? "Not provided",
+        personalInterests: Array.isArray(item.personalInterests)
+          ? item.personalInterests.join(", ")
+          : item.personalInterests ?? "",
+        information: item.careerAdvice || "",
+        email: item.email ?? "Not provided",
+        phone: item.phoneNumber ?? "Not provided",
+        avatarSrc: item.imageFileId || "",
+      }),
+    );
 
     const suggestedMentors: MentorListViewItem[] = mentorRecommendations
       .filter((item: any) => item.status !== "active")
@@ -222,23 +212,30 @@ export default function MentorshipDashboard() {
       );
     };
 
-    if (suggestedMentors.length > 0) {
-      return (
-        <ListView
-          title="Suggested Mentors"
-          items={suggestedMentors}
-          rowOptions={renderSuggestedMentorRowOptions}
-          modalContent={renderSuggestedMentorModal}
-        />
-      );
-    }
-
     return (
-      <Card className="flex flex-col items-center">
-        <div className="font-medium italic text-center px-6 py-4">
-          No mentor suggestions available at this time.
-        </div>
-      </Card>
+      <div className="flex flex-col gap-4">
+        {matchedMentors.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {matchedMentors.map((mentor: CollapsibleCardProps) => (
+              <CollapsibleCard key={mentor.name} {...mentor} />
+            ))}
+          </div>
+        )}
+        {suggestedMentors.length > 0 ? (
+          <ListView
+            title="Suggested Mentors"
+            items={suggestedMentors}
+            rowOptions={renderSuggestedMentorRowOptions}
+            modalContent={renderSuggestedMentorModal}
+          />
+        ) : (
+          <Card className="flex flex-col items-center">
+            <div className="font-medium italic text-center px-6 py-4">
+              No mentor suggestions available at this time.
+            </div>
+          </Card>
+        )}
+      </div>
     );
   };
 

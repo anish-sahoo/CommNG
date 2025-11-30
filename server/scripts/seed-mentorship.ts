@@ -1,14 +1,16 @@
 #!/usr/bin/env tsx
 /* eslint-disable no-console */
-import "dotenv/config";
 import { and, eq } from "drizzle-orm";
 import {
   mentees,
   mentors,
   mentorshipMatches,
+  account,
+  mentorRecommendations,
   users,
 } from "../src/data/db/schema.js";
-import { db } from "../src/data/db/sql.js";
+import { db, connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
+import { hashPassword } from "better-auth/crypto";
 
 type SeedUserInput = {
   id: string;
@@ -21,7 +23,14 @@ type SeedUserInput = {
   phoneNumber?: string;
 };
 
-async function ensureUser(input: SeedUserInput) {
+const DEFAULT_PASSWORD = "password";
+type UserRow = typeof users.$inferSelect;
+type AccountRow = typeof account.$inferSelect;
+type MentorRow = typeof mentors.$inferSelect;
+type MenteeRow = typeof mentees.$inferSelect;
+type MentorRecommendationRow = typeof mentorRecommendations.$inferSelect;
+
+async function ensureUser(input: SeedUserInput): Promise<UserRow> {
   const [existing] = await db
     .select()
     .from(users)
@@ -47,10 +56,46 @@ async function ensureUser(input: SeedUserInput) {
     })
     .returning();
 
-  return created;
+  if (!created) {
+    throw new Error(`Failed to create user ${input.id}`);
+  }
+
+  return created as UserRow;
 }
 
-async function ensureMentor(userId: string) {
+async function ensurePasswordAccount(userId: string): Promise<AccountRow> {
+  const [existing] = await db
+    .select()
+    .from(account)
+    .where(
+      and(eq(account.userId, userId), eq(account.providerId, "credential"))
+    )
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const hashed = await hashPassword(DEFAULT_PASSWORD);
+  const [created] = await db
+    .insert(account)
+    .values({
+      id: `${userId}-credential`,
+      userId,
+      providerId: "credential",
+      accountId: userId,
+      password: hashed,
+    })
+    .returning();
+
+  if (!created) {
+    throw new Error(`Failed to create credential account for ${userId}`);
+  }
+
+  return created as AccountRow;
+}
+
+async function ensureMentor(userId: string): Promise<MentorRow> {
   const [existing] = await db
     .select()
     .from(mentors)
@@ -80,10 +125,14 @@ async function ensureMentor(userId: string) {
     })
     .returning();
 
-  return created;
+  if (!created) {
+    throw new Error(`Failed to create mentor for ${userId}`);
+  }
+
+  return created as MentorRow;
 }
 
-async function ensureMentee(userId: string) {
+async function ensureMentee(userId: string): Promise<MenteeRow> {
   const [existing] = await db
     .select()
     .from(mentees)
@@ -114,13 +163,59 @@ async function ensureMentee(userId: string) {
     })
     .returning();
 
-  return created;
+  if (!created) {
+    throw new Error(`Failed to create mentee for ${userId}`);
+  }
+
+  return created as MenteeRow;
+}
+
+async function upsertRecommendation(
+  userId: string,
+  recommendedMentorIds: string[]
+): Promise<MentorRecommendationRow> {
+  const [existing] = await db
+    .select()
+    .from(mentorRecommendations)
+    .where(eq(mentorRecommendations.userId, userId))
+    .limit(1);
+
+  if (existing) {
+    const merged = Array.from(
+      new Set([...(existing.recommendedMentorIds ?? []), ...recommendedMentorIds])
+    );
+    const [updated] = await db
+      .update(mentorRecommendations)
+      .set({ recommendedMentorIds: merged })
+      .where(eq(mentorRecommendations.userId, userId))
+      .returning();
+
+    if (!updated) {
+      throw new Error(`Failed to update mentor recommendations for ${userId}`);
+    }
+
+    return updated as MentorRecommendationRow;
+  }
+
+  const [created] = await db
+    .insert(mentorRecommendations)
+    .values({
+      userId,
+      recommendedMentorIds,
+    })
+    .returning();
+
+  if (!created) {
+    throw new Error(`Failed to create mentor recommendations for ${userId}`);
+  }
+
+  return created as MentorRecommendationRow;
 }
 
 async function ensureMatch(
   menteeUserId: string,
   mentorUserId: string,
-  status: "pending" | "accepted" | "declined",
+  status: "pending" | "accepted" | "declined"
 ) {
   const [existing] = await db
     .select()
@@ -128,8 +223,8 @@ async function ensureMatch(
     .where(
       and(
         eq(mentorshipMatches.requestorUserId, menteeUserId),
-        eq(mentorshipMatches.mentorUserId, mentorUserId),
-      ),
+        eq(mentorshipMatches.mentorUserId, mentorUserId)
+      )
     )
     .limit(1);
 
@@ -151,11 +246,25 @@ async function ensureMatch(
     })
     .returning();
 
+  if (!created) {
+    throw new Error(
+      `Failed to create match between mentee ${menteeUserId} and mentor ${mentorUserId}`
+    );
+  }
+
   return created;
 }
 
+/**
+ * Seeds mock mentorship data (one mentee, three mentors: accepted, pending, suggested).
+ *
+ * Usage:
+ *   cd server
+ *   npx dotenv -e .env -- tsx scripts/seed-mentorship.ts
+ */
 async function main() {
   console.log("Seeding mock mentorship data...");
+  await connectPostgres();
 
   const mentorA = await ensureUser({
     id: "mock-mentor-1",
@@ -187,22 +296,40 @@ async function main() {
     location: "Boise, ID",
     phoneNumber: "555-0103",
   });
+  const mentorC = await ensureUser({
+    id: "mock-mentor-3",
+    name: "Lt. Dana Support",
+    email: "dana.support@example.com",
+    rank: "O-2",
+    positionType: "active",
+    serviceType: "officer",
+    location: "Portland, OR",
+    phoneNumber: "555-0104",
+  });
 
   await ensureMentor(mentorA.id);
   await ensureMentor(mentorB.id);
+  await ensureMentor(mentorC.id);
   await ensureMentee(mentee.id);
+  await ensurePasswordAccount(mentorA.id);
+  await ensurePasswordAccount(mentorB.id);
+  await ensurePasswordAccount(mentorC.id);
+  await ensurePasswordAccount(mentee.id);
 
   await ensureMatch(mentee.id, mentorA.id, "accepted"); // shows as active match
   await ensureMatch(mentee.id, mentorB.id, "pending"); // shows as pending request
+  await upsertRecommendation(mentee.id, [mentorC.id]); // suggested mentor
 
   console.log("Seed complete.");
   console.log("Users created:");
   console.log(` Mentor A: ${mentorA.email}`);
   console.log(` Mentor B: ${mentorB.email}`);
+  console.log(` Mentor C: ${mentorC.email}`);
   console.log(` Mentee : ${mentee.email}`);
   console.log("");
+  console.log(`Default password for all: ${DEFAULT_PASSWORD}`);
   console.log(
-    "Use these in the UI to see: mentee sees an active mentor + a pending request; mentors see pending/active mentees.",
+    "Use these in the UI to see: mentee sees an active mentor + a pending request; mentors see pending/active mentees."
   );
 }
 
@@ -211,6 +338,6 @@ main()
     console.error(err);
     process.exit(1);
   })
-  .finally(() => {
-    void db.$client.end();
+  .finally(async () => {
+    await shutdownPostgres();
   });
