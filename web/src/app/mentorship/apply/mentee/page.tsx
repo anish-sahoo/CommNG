@@ -412,7 +412,7 @@ export default function MentorshipApplyMenteePage() {
         </section>
 
         <section>
-          <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm mb-3">
+          <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm">
             3. Upload a resume to share with mentors once matched.
           </h1>
           <Dropzone

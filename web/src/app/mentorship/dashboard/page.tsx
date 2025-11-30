@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { mentorshipResources } from "@/app/mentorship/dashboard/resources";
 import type { CollapsibleCardProps } from "@/components/expanding-card";
@@ -19,27 +19,41 @@ import { useTRPC } from "@/lib/trpc";
 // MentorshipDashboard shows a view of the user's mentorship status using real backend data.
 export default function MentorshipDashboard() {
   const trpc = useTRPC();
-  const { data, isLoading, isError, error } = useQuery(
+  const queryClient = useQueryClient();
+  const { data, isLoading, isError } = useQuery(
     trpc.mentorship.getMentorshipData.queryOptions(),
   );
 
   const hasMentorProfile = Boolean(data?.mentor?.profile);
   const hasMenteeProfile = Boolean(data?.mentee?.profile);
 
+  const mentorshipQueryKey = trpc.mentorship.getMentorshipData.queryKey();
+
   const handleSendRequest = useMutation(
-    trpc.mentorship.requestMentorship.mutationOptions(),
+    trpc.mentorship.requestMentorship.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mentorshipQueryKey });
+      },
+    }),
   );
 
   const acceptRequest = useMutation(
-    trpc.mentorship.acceptMentorshipRequest.mutationOptions(),
+    trpc.mentorship.acceptMentorshipRequest.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mentorshipQueryKey });
+      },
+    }),
   );
 
   const rejectRequest = useMutation(
-    trpc.mentorship.declineMentorshipRequest.mutationOptions(),
+    trpc.mentorship.declineMentorshipRequest.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: mentorshipQueryKey });
+      },
+    }),
   );
 
   const renderYourMentor = () => {
-    // Loading state
     if (isLoading) {
       return (
         <div>
@@ -52,7 +66,6 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // Error state
     if (isError) {
       return (
         <div>
@@ -67,7 +80,6 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // User hasn't completed mentee application
     if (!hasMenteeProfile) {
       return (
         <Card className="flex flex-col items-center">
@@ -89,19 +101,24 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // User has active mentors
-    if (data?.mentee?.activeMentors && data.mentee.activeMentors.length > 0) {
-      const matchedMentors: CollapsibleCardProps[] =
-        data.mentee.activeMentors.map((item: any) => ({
+    const activeMentors = data?.mentee?.activeMentors ?? [];
+    const mentorRecommendations = data?.mentee?.mentorRecommendations ?? [];
+
+    if (activeMentors.length > 0) {
+      const matchedMentors: CollapsibleCardProps[] = activeMentors.map(
+        (item: any) => ({
           name: item.name,
-          rank: item.rank,
-          location: item.location,
-          personalInterests: item.personalInterests || "",
+          rank: item.rank ?? "Unknown rank",
+          location: item.location ?? "Not provided",
+          personalInterests: Array.isArray(item.personalInterests)
+            ? item.personalInterests.join(", ")
+            : item.personalInterests ?? "",
           information: item.careerAdvice || "",
-          email: item.email,
-          phone: item.phone,
+          email: item.email ?? "Not provided",
+          phone: item.phoneNumber ?? "Not provided",
           avatarSrc: item.imageFileId || "",
-        }));
+        }),
+      );
 
       return (
         <div className="flex flex-col gap-4">
@@ -112,102 +129,100 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // User doesn't have mentor recommendations yet
-    if (data?.mentee?.activeMentors && data.mentee.activeMentors.length === 0) {
-      return (
-        <Card className="flex flex-col items-center">
-          <div className="font-medium italic">
-            No mentor suggestions available at this time.
-          </div>
-        </Card>
-      );
-    }
+    const suggestedMentors: MentorListViewItem[] = mentorRecommendations
+      .filter((item: any) => item.status !== "active")
+      .map((item: any) => {
+        const personalInterests = Array.isArray(item.mentor.personalInterests)
+          ? item.mentor.personalInterests
+          : item.mentor.personalInterests
+            ? item.mentor.personalInterests
+                .split(",")
+                .map((interest: string) => interest.trim())
+                .filter(Boolean)
+            : [];
 
-    // User has mentor recommendations
-    if (
-      data?.mentee?.mentorRecommendations &&
-      data.mentee.mentorRecommendations.length > 0
-    ) {
-      const suggestedMentors: MentorListViewItem[] =
-        data?.mentee?.mentorRecommendations.map((item: any) => ({
+        return {
           id: item.mentor.userId,
-          name: item.mentor.name,
-          rank: item.mentor.rank,
-          personalInterests: item.mentor.personalInterests || "",
-          whyInterested: item.mentor.whyInterested || "",
+          name: item.mentor.name ?? "Unknown mentor",
+          rank: item.mentor.rank ?? undefined,
+          role: item.mentor.detailedPosition ?? item.mentor.positionType,
+          personalInterests,
           careerAdvice: item.mentor.careerAdvice || "",
-          meetingFormat: item.preferredMeetingFormat || "",
-          expectedCommitment: item.hoursPerMonthCommitment || "",
-          hasRequested: item.hasRequested,
-        }));
+          meetingFormat:
+            item.mentor.preferredMeetingFormat || "No preference listed",
+          expectedCommitment: item.mentor.hoursPerMonthCommitment || 0,
+          hasRequested: item.status === "pending",
+        };
+      });
 
-      const renderSuggestedMentorRowOptions = (
-        mentorInformation: MentorListViewItem,
-      ) => {
-        const requested = mentorInformation.hasRequested;
-        return (
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className={`inline-flex items-center gap-1 disabled:opacity-100 ${
-              requested
-                ? "bg-primary text-white border-primary cursor-not-allowed hover:bg-primary"
-                : ""
-            }`}
-            disabled={requested}
-            // TODO: check functionality
-            onClick={() =>
-              handleSendRequest.mutate({
-                mentorUserId: mentorInformation.id,
-              })
-            }
-          >
-            {requested ? "Requested" : "Send Request"}
-          </Button>
-        );
-      };
+    const renderSuggestedMentorRowOptions = (
+      mentorInformation: MentorListViewItem,
+    ) => {
+      const requested = mentorInformation.hasRequested;
+      return (
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className={`inline-flex items-center gap-1 disabled:opacity-100 ${
+            requested
+              ? "bg-primary text-white border-primary cursor-not-allowed hover:bg-primary"
+              : ""
+          }`}
+          disabled={requested}
+          onClick={() =>
+            handleSendRequest.mutate({
+              mentorUserId: mentorInformation.id,
+            })
+          }
+        >
+          {requested ? "Requested" : "Send Request"}
+        </Button>
+      );
+    };
 
-      const renderSuggestedMentorModal = (mentor: MentorListViewItem) => {
-        return (
-          <div className="space-y-4">
+    const renderSuggestedMentorModal = (mentor: MentorListViewItem) => {
+      return (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-secondary/70">
+              Meeting Format
+            </p>
+            <p className="font-semibold">{mentor.meetingFormat}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-secondary/70">
+              Expected Commitment
+            </p>
+            <p className="font-semibold">
+              {mentor.expectedCommitment
+                ? `${mentor.expectedCommitment} hours/month`
+                : "Not specified"}
+            </p>
+          </div>
+          {mentor.personalInterests && mentor.personalInterests.length > 0 && (
             <div>
               <p className="text-sm font-medium text-secondary/70">
-                Meeting Format
-              </p>
-              <p className="font-semibold">{mentor.meetingFormat}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-secondary/70">
-                Expected Commitment
+                Personal Interests
               </p>
               <p className="font-semibold">
-                {mentor.expectedCommitment} hours/month
+                {mentor.personalInterests.join(", ")}
               </p>
             </div>
-            {mentor.personalInterests &&
-              mentor.personalInterests.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-secondary/70">
-                    Personal Interests
-                  </p>
-                  <p className="font-semibold">
-                    {mentor.personalInterests.join(", ")}
-                  </p>
-                </div>
-              )}
-            {mentor.careerAdvice && (
-              <div>
-                <p className="text-sm font-medium text-secondary/70">
-                  Career Advice
-                </p>
-                <p className="font-semibold">{mentor.careerAdvice}</p>
-              </div>
-            )}
-          </div>
-        );
-      };
+          )}
+          {mentor.careerAdvice && (
+            <div>
+              <p className="text-sm font-medium text-secondary/70">
+                Career Advice
+              </p>
+              <p className="font-semibold">{mentor.careerAdvice}</p>
+            </div>
+          )}
+        </div>
+      );
+    };
 
+    if (suggestedMentors.length > 0) {
       return (
         <ListView
           title="Suggested Mentors"
@@ -217,10 +232,17 @@ export default function MentorshipDashboard() {
         />
       );
     }
+
+    return (
+      <Card className="flex flex-col items-center">
+        <div className="font-medium italic text-center px-6 py-4">
+          No mentor suggestions available at this time.
+        </div>
+      </Card>
+    );
   };
 
   const renderYourMentee = () => {
-    // Loading state
     if (isLoading) {
       return (
         <div>
@@ -233,7 +255,6 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // Error state
     if (isError) {
       return (
         <div>
@@ -248,7 +269,6 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // User hasn't completed mentor application
     if (!hasMentorProfile) {
       return (
         <div>
@@ -272,38 +292,40 @@ export default function MentorshipDashboard() {
       );
     }
 
-    // User doesn't have mentee requests yet
-    if (data?.mentor?.activeMentees && data.mentor.activeMentees.length === 0) {
-      return (
-        <Card className="flex flex-col items-center">
-          <div className="font-medium italic">
-            No mentee requests available at this time.
-          </div>
-        </Card>
-      );
-    }
-
-    // User has mentee requests
     const AcceptIcon = icons.done;
     const RejectIcon = icons.clear;
 
-    const pendingRequests: MenteeListViewItem[] = data?.mentor?.activeMentees
-      ? data?.mentor?.activeMentees
-          .filter((mentee: any) => mentee.status === "pending")
-          .map((item: any) => ({
-            id: item.userId,
-            name: item.name,
-            rank: item.rank,
-            learningGoals: item.learningGoals,
-            personalInterests: item.personalInterests,
-            roleModelInspiration: item.roleModelInspiration,
-            preferredMeetingFormat: item.preferredMeetingFormat,
-            hoursPerMonthCommitment: item.hoursPerMonthCommitment,
-            matchId: item.matchId,
-          }))
-      : [];
+    const pendingRequests: MenteeListViewItem[] =
+      data?.mentor?.pendingRequests?.map((item: any) => {
+        const personalInterests = Array.isArray(item.mentee.personalInterests)
+          ? item.mentee.personalInterests
+          : item.mentee.personalInterests
+            ? item.mentee.personalInterests
+                .split(",")
+                .map((interest: string) => interest.trim())
+                .filter(Boolean)
+            : [];
+
+        return {
+          id: item.mentee.userId,
+          name: item.mentee.name ?? "Unknown mentee",
+          rank: item.mentee.rank,
+          role: item.mentee.detailedPosition ?? item.mentee.positionType,
+          learningGoals: item.mentee.learningGoals,
+          personalInterests,
+          hopeToGainResponses: item.mentee.hopeToGainResponses,
+          roleModelInspiration: item.mentee.roleModelInspiration,
+          preferredMeetingFormat: item.mentee.preferredMeetingFormat,
+          hoursPerMonthCommitment: item.mentee.hoursPerMonthCommitment,
+          matchId: item.matchId,
+        };
+      }) ?? [];
 
     const renderMenteeRequestModal = (mentee: MenteeListViewItem) => {
+      const personalInterests = Array.isArray(mentee.personalInterests)
+        ? mentee.personalInterests.join(", ")
+        : mentee.personalInterests;
+
       return (
         <div className="space-y-4">
           {mentee.preferredMeetingFormat && (
@@ -329,7 +351,7 @@ export default function MentorshipDashboard() {
               <p className="text-sm font-medium text-secondary/70">
                 What are your personal interests?
               </p>
-              <p className="font-semibold">{mentee.personalInterests}</p>
+              <p className="font-semibold">{personalInterests}</p>
             </div>
           )}
           {mentee.roleModelInspiration && (
@@ -380,36 +402,51 @@ export default function MentorshipDashboard() {
       );
     };
 
-    if (pendingRequests && pendingRequests.length > 0) {
-      <ListView
-        title="Pending Requests"
-        items={pendingRequests}
-        modalContent={renderMenteeRequestModal}
-        rowOptions={(request) => renderMenteeRequestRowOptions(request.matchId)}
-      />;
-    }
+    const matchedMentees: CollapsibleCardProps[] =
+      data?.mentor?.activeMentees?.map((item: any) => ({
+        name: item.name,
+        rank: item.rank ?? "Unknown rank",
+        location: item.location ?? "Not provided",
+        personalInterests: Array.isArray(item.personalInterests)
+          ? item.personalInterests.join(", ")
+          : item.personalInterests ?? "",
+        information: item.learningGoals || "",
+        email: item.email ?? "Not provided",
+        phone: item.phoneNumber ?? "Not provided",
+      })) ?? [];
 
-    // User has active mentees
-    if (data?.mentor?.activeMentees && data.mentor.activeMentees.length > 0) {
-      const matchedMentees: CollapsibleCardProps[] =
-        data.mentor.activeMentees.map((item: any) => ({
-          name: item.name,
-          rank: item.rank,
-          location: item.location,
-          personalInterests: item.personalInterests || "",
-          information: item.goals || "",
-          email: item.email,
-          phone: item.phone,
-        }));
-
+    if (!pendingRequests.length && !matchedMentees.length) {
       return (
-        <div className="flex flex-col gap-4">
-          {matchedMentees.map((mentee: CollapsibleCardProps) => (
-            <CollapsibleCard key={mentee.name} {...mentee} />
-          ))}
-        </div>
+        <Card className="flex flex-col items-center">
+          <div className="font-medium italic">
+            No mentee requests available at this time.
+          </div>
+        </Card>
       );
     }
+
+    return (
+      <div className="flex flex-col gap-4">
+        {pendingRequests.length > 0 && (
+          <ListView
+            title="Pending Requests"
+            items={pendingRequests}
+            modalContent={renderMenteeRequestModal}
+            rowOptions={(request) =>
+              renderMenteeRequestRowOptions(request.matchId)
+            }
+          />
+        )}
+
+        {matchedMentees.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {matchedMentees.map((mentee: CollapsibleCardProps) => (
+              <CollapsibleCard key={mentee.name} {...mentee} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
