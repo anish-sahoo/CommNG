@@ -60,6 +60,7 @@ export type MatchedMentee = {
 export type MentorshipDataOutput = {
   mentor: {
     activeMentees: GetMenteeOutput[];
+    pendingRequests: PendingMenteeRequest[];
     profile: GetMentorOutput | null;
   } | null;
   mentee: {
