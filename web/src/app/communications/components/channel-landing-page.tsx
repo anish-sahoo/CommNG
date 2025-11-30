@@ -217,8 +217,12 @@ export function ChannelLandingPage({ variant }: ChannelLandingPageProps) {
               <Link
                 href="/communications/channels/new"
                 aria-label="Create a new channel"
+                className="group flex items-center gap-2 rounded-lg px-3 py-2 text-primary transition-colors hover:bg-primary hover:text-background"
               >
-                <AddIcon className="h-5 w-5 text-accent" aria-hidden="true" />
+                <AddIcon
+                  className="h-5 w-5 text-current transition-colors group-hover:text-background group-hover:stroke-background"
+                  aria-hidden="true"
+                />
                 Channel
               </Link>
             </Button>
