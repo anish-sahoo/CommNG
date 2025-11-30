@@ -442,11 +442,11 @@ export default function ProfileSettingsPage() {
         </div>
 
         <div className="border-t border-border py-6 px-4">
-          <div className="flex justify-center">
+          <div className="flex justify-center sm:justify-end">
             <Button
               type="button"
               variant="destructive"
-              className="inline-flex items-center gap-2 px-6"
+              className="bg-error hover:bg-error/80 inline-flex items-center gap-2 px-6"
               disabled={isSigningOut}
               onClick={handleSignOutClick}
               aria-label="Log out of your account"

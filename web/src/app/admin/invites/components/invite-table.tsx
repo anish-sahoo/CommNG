@@ -109,12 +109,14 @@ export function InviteTable({ inviteCodes, onRevoke }: InviteTableProps) {
               <TableCell
                 className="text-sm text-muted-foreground cursor-help"
                 title={formatFullDateTime(new Date(inviteCode.createdAt))}
+                aria-label={`Created ${formatFullDateTime(new Date(inviteCode.createdAt))}`}
               >
                 {formatRelativeTime(new Date(inviteCode.createdAt))}
               </TableCell>
               <TableCell
                 className="text-sm text-muted-foreground cursor-help"
                 title={formatFullDateTime(new Date(inviteCode.expiresAt))}
+                aria-label={`Expires ${formatFullDateTime(new Date(inviteCode.expiresAt))}`}
               >
                 {formatRelativeTime(new Date(inviteCode.expiresAt))}
               </TableCell>

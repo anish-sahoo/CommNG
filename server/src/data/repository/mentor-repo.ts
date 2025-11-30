@@ -12,6 +12,7 @@ import type {
   CreateMentorOutput,
   GetMentorOutput,
 } from "../../types/mentor-types.js";
+import type { PendingMenteeRequest } from "../../types/mentorship-types.js";
 
 /**
  * Repository to handle database queries/communication related to mentors
@@ -203,6 +204,87 @@ export class MentorRepository {
     }
 
     return mentor;
+  }
+
+  /**
+   * Get pending mentee requests for a mentor
+   */
+  async getPendingMenteeRequests(
+    userId: string,
+  ): Promise<PendingMenteeRequest[]> {
+    const pendingRows = await db
+      .select({
+        matchId: mentorshipMatches.matchId,
+        status: mentorshipMatches.status,
+        matchedAt: mentorshipMatches.matchedAt,
+        // Mentee profile fields
+        menteeId: mentees.menteeId,
+        menteeUserId: mentees.userId,
+        learningGoals: mentees.learningGoals,
+        experienceLevel: mentees.experienceLevel,
+        preferredMentorType: mentees.preferredMentorType,
+        menteeStatus: mentees.status,
+        resumeFileId: mentees.resumeFileId,
+        personalInterests: mentees.personalInterests,
+        roleModelInspiration: mentees.roleModelInspiration,
+        hopeToGainResponses: mentees.hopeToGainResponses,
+        mentorQualities: mentees.mentorQualities,
+        preferredMeetingFormat: mentees.preferredMeetingFormat,
+        hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
+        menteeCreatedAt: mentees.createdAt,
+        menteeUpdatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
+      })
+      .from(mentorshipMatches)
+      .innerJoin(mentees, eq(mentees.userId, mentorshipMatches.requestorUserId))
+      .innerJoin(users, eq(users.id, mentees.userId))
+      .where(
+        and(
+          eq(mentorshipMatches.mentorUserId, userId),
+          eq(mentorshipMatches.status, "pending"),
+        ),
+      );
+
+    return pendingRows.map((row) => ({
+      matchId: row.matchId,
+      status: row.status,
+      matchedAt: row.matchedAt,
+      mentee: {
+        menteeId: row.menteeId,
+        userId: row.menteeUserId,
+        learningGoals: row.learningGoals,
+        experienceLevel: row.experienceLevel,
+        preferredMentorType: row.preferredMentorType,
+        status: row.menteeStatus,
+        resumeFileId: row.resumeFileId,
+        personalInterests: row.personalInterests,
+        roleModelInspiration: row.roleModelInspiration,
+        hopeToGainResponses: row.hopeToGainResponses,
+        mentorQualities: row.mentorQualities,
+        preferredMeetingFormat: row.preferredMeetingFormat,
+        hoursPerMonthCommitment: row.hoursPerMonthCommitment,
+        createdAt: row.menteeCreatedAt,
+        updatedAt: row.menteeUpdatedAt,
+        name: row.name,
+        email: row.email,
+        phoneNumber: row.phoneNumber,
+        imageFileId: row.imageFileId,
+        rank: row.rank,
+        positionType: row.positionType,
+        detailedPosition: row.detailedPosition,
+        detailedRank: row.detailedRank,
+        location: row.location,
+      },
+    }));
   }
 
   /**

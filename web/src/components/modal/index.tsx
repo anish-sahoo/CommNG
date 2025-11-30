@@ -1,5 +1,4 @@
 "use client";
-
 import type { ReactNode } from "react";
 import {
   Dialog,
@@ -13,7 +12,7 @@ import {
 export type ModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title?: string;
+  title?: string | ReactNode;
   description?: string;
   children?: ReactNode;
   footer?: ReactNode;

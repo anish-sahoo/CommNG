@@ -356,9 +356,12 @@ export class MentorshipService {
     };
 
     if (mentorData.mentor) {
+      const pendingRequests =
+        await this.mentorRepo.getPendingMenteeRequests(userId);
       result.mentor = {
         profile: mentorData.mentor,
         activeMentees: mentorData.activeMentees,
+        pendingRequests,
       };
     }
 

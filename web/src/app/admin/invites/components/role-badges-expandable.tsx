@@ -39,18 +39,32 @@ export function RoleBadgesExpandable({
         <Badge
           variant="outline"
           className="text-xs cursor-pointer hover:bg-accent"
-          onClick={() => setIsExpanded(true)}
+          asChild
         >
-          +{remainingCount} more
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            aria-label={`Show all ${expandedRoles.length} permissions`}
+            className="focus:outline-none"
+          >
+            +{remainingCount} more
+          </button>
         </Badge>
       )}
       {isExpanded && expandedRoles.length > maxDisplay && (
         <Badge
           variant="outline"
           className="text-xs cursor-pointer hover:bg-accent"
-          onClick={() => setIsExpanded(false)}
+          asChild
         >
-          Show less
+          <button
+            type="button"
+            onClick={() => setIsExpanded(false)}
+            aria-label="Collapse extra permissions"
+            className="focus:outline-none"
+          >
+            Show less
+          </button>
         </Badge>
       )}
     </div>

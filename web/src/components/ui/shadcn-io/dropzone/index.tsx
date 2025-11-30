@@ -2,7 +2,7 @@
 
 import { UploadIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useId } from "react";
 import type { DropEvent, DropzoneOptions, FileRejection } from "react-dropzone";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,15 @@ const DropzoneContext = createContext<DropzoneContextType | undefined>(
 export type DropzoneProps = Omit<DropzoneOptions, "onDrop"> & {
   src?: File[];
   className?: string;
+  /**
+   * Accessible label for the drop target. Defaults to a description
+   * that mentions whether single or multiple files are allowed.
+   */
+  ariaLabel?: string;
+  /**
+   * Additional description read by screen readers to explain limits.
+   */
+  ariaDescription?: string;
   onDrop?: (
     acceptedFiles: File[],
     fileRejections: FileRejection[],
@@ -54,6 +63,8 @@ export const Dropzone = ({
   disabled,
   src,
   className,
+  ariaLabel,
+  ariaDescription,
   children,
   ...props
 }: DropzoneProps) => {
@@ -75,6 +86,17 @@ export const Dropzone = ({
     },
     ...props,
   });
+  const descriptionId = useId();
+  const defaultLabel =
+    ariaLabel ?? `Upload ${maxFiles === 1 ? "a file" : "files"}`;
+  const computedDescription =
+    ariaDescription ??
+    `Press enter or click to upload ${maxFiles === 1 ? "a file" : "files"}. ` +
+      "You can also drag and drop files here" +
+      (accept ? `; accepted types: ${Object.keys(accept).join(", ")}` : "") +
+      (maxSize ? `; maximum size ${renderBytes(maxSize)}` : "") +
+      (minSize ? `; minimum size ${renderBytes(minSize)}` : "") +
+      (disabled ? "; uploads are currently disabled" : "");
 
   return (
     <DropzoneContext.Provider
@@ -90,8 +112,13 @@ export const Dropzone = ({
         disabled={disabled}
         type="button"
         variant="outline"
+        aria-label={defaultLabel}
+        aria-describedby={descriptionId}
         {...getRootProps()}
       >
+        <span id={descriptionId} className="sr-only">
+          {computedDescription}
+        </span>
         <input {...getInputProps()} disabled={disabled} />
         {children}
       </Button>

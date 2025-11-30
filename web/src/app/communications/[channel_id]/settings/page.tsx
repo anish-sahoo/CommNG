@@ -492,7 +492,7 @@ export default function ChannelSettingsPage({
               type="button"
               variant="destructive"
               size="lg"
-              className="text-sm font-semibold bg-error text-white hover:bg-error/90 focus-visible:ring-error/30 w-full sm:w-auto"
+              className="text-sm font-semibold bg-error text-white hover:bg-error/80 focus-visible:ring-error/30 w-full sm:w-auto"
               onClick={handleSelect}
               aria-label={isAdmin ? "Delete channel" : "Leave channel"}
             >

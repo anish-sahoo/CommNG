@@ -1,10 +1,16 @@
+﻿"use client";
+
 import camaraderie from "@images/mentorship/camaraderie.jpg";
 import professional_growth from "@images/mentorship/professional_growth.jpg";
 import service_responsibility from "@images/mentorship/service_responsibility.jpg";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
+import { useTRPC } from "@/lib/trpc";
 
 const cards = [
   {
@@ -28,15 +34,50 @@ const cards = [
 ];
 
 export default function MentorshipLanding() {
+  const router = useRouter();
+  const trpc = useTRPC();
+  const { data, isLoading } = useQuery(
+    trpc.mentorship.getMentorshipData.queryOptions(),
+  );
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const hasMentorProfile = Boolean(data?.mentor?.profile);
+  const hasMenteeProfile = Boolean(data?.mentee?.profile);
+  const shouldRedirect = hasMentorProfile || hasMenteeProfile;
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (shouldRedirect) {
+      setIsRedirecting(true);
+      router.replace("/mentorship/dashboard");
+    }
+  }, [isLoading, shouldRedirect, router]);
+
+  const shellTitle = (
+    <div className="flex flex-col gap-2">
+      <h1 className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+        Mentorship
+      </h1>
+    </div>
+  );
+
+  if (isLoading || isRedirecting || shouldRedirect) {
+    return (
+      <TitleShell
+        title={shellTitle}
+        scrollableContent={false}
+        contentClassName="md:pr-0"
+      >
+        <div className="py-10 text-center text-lg text-secondary">
+          Checking your mentorship profile...
+        </div>
+      </TitleShell>
+    );
+  }
+
   return (
     <TitleShell
-      title={
-        <div className="flex flex-col gap-2">
-          <h1 className="text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
-            Mentorship
-          </h1>
-        </div>
-      }
+      title={shellTitle}
       scrollableContent={false}
       contentClassName="md:pr-0"
     >
@@ -52,7 +93,7 @@ export default function MentorshipLanding() {
               type="button"
               size="lg"
               className="
-                inline-flex w-full items-center justify-center gap-3
+                inline-flex w/full items-center justify-center gap-3
                 px-12 py-5 text-xl font-semibold sm:text-2xl
                 bg-primary text-white
                 transition-colors
@@ -70,7 +111,7 @@ export default function MentorshipLanding() {
               type="button"
               size="lg"
               className="
-                inline-flex w-full items-center justify-center gap-3
+                inline-flex w/full items-center justify-center gap-3
                 px-12 py-5 text-xl font-semibold sm:text-2xl
                 bg-primary text-white
                 transition-colors
@@ -84,7 +125,7 @@ export default function MentorshipLanding() {
           </Link>
         </div>
 
-        <div className="mx-auto flex w-full app-content-width flex-col gap-12">
+        <div className="mx-auto flex w/full app-content-width flex-col gap-12">
           {cards.map((card) => (
             <article
               key={card.title}

@@ -2,11 +2,13 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
+import { icons } from "@/components/icons";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { TextInput } from "@/components/text-input";
 import {
@@ -159,11 +161,20 @@ const rankOptions = [
 ];
 
 export default function MentorshipApplyMentorPage() {
-  const trpc = useTRPC();
+  const _trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: sessionData } = authClient.useSession();
   const userId = sessionData?.user?.id ?? null;
+  const backHref = useMemo(
+    () =>
+      searchParams.get("from") === "dashboard"
+        ? "/mentorship/dashboard"
+        : "/mentorship",
+    [searchParams],
+  );
+  const BackIcon = icons.arrowLeft;
 
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
@@ -185,9 +196,13 @@ export default function MentorshipApplyMentorPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   // Aligned with server `appRouter.mentorship.createMentor`
-  const createMentor = useMutation(
-    trpc.mentorship.createMentor.mutationOptions(),
-  );
+  const createMentor = useMutation({
+    mutationFn: async (
+      input: Parameters<
+        (typeof trpcClient.mentorship.createMentor)["mutate"]
+      >[0],
+    ) => trpcClient.mentorship.createMentor.mutate(input),
+  });
 
   const uploadResume = useCallback(
     async (file: File) => {
@@ -437,9 +452,18 @@ export default function MentorshipApplyMentorPage() {
   return (
     <div className="flex flex-col flex-wrap w-full relative items-left justify-center sm:gap-16 px-8 sm:px-10 lg:px-20 py-10 mx-4">
       <section className="flex flex-col items-left space-y-8">
-        <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl mt-4">
-          Mentor Onboarding Application
-        </h1>
+        <div className="flex items-center gap-3 mt-2">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-2 text-accent hover:underline"
+            aria-label="Back"
+          >
+            <BackIcon className="h-6 w-6" />
+          </Link>
+          <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl">
+            Mentor Onboarding Application
+          </h1>
+        </div>
         <h1 className="text-s sm:text-sm text-secondary mb-2">
           Thank you for your interest in mentoring. Give yourself 20-25 minutes
           to thoughtfully complete this application. Your responses are used to
