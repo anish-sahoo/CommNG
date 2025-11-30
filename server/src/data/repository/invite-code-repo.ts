@@ -1,4 +1,13 @@
-import { and, eq, gt, isNotNull, isNull, lt } from "drizzle-orm";
+import {
+  and,
+  count,
+  eq,
+  gt,
+  isNotNull,
+  isNull,
+  lt,
+  type SQL,
+} from "drizzle-orm";
 import { type InviteCode, inviteCodes } from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import type { RoleKey } from "../../data/roles.js";
@@ -130,39 +139,61 @@ export class InviteCodeRepository {
    * @param status Optional status filter
    * @param limit Maximum number of results
    * @param offset Offset for pagination
-   * @returns Array of invite codes with computed status
+   * @returns Paginated invite codes with metadata
    */
   async listInviteCodes(status?: InviteCodeStatus, limit = 50, offset = 0) {
-    let query = db.select().from(inviteCodes);
-
-    // Apply status filter
+    // Build where condition
     const now = new Date();
+    let whereCondition: SQL | undefined;
+
     if (status === "active") {
-      query = query.where(
-        and(
-          isNull(inviteCodes.revokedAt),
-          isNull(inviteCodes.usedBy),
-          gt(inviteCodes.expiresAt, now),
-        ),
-      ) as typeof query;
+      whereCondition = and(
+        isNull(inviteCodes.revokedAt),
+        isNull(inviteCodes.usedBy),
+        gt(inviteCodes.expiresAt, now),
+      );
     } else if (status === "used") {
-      query = query.where(isNotNull(inviteCodes.usedBy)) as typeof query;
+      whereCondition = isNotNull(inviteCodes.usedBy);
     } else if (status === "expired") {
-      query = query.where(
-        and(
-          isNull(inviteCodes.revokedAt),
-          isNull(inviteCodes.usedBy),
-          lt(inviteCodes.expiresAt, now),
-        ),
-      ) as typeof query;
+      whereCondition = and(
+        isNull(inviteCodes.revokedAt),
+        isNull(inviteCodes.usedBy),
+        lt(inviteCodes.expiresAt, now),
+      );
     } else if (status === "revoked") {
-      query = query.where(isNotNull(inviteCodes.revokedAt)) as typeof query;
+      whereCondition = isNotNull(inviteCodes.revokedAt);
     }
 
-    const codes = await query.limit(limit).offset(offset);
+    // Get total count
+    const countQuery = whereCondition
+      ? db.select({ count: count() }).from(inviteCodes).where(whereCondition)
+      : db.select({ count: count() }).from(inviteCodes);
+
+    const countRes = await countQuery;
+
+    const totalCount = countRes[0]?.count ?? 0;
+
+    // Get paginated data
+    let dataQuery = db.select().from(inviteCodes);
+    if (whereCondition) {
+      dataQuery = dataQuery.where(whereCondition) as typeof dataQuery;
+    }
+
+    const codes = await dataQuery.limit(limit).offset(offset);
 
     // Add computed status to each code
-    return codes.map((code) => this.addStatusToCode(code));
+    const data = codes.map((code) => this.addStatusToCode(code));
+
+    // Calculate pagination metadata
+    const hasMore = offset + limit < totalCount;
+    const hasPrevious = offset > 0;
+
+    return {
+      data,
+      totalCount,
+      hasMore,
+      hasPrevious,
+    };
   }
 
   /**

@@ -8,6 +8,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
@@ -130,6 +131,13 @@ type ChannelViewProps = {
 export function ChannelView({ channelId }: ChannelViewProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
+  const backHref =
+    from === "all" ? "/communications/all-channels" : "/communications";
+  const backAriaLabel =
+    from === "all" ? "Back to all channels" : "Back to my channels";
 
   const [_isSmallScreen, setIsSmallScreen] = useState(false);
 
@@ -408,8 +416,8 @@ export function ChannelView({ channelId }: ChannelViewProps) {
     return (
       <TitleShell
         title={displayChannelName}
-        backHref="/communications"
-        backAriaLabel="Back to my channels"
+        backHref={backHref}
+        backAriaLabel={backAriaLabel}
       >
         <div className="flex flex-col items-center justify-center gap-6 rounded-xl border border-border bg-muted/30 p-8 text-center">
           <div className="flex flex-col gap-2">
@@ -440,8 +448,8 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   return (
     <TitleShell
       title={displayChannelName}
-      backHref="/communications"
-      backAriaLabel="Back to my channels"
+      backHref={backHref}
+      backAriaLabel={backAriaLabel}
       actions={
         <>
           <div className="hidden items-center gap-3 sm:flex">

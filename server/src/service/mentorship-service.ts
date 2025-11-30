@@ -24,11 +24,13 @@ import type { MatchingService } from "./matching-service.js";
 /**
  * Service to handle mentorship data aggregation
  *
- * NOTE: Mentor and mentee profiles returned from this service are backed by
- * `GetMentorOutput` and `GetMenteeOutput`, which now include enriched user
- * profile fields (name, rank / position, image file id, contact, location).
- * Callers can rely on those fields being present when a related `users`
- * record exists, without making additional user lookups.
+ * NOTE: All mentor and mentee profiles returned from this service (including
+ * active mentors, active mentees, and mentor recommendations) are backed by
+ * `GetMentorOutput` and `GetMenteeOutput`, which include enriched user profile
+ * fields (name, email, phoneNumber, imageFileId, rank, positionType,
+ * detailedPosition, detailedRank, location). Callers can rely on those fields
+ * being present when a related `users` record exists, without making additional
+ * user lookups.
  */
 export class MentorshipService {
   constructor(
@@ -330,10 +332,13 @@ export class MentorshipService {
 
     return {
       profile: menteeData.mentee,
+      // Note: activeMentors from getMenteeWithActiveMentors include enriched user profile fields
+      // (name, email, phoneNumber, imageFileId, rank, positionType, etc.)
       activeMentors: menteeData.activeMentors.map((m) => ({
         ...m,
         strengths: m.strengths ?? [],
       })),
+      // Note: mentorRecommendations use mentors from getMentorsByUserIds which include enriched fields
       mentorRecommendations: mentorRecs,
     };
   }

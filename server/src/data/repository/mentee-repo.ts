@@ -415,9 +415,20 @@ export class MenteeRepository {
         hoursPerMonthCommitment: mentors.hoursPerMonthCommitment,
         createdAt: mentors.createdAt,
         updatedAt: mentors.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentorshipMatches)
       .innerJoin(mentors, eq(mentors.userId, mentorshipMatches.mentorUserId))
+      .innerJoin(users, eq(users.id, mentors.userId))
       .where(
         and(
           eq(mentorshipMatches.requestorUserId, userId),

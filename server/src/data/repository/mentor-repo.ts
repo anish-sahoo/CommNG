@@ -278,9 +278,20 @@ export class MentorRepository {
         hoursPerMonthCommitment: mentees.hoursPerMonthCommitment,
         createdAt: mentees.createdAt,
         updatedAt: mentees.updatedAt,
+        // Enriched user profile fields
+        name: users.name,
+        email: users.email,
+        phoneNumber: users.phoneNumber,
+        imageFileId: users.image,
+        rank: users.rank,
+        positionType: users.positionType,
+        detailedPosition: users.detailedPosition,
+        detailedRank: users.detailedRank,
+        location: users.location,
       })
       .from(mentorshipMatches)
       .innerJoin(mentees, eq(mentees.userId, mentorshipMatches.requestorUserId))
+      .innerJoin(users, eq(users.id, mentees.userId))
       .where(
         and(
           eq(mentorshipMatches.mentorUserId, userId),
