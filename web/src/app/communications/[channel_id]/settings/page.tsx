@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { resizeImage } from "@/utils/resize";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
@@ -189,16 +190,22 @@ export default function ChannelSettingsPage({
     setBannerError(null);
     setBannerUploading(true);
     try {
+      // Resize image if it's an image file
+      let processedFile = file;
+      if (file.type.startsWith('image/')) {
+        processedFile = await resizeImage(file, { maxSizeMB: 2, maxWidthOrHeight: 1200 });
+      }
+
       const presign = await trpcClient.files.createPresignedUpload.mutate({
-        fileName: file.name,
-        contentType: file.type,
-        fileSize: file.size,
+        fileName: processedFile.name,
+        contentType: processedFile.type,
+        fileSize: processedFile.size,
       });
 
       const res = await fetch(presign.uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-        body: file,
+        headers: { "Content-Type": processedFile.type || "application/octet-stream" },
+        body: processedFile,
       });
       if (!res.ok) {
         throw new Error("Upload failed. Please try again.");
@@ -206,9 +213,9 @@ export default function ChannelSettingsPage({
 
       await trpcClient.files.confirmUpload.mutate({
         fileId: presign.fileId,
-        fileName: file.name,
+        fileName: processedFile.name,
         storedName: presign.storedName,
-        contentType: file.type || undefined,
+        contentType: processedFile.type || undefined,
       });
 
       setChannelBannerFileId(presign.fileId);

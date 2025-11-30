@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { resizeImage } from "@/utils/resize";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
@@ -223,18 +224,23 @@ export default function ProfileEditPage() {
       setPhotoError(null);
 
       try {
+        let processedFile = file;
+        if (file.type.startsWith('image/')) {
+          processedFile = await resizeImage(file, { maxSizeMB: 1, maxWidthOrHeight: 400 });
+        }
+
         const presign = await trpcClient.files.createPresignedUpload.mutate({
-          fileName: file.name,
-          contentType: file.type,
-          fileSize: file.size,
+          fileName: processedFile.name,
+          contentType: processedFile.type,
+          fileSize: processedFile.size,
         });
 
         const uploadResponse = await fetch(presign.uploadUrl, {
           method: "PUT",
           headers: {
-            "Content-Type": file.type || "application/octet-stream",
+            "Content-Type": processedFile.type || "application/octet-stream",
           },
-          body: file,
+          body: processedFile,
         });
 
         if (!uploadResponse.ok) {
@@ -243,9 +249,9 @@ export default function ProfileEditPage() {
 
         await trpcClient.files.confirmUpload.mutate({
           fileId: presign.fileId,
-          fileName: file.name,
+          fileName: processedFile.name,
           storedName: presign.storedName,
-          contentType: file.type || undefined,
+          contentType: processedFile.type || undefined,
         });
 
         setAvatarFileId(presign.fileId);

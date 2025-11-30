@@ -13,7 +13,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
 async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
   if (!("serviceWorker" in navigator) || !("Notification" in window)) {
-    console.log(
+    console.error(
       "subscribeIfNeeded: browser doesn't support service workers or notifications",
     );
     return;
@@ -21,7 +21,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
 
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   if (!publicKey) {
-    console.log(
+    console.error(
       "subscribeIfNeeded: NEXT_PUBLIC_VAPID_PUBLIC_KEY not set; skipping",
     );
     return;
@@ -30,11 +30,11 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
   try {
     const reg = await navigator.serviceWorker.register("/sw.js");
     await navigator.serviceWorker.ready;
-    console.log("Service worker registration succeeded:", reg);
+    console.debug("Service worker registration succeeded:", reg);
 
     const existingSub = await reg.pushManager.getSubscription();
     if (existingSub) {
-      console.log(
+      console.debug(
         "Existing subscription found; sending to backend...",
         existingSub,
       );
@@ -43,7 +43,6 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
     }
 
     let permission = Notification.permission;
-    console.log("Notification.permission =>", permission);
     if (permission === "default") {
       permission = await Notification.requestPermission();
     }
@@ -51,7 +50,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
     if (permission !== "granted") {
       return;
     }
-    console.log(
+    console.debug(
       "No existing subscription; subscribing user to notifications...",
     );
     const subscription = await reg.pushManager.subscribe({
@@ -65,7 +64,7 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
       !subscriptionJson.keys?.p256dh ||
       !subscriptionJson.keys?.auth
     ) {
-      console.log(
+      console.debug(
         "New subscription missing required fields; skipping backend send",
       );
       return;
@@ -80,9 +79,9 @@ async function subscribeIfNeeded(trpc: ReturnType<typeof useTRPCClient>) {
       topics: ["general"],
     };
     try {
-      console.log("Sending newly-created subscription to backend...");
+      console.debug("Sending newly-created subscription to backend...");
       await trpc.notifications.subscribe.mutate(payload);
-      console.log("Successfully sent new subscription to backend");
+      console.debug("Successfully sent new subscription to backend");
     } catch (err) {
       console.error("Failed to save new subscription to backend", err);
     }
@@ -99,14 +98,14 @@ async function sendCurrentSubscriptionToBackend(
   try {
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg) {
-      console.log(
+      console.warn(
         "sendCurrentSubscriptionToBackend: no service worker registration",
       );
       return;
     }
     const existingSub = await reg.pushManager.getSubscription();
     if (!existingSub) {
-      console.log("sendCurrentSubscriptionToBackend: no existing subscription");
+      console.debug("sendCurrentSubscriptionToBackend: no existing subscription");
       return;
     }
 
@@ -116,7 +115,7 @@ async function sendCurrentSubscriptionToBackend(
       !subscriptionJson.keys?.p256dh ||
       !subscriptionJson.keys?.auth
     ) {
-      console.log(
+      console.warn(
         "sendCurrentSubscriptionToBackend: existing subscription is missing fields",
       );
       return;
@@ -131,12 +130,12 @@ async function sendCurrentSubscriptionToBackend(
       topics: ["general"],
     };
 
-    console.log(
+    console.debug(
       "sendCurrentSubscriptionToBackend: sending subscription to backend (roles changed / login)...",
     );
     try {
       await trpc.notifications.subscribe.mutate(payload);
-      console.log(
+      console.debug(
         "sendCurrentSubscriptionToBackend: successfully saved subscription to backend",
       );
     } catch (err) {
@@ -162,7 +161,7 @@ export default function NotificationSubscriber() {
   useEffect(() => {
     if (attemptedRef.current) return;
     attemptedRef.current = true;
-    console.log("NotificationSubscriber: running subscribeIfNeeded");
+    console.debug("NotificationSubscriber: running subscribeIfNeeded");
     // Run registration on mount unconditionally — the SW should be registered
     // for all visitors. When the user is authenticated (we can tell from
     // `roles`) we'll attempt to save the subscription to the backend; if not,
@@ -177,7 +176,7 @@ export default function NotificationSubscriber() {
     if (sentOnRolesRef.current) return;
 
     sentOnRolesRef.current = true;
-    console.log(
+    console.debug(
       "NotificationSubscriber: roles present; re-sending subscription to backend if any",
     );
     sendCurrentSubscriptionToBackend(trpc);
