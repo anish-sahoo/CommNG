@@ -78,7 +78,7 @@ export default function ChannelMembersPage({
       isCurrentUser: member.userId === currentUserId,
       userId: member.userId,
       action: member.action,
-      image: member.image
+      image: member.image,
     }));
   }, [membersQuery.data, currentUserId]);
 

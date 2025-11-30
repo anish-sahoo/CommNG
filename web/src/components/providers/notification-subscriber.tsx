@@ -105,7 +105,9 @@ async function sendCurrentSubscriptionToBackend(
     }
     const existingSub = await reg.pushManager.getSubscription();
     if (!existingSub) {
-      console.debug("sendCurrentSubscriptionToBackend: no existing subscription");
+      console.debug(
+        "sendCurrentSubscriptionToBackend: no existing subscription",
+      );
       return;
     }
 

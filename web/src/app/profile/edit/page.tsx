@@ -11,7 +11,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { resizeImage } from "@/utils/resize";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Button } from "@/components/ui/button";
@@ -30,6 +29,7 @@ import {
 } from "@/components/ui/shadcn-io/dropzone";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { resizeImage } from "@/utils/resize";
 
 type AvatarStatus = "idle" | "uploading" | "uploaded" | "error";
 
@@ -225,8 +225,11 @@ export default function ProfileEditPage() {
 
       try {
         let processedFile = file;
-        if (file.type.startsWith('image/')) {
-          processedFile = await resizeImage(file, { maxSizeMB: 1, maxWidthOrHeight: 400 });
+        if (file.type.startsWith("image/")) {
+          processedFile = await resizeImage(file, {
+            maxSizeMB: 1,
+            maxWidthOrHeight: 400,
+          });
         }
 
         const presign = await trpcClient.files.createPresignedUpload.mutate({

@@ -2,7 +2,6 @@
 
 import { useCallback, useId, useMemo, useState } from "react";
 import { icons } from "@/components/icons";
-import { resizeImage } from "@/utils/resize";
 import { TextInput } from "@/components/text-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { useTRPCClient } from "@/lib/trpc";
+import { resizeImage } from "@/utils/resize";
 
 export type CreateChannelValues = {
   title: string;
@@ -86,8 +86,11 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
       try {
         // Resize image if it's an image file
         let processedFile = file;
-        if (file.type.startsWith('image/')) {
-          processedFile = await resizeImage(file, { maxSizeMB: 2, maxWidthOrHeight: 1200 });
+        if (file.type.startsWith("image/")) {
+          processedFile = await resizeImage(file, {
+            maxSizeMB: 2,
+            maxWidthOrHeight: 1200,
+          });
         }
 
         const presign = await trpcClient.files.createPresignedUpload.mutate({
@@ -98,7 +101,9 @@ export function CreateChannelForm({ onSubmit, submitting, error }: Props) {
 
         const res = await fetch(presign.uploadUrl, {
           method: "PUT",
-          headers: { "Content-Type": processedFile.type || "application/octet-stream" },
+          headers: {
+            "Content-Type": processedFile.type || "application/octet-stream",
+          },
           body: processedFile,
         });
         if (!res.ok) throw new Error("File upload failed. Please try again.");

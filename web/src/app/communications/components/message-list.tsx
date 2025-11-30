@@ -1,8 +1,6 @@
 "use client";
 
 import PostedCard from "@/components/posted-card";
-import { useEffect, useMemo, useState } from "react";
-import { useTRPCClient } from "@/lib/trpc";
 
 export type ChannelMessage = {
   id: number;

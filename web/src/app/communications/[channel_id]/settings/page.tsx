@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useId, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { resizeImage } from "@/utils/resize";
 import DropdownSelect from "@/components/dropdown-select";
 import { icons } from "@/components/icons";
 import { TitleShell } from "@/components/layouts/title-shell";
@@ -23,6 +22,7 @@ import {
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { resizeImage } from "@/utils/resize";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -192,8 +192,11 @@ export default function ChannelSettingsPage({
     try {
       // Resize image if it's an image file
       let processedFile = file;
-      if (file.type.startsWith('image/')) {
-        processedFile = await resizeImage(file, { maxSizeMB: 2, maxWidthOrHeight: 1200 });
+      if (file.type.startsWith("image/")) {
+        processedFile = await resizeImage(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1200,
+        });
       }
 
       const presign = await trpcClient.files.createPresignedUpload.mutate({
@@ -204,7 +207,9 @@ export default function ChannelSettingsPage({
 
       const res = await fetch(presign.uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": processedFile.type || "application/octet-stream" },
+        headers: {
+          "Content-Type": processedFile.type || "application/octet-stream",
+        },
         body: processedFile,
       });
       if (!res.ok) {
