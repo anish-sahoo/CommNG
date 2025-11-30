@@ -301,14 +301,14 @@ export default function NewChannelPostPage({
             showCharCount={true}
             counterColor="text-primary"
           />
-          <div
+          <fieldset
             className="space-y-3"
             aria-labelledby={attachmentsLabelId}
             aria-describedby={attachmentsHintId}
           >
-            <p id={attachmentsLabelId} className="sr-only">
+            <legend id={attachmentsLabelId} className="sr-only">
               Attachments
-            </p>
+            </legend>
             <p id={attachmentsHintId} className="sr-only">
               Add up to 10 files. Drag and drop or press enter to browse for
               files. Uploads must finish before posting.
@@ -386,7 +386,7 @@ export default function NewChannelPostPage({
                 ))}
               </div>
             ) : null}
-          </div>
+          </fieldset>
 
           {submissionError && (
             <p className="text-sm text-destructive" role="alert">

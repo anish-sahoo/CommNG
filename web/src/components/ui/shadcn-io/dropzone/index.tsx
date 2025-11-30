@@ -87,7 +87,8 @@ export const Dropzone = ({
     ...props,
   });
   const descriptionId = useId();
-  const defaultLabel = ariaLabel ?? `Upload ${maxFiles === 1 ? "a file" : "files"}`;
+  const defaultLabel =
+    ariaLabel ?? `Upload ${maxFiles === 1 ? "a file" : "files"}`;
   const computedDescription =
     ariaDescription ??
     `Press enter or click to upload ${maxFiles === 1 ? "a file" : "files"}. ` +

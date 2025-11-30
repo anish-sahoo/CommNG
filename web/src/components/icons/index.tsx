@@ -24,6 +24,7 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldUser,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -31,7 +32,6 @@ import {
   UserPlus,
   Users,
   X,
-  ShieldUser,
 } from "lucide-react";
 
 export const icons = {

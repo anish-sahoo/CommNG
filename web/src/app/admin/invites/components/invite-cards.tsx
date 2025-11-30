@@ -103,11 +103,16 @@ export function InviteCards({ inviteCodes, onRevoke }: InviteCardsProps) {
                   <Clock className="h-3 w-3" />
                   <span className="font-medium">Created</span>
                 </div>
-                <div
-                  className="text-foreground"
-                  aria-label={`Created ${formatFullDateTime(inviteCode.createdAt)}`}
-                >
-                  {formatRelativeTime(inviteCode.createdAt)}
+                <div className="text-foreground">
+                  <span className="sr-only">
+                    Created {formatFullDateTime(inviteCode.createdAt)}
+                  </span>
+                  <time
+                    dateTime={new Date(inviteCode.createdAt).toISOString()}
+                    aria-hidden="true"
+                  >
+                    {formatRelativeTime(inviteCode.createdAt)}
+                  </time>
                 </div>
                 <div className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {formatFullDateTime(inviteCode.createdAt)}
@@ -118,11 +123,16 @@ export function InviteCards({ inviteCodes, onRevoke }: InviteCardsProps) {
                   <Calendar className="h-3 w-3" />
                   <span className="font-medium">Expires</span>
                 </div>
-                <div
-                  className="text-foreground"
-                  aria-label={`Expires ${formatFullDateTime(inviteCode.expiresAt)}`}
-                >
-                  {formatRelativeTime(inviteCode.expiresAt)}
+                <div className="text-foreground">
+                  <span className="sr-only">
+                    Expires {formatFullDateTime(inviteCode.expiresAt)}
+                  </span>
+                  <time
+                    dateTime={new Date(inviteCode.expiresAt).toISOString()}
+                    aria-hidden="true"
+                  >
+                    {formatRelativeTime(inviteCode.expiresAt)}
+                  </time>
                 </div>
                 <div className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {formatFullDateTime(inviteCode.expiresAt)}

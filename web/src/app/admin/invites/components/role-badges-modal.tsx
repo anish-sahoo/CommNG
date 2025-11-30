@@ -43,7 +43,11 @@ export function RoleBadgesModal({
           </Badge>
         ))}
         {remainingCount > 0 && (
-          <Badge variant="outline" className="text-xs cursor-pointer hover:bg-accent" asChild>
+          <Badge
+            variant="outline"
+            className="text-xs cursor-pointer hover:bg-accent"
+            asChild
+          >
             <button
               type="button"
               onClick={() => setIsOpen(true)}
