@@ -16,6 +16,47 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTRPC } from "@/lib/trpc";
 
+type DashboardMentor = {
+  userId: string;
+  name?: string | null;
+  rank?: string | null;
+  location?: string | null;
+  personalInterests?: string | string[] | null;
+  careerAdvice?: string | null;
+  email?: string | null;
+  phoneNumber?: string | null;
+  imageFileId?: string | null;
+  preferredMeetingFormat?: string | null;
+  hoursPerMonthCommitment?: number | null;
+  detailedPosition?: string | null;
+  positionType?: string | null;
+};
+
+type DashboardMentee = {
+  userId: string;
+  name?: string | null;
+  rank?: string | null;
+  location?: string | null;
+  personalInterests?: string | string[] | null;
+  learningGoals?: string | null;
+  preferredMeetingFormat?: string | null;
+  hoursPerMonthCommitment?: number | null;
+  hopeToGainResponses?: string[] | null;
+  roleModelInspiration?: string | null;
+  detailedPosition?: string | null;
+  positionType?: string | null;
+};
+
+type MentorRecommendation = {
+  mentor: DashboardMentor;
+  status: "active" | "pending" | "suggested";
+};
+
+type PendingMentorshipRequest = {
+  matchId: number;
+  mentee: DashboardMentee;
+};
+
 // MentorshipDashboard shows a view of the user's mentorship status using real backend data.
 export default function MentorshipDashboard() {
   const trpc = useTRPC();
@@ -105,13 +146,13 @@ export default function MentorshipDashboard() {
     const mentorRecommendations = data?.mentee?.mentorRecommendations ?? [];
 
     const matchedMentors: CollapsibleCardProps[] = activeMentors.map(
-      (item: any) => ({
-        name: item.name,
+      (item: DashboardMentor) => ({
+        name: item.name ?? "Unknown mentor",
         rank: item.rank ?? "Unknown rank",
         location: item.location ?? "Not provided",
         personalInterests: Array.isArray(item.personalInterests)
           ? item.personalInterests.join(", ")
-          : item.personalInterests ?? "",
+          : (item.personalInterests ?? ""),
         information: item.careerAdvice || "",
         email: item.email ?? "Not provided",
         phone: item.phoneNumber ?? "Not provided",
@@ -120,8 +161,8 @@ export default function MentorshipDashboard() {
     );
 
     const suggestedMentors: MentorListViewItem[] = mentorRecommendations
-      .filter((item: any) => item.status !== "active")
-      .map((item: any) => {
+      .filter((item: MentorRecommendation) => item.status !== "active")
+      .map((item: MentorRecommendation) => {
         const personalInterests = Array.isArray(item.mentor.personalInterests)
           ? item.mentor.personalInterests
           : item.mentor.personalInterests
@@ -143,7 +184,14 @@ export default function MentorshipDashboard() {
           expectedCommitment: item.mentor.hoursPerMonthCommitment || 0,
           hasRequested: item.status === "pending",
         };
-      });
+      })
+      // Ensure uniqueness by mentor id to avoid duplicate keys in the list view
+      .reduce((acc: MentorListViewItem[], mentor) => {
+        if (!acc.some((existing) => existing.id === mentor.id)) {
+          acc.push(mentor);
+        }
+        return acc;
+      }, []);
 
     const renderSuggestedMentorRowOptions = (
       mentorInformation: MentorListViewItem,
@@ -293,7 +341,7 @@ export default function MentorshipDashboard() {
     const RejectIcon = icons.clear;
 
     const pendingRequests: MenteeListViewItem[] =
-      data?.mentor?.pendingRequests?.map((item: any) => {
+      data?.mentor?.pendingRequests?.map((item: PendingMentorshipRequest) => {
         const personalInterests = Array.isArray(item.mentee.personalInterests)
           ? item.mentee.personalInterests
           : item.mentee.personalInterests
@@ -308,12 +356,14 @@ export default function MentorshipDashboard() {
           name: item.mentee.name ?? "Unknown mentee",
           rank: item.mentee.rank,
           role: item.mentee.detailedPosition ?? item.mentee.positionType,
-          learningGoals: item.mentee.learningGoals,
+          learningGoals: item.mentee.learningGoals ?? undefined,
           personalInterests,
-          hopeToGainResponses: item.mentee.hopeToGainResponses,
-          roleModelInspiration: item.mentee.roleModelInspiration,
-          preferredMeetingFormat: item.mentee.preferredMeetingFormat,
-          hoursPerMonthCommitment: item.mentee.hoursPerMonthCommitment,
+          hopeToGainResponses: item.mentee.hopeToGainResponses ?? undefined,
+          roleModelInspiration: item.mentee.roleModelInspiration ?? undefined,
+          preferredMeetingFormat:
+            item.mentee.preferredMeetingFormat ?? undefined,
+          hoursPerMonthCommitment:
+            item.mentee.hoursPerMonthCommitment ?? undefined,
           matchId: item.matchId,
         };
       }) ?? [];
@@ -400,13 +450,13 @@ export default function MentorshipDashboard() {
     };
 
     const matchedMentees: CollapsibleCardProps[] =
-      data?.mentor?.activeMentees?.map((item: any) => ({
+      data?.mentor?.activeMentees?.map((item: DashboardMentee) => ({
         name: item.name,
         rank: item.rank ?? "Unknown rank",
         location: item.location ?? "Not provided",
         personalInterests: Array.isArray(item.personalInterests)
           ? item.personalInterests.join(", ")
-          : item.personalInterests ?? "",
+          : (item.personalInterests ?? ""),
         information: item.learningGoals || "",
         email: item.email ?? "Not provided",
         phone: item.phoneNumber ?? "Not provided",

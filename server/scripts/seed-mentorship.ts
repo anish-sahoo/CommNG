@@ -1,16 +1,16 @@
 #!/usr/bin/env tsx
+import { hashPassword } from "better-auth/crypto";
 /* eslint-disable no-console */
 import { and, eq } from "drizzle-orm";
 import {
+  account,
   mentees,
+  mentorRecommendations,
   mentors,
   mentorshipMatches,
-  account,
-  mentorRecommendations,
   users,
 } from "../src/data/db/schema.js";
-import { db, connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
-import { hashPassword } from "better-auth/crypto";
+import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
 
 type SeedUserInput = {
   id: string;
@@ -68,7 +68,7 @@ async function ensurePasswordAccount(userId: string): Promise<AccountRow> {
     .select()
     .from(account)
     .where(
-      and(eq(account.userId, userId), eq(account.providerId, "credential"))
+      and(eq(account.userId, userId), eq(account.providerId, "credential")),
     )
     .limit(1);
 
@@ -172,7 +172,7 @@ async function ensureMentee(userId: string): Promise<MenteeRow> {
 
 async function upsertRecommendation(
   userId: string,
-  recommendedMentorIds: string[]
+  recommendedMentorIds: string[],
 ): Promise<MentorRecommendationRow> {
   const [existing] = await db
     .select()
@@ -182,7 +182,10 @@ async function upsertRecommendation(
 
   if (existing) {
     const merged = Array.from(
-      new Set([...(existing.recommendedMentorIds ?? []), ...recommendedMentorIds])
+      new Set([
+        ...(existing.recommendedMentorIds ?? []),
+        ...recommendedMentorIds,
+      ]),
     );
     const [updated] = await db
       .update(mentorRecommendations)
@@ -215,7 +218,7 @@ async function upsertRecommendation(
 async function ensureMatch(
   menteeUserId: string,
   mentorUserId: string,
-  status: "pending" | "accepted" | "declined"
+  status: "pending" | "accepted" | "declined",
 ) {
   const [existing] = await db
     .select()
@@ -223,8 +226,8 @@ async function ensureMatch(
     .where(
       and(
         eq(mentorshipMatches.requestorUserId, menteeUserId),
-        eq(mentorshipMatches.mentorUserId, mentorUserId)
-      )
+        eq(mentorshipMatches.mentorUserId, mentorUserId),
+      ),
     )
     .limit(1);
 
@@ -248,7 +251,7 @@ async function ensureMatch(
 
   if (!created) {
     throw new Error(
-      `Failed to create match between mentee ${menteeUserId} and mentor ${mentorUserId}`
+      `Failed to create match between mentee ${menteeUserId} and mentor ${mentorUserId}`,
     );
   }
 
@@ -329,7 +332,7 @@ async function main() {
   console.log("");
   console.log(`Default password for all: ${DEFAULT_PASSWORD}`);
   console.log(
-    "Use these in the UI to see: mentee sees an active mentor + a pending request; mentors see pending/active mentees."
+    "Use these in the UI to see: mentee sees an active mentor + a pending request; mentors see pending/active mentees.",
   );
 }
 
