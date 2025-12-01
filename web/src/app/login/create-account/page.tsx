@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { toast } from "sonner";
 import { locationOptions } from "@/app/login/create-account/MA-towns";
 import {
@@ -52,21 +52,27 @@ const rankOptions = [
   },
 ];
 
-export default function CreateAccountPage() {
+function CreateAccountPage() {
   const router = useRouter();
   const trpc = useTRPCClient();
-  const [email, _setEmail] = useState("");
-  const [phone, _setPhone] = useState("");
-  const [fullname, _setFullname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [fullname, setFullname] = useState("");
 
-  const [branch, setBranch] = useState<string>("");
+  const [branch, setBranch] = useState<
+    "army-national-guard" | "air-force-national-guard" | null
+  >(null);
+  const [department, setDepartment] = useState<string>("");
   const [rankSelection, setRankSelection] = useState<string>("");
   const [multiLineText, setMultiLineText] = useState<string>("");
   const [locationSelection, setLocationSelection] = useState<string>("");
   const [careerField, setCareerField] = useState<string>("");
 
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [dutySelection, setDutySelection] = useState<string>("");
+  const [dutySelection, setDutySelection] = useState<
+    "active-duty" | "part-time" | null
+  >(null);
   const [signalVisibility, setSignalVisibility] = useState<
     "private" | "public"
   >("private");
@@ -74,41 +80,97 @@ export default function CreateAccountPage() {
     "private",
   );
 
-  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("inviteCode");
 
-  const saveVisibility = async (
-    nextSignal: "private" | "public",
-    nextEmail: "private" | "public",
-  ) => {
-    try {
-      setIsSavingVisibility(true);
-      await trpc.user.updateUserVisibility.mutate({
-        signal_visibility: nextSignal,
-        email_visibility: nextEmail,
-      });
-      toast.success("Visibility updated.");
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to update visibility. Please try again.");
-    } finally {
-      setIsSavingVisibility(false);
-    }
-  };
+  const [dutyError, setDutyError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [branchError, setBranchError] = useState<string | null>(null);
 
   const [isCreateAccount, setIsCreateAccount] = useState(false);
   const handleCreateAccount = async () => {
-    setIsCreateAccount(true);
-    const res = await authClient.signOut();
+    setDutyError(null);
+    setEmailError(null);
+    setPasswordError(null);
+    setBioError(null);
+    setBranchError(null);
 
-    if (res.error) {
-      const message =
-        res.error.message ?? "Unable to create account right now.";
-      toast.error(`${message} Please try again.`);
-      setIsCreateAccount(false);
+    await authClient.signOut();
+
+    if (!inviteCode) {
+      toast.error(
+        "Invite code is missing. Please return to the sign-up page and try again.",
+      );
       return;
     }
 
-    router.replace("/login");
+    if (!dutySelection) {
+      setDutyError("Please select whether you are active duty or part-time.");
+      return;
+    }
+
+    if (!email) {
+      setEmailError("Email is required.");
+      return;
+    }
+
+    if (!password) {
+      setPasswordError("Password is required.");
+      return;
+    }
+
+    if (!multiLineText) {
+      setBioError("Short biography is required.");
+      return;
+    }
+
+    if (!branch) {
+      setBranchError("Branch is required");
+      return;
+    }
+
+    if (!rankSelection) {
+      setBranchError("Rank is required");
+      return;
+    }
+
+    setIsCreateAccount(true);
+    try {
+      await trpc.user.createUser.mutate({
+        inviteCode,
+        userData: {
+          email,
+          password,
+          name: fullname,
+          rank: rankSelection,
+          about: multiLineText,
+          location: locationSelection,
+          positionType:
+            dutySelection === "active-duty" ? "active" : "part-time",
+          branch: branch === "air-force-national-guard" ? "airforce" : "army",
+          department,
+          civilianCareer: careerField,
+
+          emailVisibility,
+          signalVisibility,
+
+          interests: selectedInterests,
+        },
+      });
+
+      const { error } = await authClient.signIn.email({ email, password });
+
+      if (error) {
+        const message = error.message ?? "Unable to create account right now.";
+        toast.error(`${message} Please try again.`);
+      } else {
+        router.replace("/login");
+      }
+    } finally {
+      setIsCreateAccount(false);
+    }
   };
 
   return (
@@ -131,27 +193,52 @@ export default function CreateAccountPage() {
           placeholder="Your full name"
           value={fullname}
           className="w-full mt-2"
+          onChange={setFullname}
         />
 
-        <label htmlFor="login-email">
-          Email address{" "}
-          <span className="font-regular text-accent">(Not Required)</span>
-        </label>
+        <label htmlFor="login-email">Email address*</label>
         <TextInput
           id="login-email"
+          type="email"
           name="email"
           placeholder="you@example.com"
           value={email}
           className="w-full mt-2"
+          onChange={(value) => {
+            setEmail(value);
+            setEmailError(null);
+          }}
         />
+        {emailError && <p className="mt-1 text-xs text-error">{emailError}</p>}
 
-        <label htmlFor="login-phone">Phone Number*</label>
+        <label htmlFor="login-password">Password*</label>
+        <TextInput
+          id="login-password"
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={password}
+          className="w-full mt-2"
+          onChange={(value) => {
+            setPassword(value);
+            setPasswordError(null);
+          }}
+        />
+        {passwordError && (
+          <p className="mt-1 text-xs text-error">{passwordError}</p>
+        )}
+
+        <label htmlFor="login-phone">
+          Phone Number{" "}
+          <span className="font-regular text-accent">(Not Required)</span>
+        </label>
         <TextInput
           id="login-phone"
           name="phone"
           placeholder="(123) 456-7890"
           value={phone}
           className="w-full mt-2"
+          onChange={setPhone}
         />
 
         <label htmlFor="login-location">Location*</label>
@@ -165,20 +252,36 @@ export default function CreateAccountPage() {
         <label htmlFor="login-rank">What is your rank?*</label>
         <SingleSelectButtonGroup
           options={rankOptions}
-          value={rankSelection}
-          onChange={setRankSelection}
-          onDropdownChange={(parent, child) => console.log(parent, child)}
+          value={branch ?? ""}
+          onChange={(val) => {
+            console.log("setting in onChange", val);
+            setBranch(
+              val as "army-national-guard" | "air-force-national-guard",
+            );
+            setBranchError(null);
+          }}
+          onDropdownChange={(branch, rank) => {
+            console.log("setting in onDropdownChange", branch, rank);
+            setBranch(
+              branch as "army-national-guard" | "air-force-national-guard",
+            );
+            setRankSelection(rank);
+            setBranchError(null);
+          }}
           className="w-full mt-2"
         />
+        {branchError && (
+          <p className="mt-1 text-xs text-error">{branchError}</p>
+        )}
 
-        <label htmlFor="login-branch">What is your branch?*</label>
+        <label htmlFor="login-dept">What is your department?*</label>
         <TextInput
-          id="login-branch"
-          name="branch"
-          placeholder="Your branch"
-          value={branch}
+          id="login-dept"
+          name="dept"
+          placeholder="Your department"
+          value={department}
           className="w-full mt-2"
-          onChange={setBranch}
+          onChange={setDepartment}
         />
 
         <label htmlFor="login-career-field">What is your career field?</label>
@@ -199,15 +302,21 @@ export default function CreateAccountPage() {
             { label: "Active Duty", value: "active-duty" },
             { label: "Part-time", value: "part-time" },
           ]}
-          value={dutySelection}
-          onChange={setDutySelection}
-          onDropdownChange={(parent, child) => console.log(parent, child)}
+          value={dutySelection ?? ""}
+          onChange={(value) => {
+            setDutySelection(value as "active-duty" | "part-time" | null);
+            setDutyError(null);
+          }}
         />
+        {dutyError && <p className="mt-1 text-xs text-error">{dutyError}</p>}
 
         <label htmlFor="login-biography">Short Biography*</label>
         <TextInput
           value={multiLineText}
-          onChange={setMultiLineText}
+          onChange={(value) => {
+            setMultiLineText(value);
+            setBioError(null);
+          }}
           placeholder="Enter a short biography about yourself..."
           multiline={true}
           rows={5}
@@ -216,6 +325,7 @@ export default function CreateAccountPage() {
           className="border-primary mt-2"
           counterColor="text-primary"
         />
+        {bioError && <p className="mt-1 text-xs text-error">{bioError}</p>}
 
         <label //selected here will appear selected in "interests" section of mentee/mentor forms
           htmlFor="login-interests"
@@ -237,11 +347,8 @@ export default function CreateAccountPage() {
             <Select
               value={signalVisibility}
               onValueChange={(value) => {
-                const nextSignal = value as "private" | "public";
-                setSignalVisibility(nextSignal);
-                void saveVisibility(nextSignal, emailVisibility);
+                setSignalVisibility(value as "private" | "public");
               }}
-              disabled={isSavingVisibility}
             >
               <SelectTrigger
                 id="signal-visibility"
@@ -261,11 +368,8 @@ export default function CreateAccountPage() {
             <Select
               value={emailVisibility}
               onValueChange={(value) => {
-                const nextEmail = value as "private" | "public";
-                setEmailVisibility(nextEmail);
-                void saveVisibility(signalVisibility, nextEmail);
+                setEmailVisibility(value as "private" | "public");
               }}
-              disabled={isSavingVisibility}
             >
               <SelectTrigger
                 id="email-visibility"
@@ -295,5 +399,20 @@ export default function CreateAccountPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center h-full py-16">
+          <span className="animate-spin mr-2 w-5 h-5 border-4 border-blue-400 border-t-transparent rounded-full inline-block"></span>
+          Loading...
+        </div>
+      }
+    >
+      <CreateAccountPage />
+    </Suspense>
   );
 }
