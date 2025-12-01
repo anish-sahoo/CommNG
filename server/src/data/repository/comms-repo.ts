@@ -790,6 +790,7 @@ export class CommsRepository {
         message: messages.message,
         createdAt: messages.createdAt,
         authorName: users.name,
+        authorImage: users.image,
         authorRank: users.rank,
         authorDepartment: users.department,
         authorBranch: users.branch,

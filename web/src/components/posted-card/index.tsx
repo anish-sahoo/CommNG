@@ -3,11 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { Avatar } from "@/components/avatar";
 import {
   DropdownButtons,
   type DropdownMenuItemConfig,
 } from "@/components/dropdown";
-import { icons } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
@@ -36,7 +36,7 @@ type MessageReaction = {
 type PostedCardProps = {
   channelId: number;
   postId: number;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   name: string;
   rank: string;
   content: string;
