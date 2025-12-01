@@ -254,14 +254,12 @@ function CreateAccountPage() {
           options={rankOptions}
           value={branch ?? ""}
           onChange={(val) => {
-            console.log("setting in onChange", val);
             setBranch(
               val as "army-national-guard" | "air-force-national-guard",
             );
             setBranchError(null);
           }}
           onDropdownChange={(branch, rank) => {
-            console.log("setting in onDropdownChange", branch, rank);
             setBranch(
               branch as "army-national-guard" | "air-force-national-guard",
             );
