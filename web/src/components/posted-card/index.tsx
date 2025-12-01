@@ -53,15 +53,25 @@ type AttachmentStatus = "idle" | "uploading" | "uploaded" | "error";
 
 const UserIcon = icons.user;
 
-const Avatar = () => (
-  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
-    <UserIcon className="h-7 w-7" />
+const Avatar = ({ avatarUrl }: { avatarUrl?: string }) => (
+  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
+    {avatarUrl ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt="User avatar"
+        className="h-full w-full object-cover"
+      />
+    ) : (
+      <UserIcon className="h-7 w-7" />
+    )}
   </div>
 );
 
 export const PostedCard = ({
   channelId,
   postId,
+  avatarUrl,
   name,
   rank,
   content,
@@ -298,7 +308,7 @@ export const PostedCard = ({
         <div className="flex flex-col gap-3 px-2 pt-6 sm:gap-4 sm:px-4 sm:pt-4">
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="flex-shrink-0 self-start">
-              <Avatar />
+              <Avatar avatarUrl={avatarUrl} />
             </div>
             <div className="min-w-0 self-center">
               <div className="text-secondary text-base font-semibold leading-tight text-left sm:text-subheader">
