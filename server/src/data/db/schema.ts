@@ -66,8 +66,7 @@ export const channelPostPermissionEnum = pgEnum(
 // Mentorship application enums
 export const positionTypeEnum = pgEnum("position_type_enum", [
   "active",
-  "guard",
-  "reserve",
+  "part-time",
 ]);
 
 export const serviceTypeEnum = pgEnum("service_type_enum", [
@@ -110,6 +109,8 @@ const vector = customType<{ data: number[]; driverData: string }>({
   },
 });
 
+// IMPORTANT: make sure to update our BetterAuth additionalFields
+// when modifying fields on the user table
 export const users = pgTable(
   "user",
   {
@@ -125,12 +126,10 @@ export const users = pgTable(
     department: text("department"),
     branch: text("branch"),
     positionType: positionTypeEnum("position_type"),
-    serviceType: serviceTypeEnum("service_type"),
-    detailedPosition: text("detailed_position"),
-    detailedRank: text("detailed_rank"),
     location: text("location"),
     about: text("about"),
-    interests: jsonb("interests"),
+    interests: jsonb("interests"), // comma separated string
+    civilianCareer: text("civilian_career"),
 
     signalVisibility: visibilityEnum("signal_visibility")
       .notNull()

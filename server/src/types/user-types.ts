@@ -105,3 +105,24 @@ export const getUsersByIdsInputSchema = z.object({
 });
 
 export type GetUsersByIdsInput = z.infer<typeof getUsersByIdsInputSchema>;
+
+export const createUserInputSchema = z.object({
+  userData: z.object({
+    email: z.email(),
+    password: z.string(),
+    name: z.string(),
+    rank: z.string(),
+    about: z.string(),
+    location: z.string(),
+    positionType: z.enum(["active", "part-time"]),
+    branch: z.enum(["army", "airforce"]),
+    department: z.string(),
+    civilianCareer: z.string().optional(),
+    emailVisibility: z.enum(["private", "public"]),
+    signalVisibility: z.enum(["private", "public"]),
+    interests: z.array(z.string()).optional(),
+  }),
+  inviteCode: z.string(),
+});
+
+export type CreateUserInput = z.infer<typeof createUserInputSchema>;

@@ -23,6 +23,13 @@ async function createUser() {
     rank: "Captain", // optional
     department: "Engineering", // optional
     branch: "Army", // optional
+    positionType: "active",
+    civilianCareer: "Engineering Manager",
+    signalVisibility: "public",
+    emailVisibility: "public",
+    interests: '"Engineering, Technology"',
+    location: "Boston",
+    about: "I am an engineer with a passion for technology.",
   };
 
   console.log("Creating user with the following details:");
@@ -45,6 +52,12 @@ async function createUser() {
         rank: userData.rank,
         department: userData.department,
         branch: userData.branch,
+        positionType: userData.positionType,
+        civilianCareer: userData.civilianCareer,
+        signalVisibility: userData.signalVisibility,
+        emailVisibility: userData.emailVisibility,
+        location: userData.location,
+        about: userData.about,
       },
     });
 

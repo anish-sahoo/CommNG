@@ -1,7 +1,9 @@
 import { and, eq, ilike, inArray, or } from "drizzle-orm";
+import { auth } from "../../auth.js";
 import { users } from "../../data/db/schema.js";
 import { db } from "../../data/db/sql.js";
 import { NotFoundError } from "../../types/errors.js";
+import type { CreateUserInput } from "../../types/user-types.js";
 
 /**
  * Repository to handle database queries/communication related to users
@@ -260,5 +262,34 @@ export class UserRepository {
       .where(inArray(users.id, user_ids));
 
     return userRows;
+  }
+
+  async createUser(userData: CreateUserInput["userData"]) {
+    const res = await auth.api.signUpEmail({
+      body: {
+        email: userData.email,
+        password: userData.password,
+        name: userData.name,
+        rank: userData.rank,
+        about: userData.about,
+        location: userData.location,
+        positionType: userData.positionType,
+        branch: userData.branch,
+        department: userData.department,
+        civilianCareer: userData.civilianCareer,
+        emailVisibility: userData.emailVisibility,
+        signalVisibility: userData.signalVisibility,
+      },
+    });
+
+    // BetterAuth doesn't properly support JSON types, so we will update it separately
+    if (userData.interests) {
+      await db
+        .update(users)
+        .set({ interests: userData.interests.join(", ") })
+        .where(eq(users.id, res.user.id));
+    }
+
+    return res;
   }
 }

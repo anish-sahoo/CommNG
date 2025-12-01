@@ -137,8 +137,6 @@ export class MenteeRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentees)
@@ -184,8 +182,6 @@ export class MenteeRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentees)
@@ -333,8 +329,6 @@ export class MenteeRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentees)
@@ -375,8 +369,6 @@ export class MenteeRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentees)
@@ -422,8 +414,6 @@ export class MenteeRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentorshipMatches)

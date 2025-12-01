@@ -3,8 +3,12 @@ import { FileRepository } from "../data/repository/file-repo.js";
 import type { UserRepository } from "../data/repository/user-repo.js";
 import { NotFoundError } from "../types/errors.js";
 // import { Cache } from "@/utils/cache.js";
-import type { UpdateUserVisibilityInput } from "../types/user-types.js";
+import type {
+  CreateUserInput,
+  UpdateUserVisibilityInput,
+} from "../types/user-types.js";
 import log from "../utils/logger.js";
+import type { InviteCodeService } from "./invite-code-service.js";
 
 const USER_CACHE_TTL_SECONDS = 60 * 60; // keep in sync with Cache decorator default
 
@@ -14,13 +18,19 @@ const USER_CACHE_TTL_SECONDS = 60 * 60; // keep in sync with Cache decorator def
 export class UserService {
   private usersRepo: UserRepository;
   private fileRepo: FileRepository;
+  private inviteCodeService: InviteCodeService;
 
   /**
    * @param usersRepo a reportRepository instance
    */
-  constructor(usersRepo: UserRepository, fileRepo?: FileRepository) {
+  constructor(
+    usersRepo: UserRepository,
+    codeService: InviteCodeService,
+    fileRepo?: FileRepository,
+  ) {
     this.usersRepo = usersRepo;
     this.fileRepo = fileRepo ?? new FileRepository();
+    this.inviteCodeService = codeService;
   }
 
   /**
@@ -165,5 +175,24 @@ export class UserService {
   // @Cache((user_ids: string[]) => `users:${user_ids.join(",")}:data`)
   async getUsersByIds(user_ids: string[]) {
     return this.usersRepo.getUsersByIds(user_ids);
+  }
+
+  // Create a new user and assign roles given by invite code
+  async createUser({ userData, inviteCode }: CreateUserInput) {
+    const validationRes =
+      await this.inviteCodeService.validateInviteCode(inviteCode);
+
+    if (!validationRes.isValid) {
+      throw new Error("Invalid invite code");
+    }
+
+    const signupRes = await this.usersRepo.createUser(userData);
+
+    await this.inviteCodeService.useInviteAndAssignRoles(
+      inviteCode,
+      signupRes.user.id,
+    );
+
+    return signupRes;
   }
 }

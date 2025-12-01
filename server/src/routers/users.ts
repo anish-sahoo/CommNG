@@ -1,10 +1,13 @@
 import { AuthRepository } from "../data/repository/auth-repo.js";
+import { InviteCodeRepository } from "../data/repository/invite-code-repo.js";
 import { UserRepository } from "../data/repository/user-repo.js";
+import { InviteCodeService } from "../service/invite-code-service.js";
 import { UserService } from "../service/user-service.js";
 import { withErrorHandling } from "../trpc/error_handler.js";
 import { procedure, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   checkEmailExistsInputSchema,
+  createUserInputSchema,
   createUserProfileInputSchema,
   getUserDataInputSchema,
   getUsersByIdsInputSchema,
@@ -13,8 +16,11 @@ import {
   updateUserVisibilityInputSchema,
 } from "../types/user-types.js";
 
-const userService = new UserService(new UserRepository());
 const authRepository = new AuthRepository();
+const userService = new UserService(
+  new UserRepository(),
+  new InviteCodeService(new InviteCodeRepository(), authRepository),
+);
 
 const getUserData = protectedProcedure
   .input(getUserDataInputSchema)
@@ -108,6 +114,15 @@ const getUsersByIds = protectedProcedure
     return userService.getUsersByIds(input.user_ids);
   });
 
+const createUser = procedure
+  .input(createUserInputSchema)
+  .meta({
+    description: "Creates a new user and marks their invite code as used",
+  })
+  .mutation(async (ctx) => {
+    return await userService.createUser(ctx.input);
+  });
+
 export const userRouter = router({
   getUserData,
   checkEmailExists,
@@ -117,4 +132,5 @@ export const userRouter = router({
   getUserRoles,
   searchUsers,
   getUsersByIds,
+  createUser,
 });

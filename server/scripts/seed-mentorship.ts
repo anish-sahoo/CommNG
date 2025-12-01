@@ -17,8 +17,7 @@ type SeedUserInput = {
   name: string;
   email: string;
   rank?: string;
-  positionType?: "active" | "guard" | "reserve";
-  serviceType?: "enlisted" | "officer";
+  positionType?: "active" | "part-time";
   location?: string;
   phoneNumber?: string;
 };
@@ -49,7 +48,6 @@ async function ensureUser(input: SeedUserInput): Promise<UserRow> {
       email: input.email,
       rank: input.rank,
       positionType: input.positionType,
-      serviceType: input.serviceType,
       location: input.location,
       phoneNumber: input.phoneNumber,
       emailVerified: true,
@@ -275,7 +273,6 @@ async function main() {
     email: "alice.mentor@example.com",
     rank: "O-3",
     positionType: "active",
-    serviceType: "officer",
     location: "Boise, ID",
     phoneNumber: "555-0101",
   });
@@ -284,8 +281,7 @@ async function main() {
     name: "Sgt. Bob Guide",
     email: "bob.guide@example.com",
     rank: "E-6",
-    positionType: "guard",
-    serviceType: "enlisted",
+    positionType: "part-time",
     location: "Salt Lake City, UT",
     phoneNumber: "555-0102",
   });
@@ -294,8 +290,7 @@ async function main() {
     name: "Spc. Casey Learner",
     email: "casey.learner@example.com",
     rank: "E-4",
-    positionType: "reserve",
-    serviceType: "enlisted",
+    positionType: "part-time",
     location: "Boise, ID",
     phoneNumber: "555-0103",
   });
@@ -305,7 +300,6 @@ async function main() {
     email: "dana.support@example.com",
     rank: "O-2",
     positionType: "active",
-    serviceType: "officer",
     location: "Portland, OR",
     phoneNumber: "555-0104",
   });

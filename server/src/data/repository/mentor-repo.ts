@@ -142,8 +142,6 @@ export class MentorRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentors)
@@ -190,8 +188,6 @@ export class MentorRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentors)
@@ -240,8 +236,6 @@ export class MentorRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentorshipMatches)
@@ -280,8 +274,6 @@ export class MentorRepository {
         imageFileId: row.imageFileId,
         rank: row.rank,
         positionType: row.positionType,
-        detailedPosition: row.detailedPosition,
-        detailedRank: row.detailedRank,
         location: row.location,
       },
     }));
@@ -321,8 +313,6 @@ export class MentorRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentors)
@@ -367,8 +357,6 @@ export class MentorRepository {
         imageFileId: users.image,
         rank: users.rank,
         positionType: users.positionType,
-        detailedPosition: users.detailedPosition,
-        detailedRank: users.detailedRank,
         location: users.location,
       })
       .from(mentorshipMatches)
