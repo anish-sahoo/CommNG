@@ -31,6 +31,14 @@ type MessageReaction = {
   reactedByCurrentUser?: boolean;
 };
 
+type AccessibleChannel = {
+  channelId: number;
+  name: string;
+  metadata: Record<string, unknown> | null;
+  postPermissionLevel: "admin" | "everyone" | "custom";
+  userPermission: "admin" | "post" | "read" | null;
+};
+
 // Reaction toggles mutate nested arrays later on, so keep cache-owned data isolated by cloning before any optimistic updates run
 function cloneMessages(messages: ChannelMessage[]): ChannelMessage[] {
   return messages.map((message) => ({
@@ -160,6 +168,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
   const parsedChannelId = parseChannelId(channelId);
 
   const channelListQuery = useQuery(trpc.comms.getAllChannels.queryOptions());
+  const allChannelsQueryKey = trpc.comms.getAllChannels.queryKey();
 
   const channelInput =
     parsedChannelId === null ? skipToken : { channelId: parsedChannelId };
@@ -274,11 +283,52 @@ export function ChannelView({ channelId }: ChannelViewProps) {
 
   const { mutate: joinChannel, isPending: isJoining } = useMutation(
     trpc.comms.joinChannel.mutationOptions({
-      onSuccess: () => {
-        // Refetch channel list and messages after joining
-        queryClient.invalidateQueries({
-          queryKey: trpc.comms.getAllChannels.queryKey(),
-        });
+      onMutate: async (variables) => {
+        await queryClient.cancelQueries({ queryKey: allChannelsQueryKey });
+        const previousChannels = queryClient.getQueryData<
+          AccessibleChannel[] | undefined
+        >(allChannelsQueryKey);
+
+        queryClient.setQueryData<AccessibleChannel[] | undefined>(
+          allChannelsQueryKey,
+          (old) => {
+            if (!Array.isArray(old)) {
+              return old;
+            }
+
+            let didUpdate = false;
+            const updated = old.map((channel) => {
+              if (channel.channelId !== variables.channelId) {
+                return channel;
+              }
+
+              if (channel.userPermission === "read") {
+                return channel;
+              }
+
+              didUpdate = true;
+              return {
+                ...channel,
+                userPermission: "read" as AccessibleChannel["userPermission"],
+              };
+            });
+
+            return didUpdate ? updated : old;
+          },
+        );
+
+        return { previousChannels };
+      },
+      onError: (_error, _variables, context) => {
+        if (context) {
+          queryClient.setQueryData<AccessibleChannel[] | undefined>(
+            allChannelsQueryKey,
+            context.previousChannels,
+          );
+        }
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: allChannelsQueryKey });
         if (channelMessagesQueryKey) {
           queryClient.invalidateQueries({
             queryKey: channelMessagesQueryKey,
@@ -433,7 +483,7 @@ export function ChannelView({ channelId }: ChannelViewProps) {
           </div>
           <Button
             onClick={() => {
-              if (parsedChannelId) {
+              if (parsedChannelId !== null) {
                 joinChannel({ channelId: parsedChannelId });
               }
             }}
