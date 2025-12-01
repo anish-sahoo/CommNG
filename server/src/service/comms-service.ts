@@ -293,10 +293,8 @@ export class CommsService {
       throw new BadRequestError("Cannot have decimal points in Channel ID");
     }
     await this.getChannelById(channel_id);
-    const isAdmin = await policyEngine.validate(
-      user_id,
-      channelRole("admin", channel_id),
-    );
+    const _userRoles = await policyEngine.getUserRoles(user_id);
+    const isAdmin = _userRoles.has(channelRole("admin", channel_id));
 
     if (isAdmin) {
       throw new ForbiddenError(
@@ -376,12 +374,16 @@ export class CommsService {
     }
 
     const roleKey = channelRole("read", channel_id);
+    const adminRoleKey = channelRole("admin", channel_id);
 
-    // Check if user already has a role in this channel
-    const hasRole = await policyEngine.validate(user_id, roleKey);
+    // Check if user already has explicit channel roles (not via global admin)
+    const userRoles = await policyEngine.getUserRoles(user_id);
+    const hasExplicitChannelRole =
+      userRoles.has(roleKey) ||
+      userRoles.has(channelRole("post", channel_id)) ||
+      userRoles.has(adminRoleKey);
 
-    if (!hasRole) {
-      // Create read role and assign it to the user
+    if (!hasExplicitChannelRole) {
       await policyEngine.createAndAssignChannelRole(
         user_id,
         user_id,
@@ -392,11 +394,10 @@ export class CommsService {
       );
 
       if (channelData?.postPermissionLevel === "everyone") {
-        const postRoleKey = channelRole("post", channel_id);
         await policyEngine.createAndAssignChannelRole(
           user_id,
           user_id,
-          postRoleKey,
+          channelRole("post", channel_id),
           "post",
           "channel",
           channel_id,

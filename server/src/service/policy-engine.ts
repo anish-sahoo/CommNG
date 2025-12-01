@@ -81,6 +81,15 @@ export class PolicyEngine {
   }
 
   /**
+   * Get all roles for a user (for debugging purposes)
+   * @param userId User ID
+   * @returns Set of role keys
+   */
+  async getUserRoles(userId: string) {
+    return this.authRepository.getRolesForUser(userId);
+  }
+
+  /**
    * Validates if a user has permission for ANY of the provided roles.
    * Accounts for role hierarchy (e.g., channel:1:admin grants channel:1:post and channel:1:read).
    * More efficient than calling validate() multiple times.
