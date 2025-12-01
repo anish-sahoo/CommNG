@@ -318,13 +318,16 @@ describe("InviteCodeService", () => {
       vi.mocked(mockAuthRepo.getAllImpliedRolesForUser).mockResolvedValue(
         new Set([GLOBAL_CREATE_INVITE_KEY]),
       );
-      vi.mocked(mockInviteCodeRepo.listInviteCodes).mockResolvedValue(
-        mockCodes.map((code) => ({ ...code, status: "active" as const })),
-      );
+      vi.mocked(mockInviteCodeRepo.listInviteCodes).mockResolvedValue({
+        data: mockCodes.map((code) => ({ ...code, status: "active" as const })),
+        totalCount: 2,
+        hasMore: false,
+        hasPrevious: false,
+      });
 
       const result = await service.listInviteCodes("admin-id", "active", 50, 0);
 
-      expect(result).toHaveLength(2);
+      expect(result.data).toHaveLength(2);
       expect(mockInviteCodeRepo.listInviteCodes).toHaveBeenCalledWith(
         "active",
         50,

@@ -121,6 +121,23 @@ Alternatively, trigger the application flow that calls `notificationService.send
 - Rotate your VAPID keys if you suspect compromise. Update both server and any clients using the public key.
 - Use a proper contact `mailto:` address so push services can reach you if needed.
 - On production, serve your site over HTTPS (required by Service Workers and push on non-localhost).
+- **GitHub Actions Permissions**: The GitHub Actions IAM user needs `secretsmanager:GetSecretValue` permission on the VAPID keys secret to fetch it during Docker builds. Add this inline policy:
+
+  ```bash
+  aws iam put-user-policy \
+    --user-name CommNG_GithubActionsUser \
+    --policy-name AllowReadVapidKeys \
+    --policy-document '{
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "secretsmanager:GetSecretValue",
+          "Resource": "arn:aws:secretsmanager:us-east-1:215600395213:secret:dev/comm_ng/vapid-keys*"
+        }
+      ]
+    }'
+  ```
 
 
 ## 7) Troubleshooting

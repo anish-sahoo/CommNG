@@ -375,7 +375,10 @@ export default function ProfileCard({
                     />
                   </button>
                 </CollapsibleTrigger>
-                <CollapsibleContent id={aboutSectionId}>
+                <CollapsibleContent
+                  id={aboutSectionId}
+                  className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up"
+                >
                   <div className="profile-card__section-border border-t bg-card px-6 py-5 text-sm leading-relaxed text-secondary/90">
                     {about}
                   </div>

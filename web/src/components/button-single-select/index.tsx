@@ -81,7 +81,7 @@ export function SingleSelectButtonGroup({
 
             {/* Child dropdown & optional "Other" text input */}
             {isActive && hasDropdown && option.dropdownOptions && (
-              <div className="mt-2 -mb-2 flex w-full flex-col pl-6">
+              <div className="mt-2 -mb-2 flex w-full flex-col">
                 <DropdownSelect
                   options={option.dropdownOptions}
                   value={dropdownValue}

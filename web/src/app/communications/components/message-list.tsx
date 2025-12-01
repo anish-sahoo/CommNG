@@ -1,3 +1,5 @@
+"use client";
+
 import PostedCard from "@/components/posted-card";
 
 export type ChannelMessage = {
@@ -5,6 +7,7 @@ export type ChannelMessage = {
   authorName?: string | null;
   authorRank?: string | null;
   authorRole?: string | null;
+  authorImage?: string | null;
   content: string;
   createdAt?: string | Date;
   attachments?: {
@@ -49,6 +52,7 @@ export function MessageList({
           key={message.id}
           channelId={channelId}
           postId={message.id}
+          avatarUrl={message.authorImage}
           name={message.authorName ?? "Unknown Member"}
           rank={message.authorRank ?? message.authorRole ?? ""}
           content={message.content}

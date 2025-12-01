@@ -1,147 +1,186 @@
 "use client";
 
-import type { RoleKey } from "@server/data/roles";
-import { useMutation } from "@tanstack/react-query";
-import { TRPCClientError } from "@trpc/client";
-import { Info } from "lucide-react";
+import type { InviteCodeStatus } from "@server/types/invite-code-types";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Plus } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
+import { AuthGuard } from "@/components/auth/auth-guard";
 import NavigationShell from "@/components/layouts/navigation-shell";
 import { TitleShell } from "@/components/layouts/title-shell";
+import { Button } from "@/components/ui/button";
 import { useHasRole } from "@/hooks/useHasRole";
-import { useTRPC } from "@/lib/trpc";
-import { InviteForm, type InviteFormValues } from "./components/invite-form";
-import { InviteSuccess } from "./components/invite-success";
+import { type InferTRPCOutput, type TRPCProcedures, useTRPC } from "@/lib/trpc";
+import { InviteCards } from "./components/invite-cards";
+import { InviteTable } from "./components/invite-table";
+import { Pagination } from "./components/pagination";
+import { RevokeDialog } from "./components/revoke-dialog";
+import { StatusTabs } from "./components/status-tabs";
 
-type InviteResult = {
-  codeId: number;
-  code: string;
-  roleKeys: RoleKey[];
-  expiresAt: Date;
-};
+type InviteCode = InferTRPCOutput<
+  TRPCProcedures["inviteCodes"]["listInviteCodes"]
+>["data"][number];
 
-export default function AdminInvitesPage() {
+const pageSize = 50;
+
+export default function InviteCodesListPage() {
   const trpc = useTRPC();
   const hasPermission = useHasRole("global:create-invite");
-  const [error, setError] = useState<string | null>(null);
-  const [successResult, setSuccessResult] = useState<InviteResult | null>(null);
 
-  const createInvite = useMutation(
-    trpc.inviteCodes.createInviteCode.mutationOptions(),
+  // State management
+  const [selectedStatus, setSelectedStatus] = useState<
+    InviteCodeStatus | "all"
+  >("all");
+  const [currentPage, setCurrentPage] = useState(0);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [selectedInviteCode, setSelectedInviteCode] =
+    useState<InviteCode | null>(null);
+
+  // tRPC query
+  const { data, isLoading, error } = useQuery(
+    trpc.inviteCodes.listInviteCodes.queryOptions({
+      status: selectedStatus === "all" ? undefined : selectedStatus,
+      limit: pageSize,
+      offset: currentPage * pageSize,
+    }),
   );
 
-  // Redirect if user doesn't have permission
+  // Handle status change
+  const handleStatusChange = (status: InviteCodeStatus | "all") => {
+    setSelectedStatus(status);
+    setCurrentPage(0); // Reset to first page when changing filters
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle revoke
+  const handleRevoke = (inviteCode: InviteCode) => {
+    setSelectedInviteCode(inviteCode);
+    setRevokeDialogOpen(true);
+  };
+
+  // Handle revoke success
+  const handleRevokeSuccess = () => {
+    setSelectedInviteCode(null);
+  };
+
+  // Check permissions
   if (!hasPermission) {
     return (
-      <NavigationShell showCommsNav={false}>
-        <TitleShell
-          title="Access Denied"
-          backHref="/admin"
-          backAriaLabel="Back to admin"
-        >
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-            <p className="text-sm text-red-800">
-              You do not have permission to create invite codes.
-            </p>
-          </div>
-        </TitleShell>
-      </NavigationShell>
+      <AuthGuard>
+        <NavigationShell showCommsNav={false}>
+          <TitleShell
+            title="Access Denied"
+            backHref="/admin"
+            backAriaLabel="Back to admin"
+          >
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+              <p className="text-sm text-red-800">
+                You do not have permission to view invite codes.
+              </p>
+            </div>
+          </TitleShell>
+        </NavigationShell>
+      </AuthGuard>
     );
   }
 
-  const handleSubmit = async (values: InviteFormValues) => {
-    setError(null);
-
-    if (values.roleKeys.length === 0) {
-      setError("At least one permission must be selected.");
-      return;
-    }
-
-    try {
-      const result = await createInvite.mutateAsync({
-        roleKeys: values.roleKeys,
-        expiresInHours: values.expiresInHours,
-      });
-
-      // Convert expiresAt string to Date object
-      setSuccessResult({
-        ...result,
-        expiresAt: new Date(result.expiresAt),
-      });
-    } catch (err) {
-      if (err instanceof TRPCClientError) {
-        const zodMessage = err.data?.zodError?.fieldErrors?.roleKeys?.[0];
-        if (zodMessage) {
-          setError(zodMessage);
-          return;
-        }
-        if (err.message.includes("permission")) {
-          setError(
-            "You do not have permission to create invite codes with these roles.",
-          );
-          return;
-        }
-        setError(err.message);
-        return;
-      }
-
-      if (err instanceof Error) {
-        setError(err.message);
-        return;
-      }
-
-      setError("Failed to create invite code. Please try again.");
-    }
-  };
-
-  const handleCreateAnother = () => {
-    setSuccessResult(null);
-    setError(null);
-  };
+  const inviteCodes = data?.data || [];
+  const totalItems = data?.totalCount || 0;
+  const hasMorePages = data?.hasMore || false;
+  const hasPreviousPage = data?.hasPrevious || false;
 
   return (
-    <NavigationShell showCommsNav={false}>
-      <TitleShell
-        title="Create Invite Code"
-        backHref="/admin"
-        backAriaLabel="Back to admin"
-      >
-        <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
-          {/* Info Section */}
-          {!successResult && (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-              <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-blue-900">
-                    About Invite Codes
-                  </h3>
-                  <p className="mt-1 text-sm text-blue-800">
-                    Invite codes allow you to grant specific permissions to new
-                    users. Select a preset to quickly configure common
-                    permission sets, then customize as needed.
-                  </p>
-                </div>
+    <AuthGuard>
+      <NavigationShell showCommsNav={false}>
+        <TitleShell
+          title="Invite Codes"
+          backHref="/admin"
+          backAriaLabel="Back to admin"
+        >
+          <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6">
+            {/* Header Actions */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <StatusTabs
+                  value={selectedStatus}
+                  onValueChange={handleStatusChange}
+                />
               </div>
+              <Link href="/admin/invites/create" className="shrink-0">
+                <Button size="sm" className="gap-2 hidden sm:flex">
+                  <Plus className="h-5 w-5" />
+                  New Code
+                </Button>
+                <Button size="sm" className="gap-2 sm:hidden">
+                  <Plus className="h-5 w-5" />
+                  New Invite
+                </Button>
+              </Link>
             </div>
-          )}
 
-          {/* Form or Success Display */}
-          {successResult ? (
-            <InviteSuccess
-              code={successResult.code}
-              roleKeys={successResult.roleKeys}
-              expiresAt={successResult.expiresAt}
-              onCreateAnother={handleCreateAnother}
-            />
-          ) : (
-            <InviteForm
-              onSubmit={handleSubmit}
-              submitting={createInvite.isPending}
-              error={error}
-            />
-          )}
-        </div>
-      </TitleShell>
-    </NavigationShell>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div
+                className="rounded-lg border border-red-200 bg-red-50 p-6"
+                role="alert"
+                aria-live="assertive"
+              >
+                <p className="text-sm text-error">
+                  Failed to load invite codes. Please try again.
+                </p>
+              </div>
+            )}
+
+            {/* Data Display */}
+            {!isLoading && !error && (
+              <>
+                {/* Desktop Table View */}
+                <InviteTable
+                  inviteCodes={inviteCodes}
+                  onRevoke={handleRevoke}
+                />
+
+                {/* Mobile Cards View */}
+                <InviteCards
+                  inviteCodes={inviteCodes}
+                  onRevoke={handleRevoke}
+                />
+
+                {/* Pagination */}
+                {totalItems > 0 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    pageSize={pageSize}
+                    totalItems={totalItems}
+                    hasMore={hasMorePages}
+                    hasPrevious={hasPreviousPage}
+                    onPageChange={handlePageChange}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </TitleShell>
+      </NavigationShell>
+
+      {/* Revoke Dialog */}
+      <RevokeDialog
+        inviteCode={selectedInviteCode}
+        open={revokeDialogOpen}
+        onOpenChange={setRevokeDialogOpen}
+        onSuccess={handleRevokeSuccess}
+      />
+    </AuthGuard>
   );
 }

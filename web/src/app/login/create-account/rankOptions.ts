@@ -1,0 +1,64 @@
+export interface AirRankOption {
+  label: string;
+  value: string;
+}
+
+export const airForceRanks: AirRankOption[] = [
+  { label: "E-1 (Airman Basic)", value: "e1-airman-basic" },
+  { label: "E-2 (Airman)", value: "e2-airman" },
+  { label: "E-3 (Airman First Class)", value: "e3-airman-first-class" },
+  { label: "E-4 (Senior Airman)", value: "e4-senior-airman" },
+  { label: "E-5 (Staff Sergeant)", value: "e5-staff-sergeant" },
+  { label: "E-6 (Technical Sergeant)", value: "e6-technical-sergeant" },
+  { label: "E-7 (Master Sergeant)", value: "e7-master-sergeant" },
+  { label: "E-8 (Senior Master Sergeant)", value: "e8-senior-master" },
+  { label: "E-9 (Chief Master Sergeant)", value: "e9-chief-master" },
+  { label: "E-9 (Command Chief Master Sergeant)", value: "e9-ccms" },
+  {
+    label: "E-9 (Chief Master Sergeant of the Air Force)",
+    value: "e9-cmsaf",
+  },
+  { label: "O-1 (Second Lieutenant)", value: "o1-second-lieutenant" },
+  { label: "O-2 (First Lieutenant)", value: "o2-first-lieutenant" },
+  { label: "O-3 (Captain)", value: "o3-captain" },
+  { label: "O-4 (Major)", value: "o4-major" },
+  { label: "O-5 (Lieutenant Colonel)", value: "o5-lieutenant-colonel" },
+  { label: "O-6 (Colonel)", value: "o6-colonel" },
+  { label: "O-7 (Brigadier General)", value: "o7-brigadier-general" },
+  { label: "O-8 (Major General)", value: "o8-major-general" },
+  { label: "O-9 (Lieutenant General)", value: "o9-lieutenant-general" },
+  {
+    label: "O-10 (General/General of the Air Force)",
+    value: "o10-general",
+  },
+];
+
+export interface ArmyRankOption {
+  label: string;
+  value: string;
+}
+
+export const armyRanks: ArmyRankOption[] = [
+  { label: "E-1 (Private)", value: "e1-private" },
+  { label: "E-2 (Private Second Class)", value: "e2-private-second-class" },
+  { label: "E-3 (Private First Class)", value: "e3-private-first-class" },
+  { label: "E-4 (Specialist/Corporal)", value: "e4-specialist-corporal" },
+  { label: "E-5 (Sergeant)", value: "e5-sergeant" },
+  { label: "E-6 (Staff Sergeant)", value: "e6-staff-sergeant" },
+  { label: "E-7 (Sergeant First Class)", value: "e7-sergeant-first-class" },
+  { label: "E-8 (Master Sergeant/First Sergeant)", value: "e8-master-first" },
+  { label: "E-9 (Sergeant Major/Command Sergeant Major)", value: "e9-sgm-csm" },
+  { label: "E-9 (Sergeant Major of the Army)", value: "e9-sma" },
+  { label: "O-1 (Second Lieutenant)", value: "o1-second-lieutenant" },
+  { label: "O-2 (First Lieutenant)", value: "o2-first-lieutenant" },
+  { label: "O-3 (Captain)", value: "o3-captain" },
+  { label: "O-4 (Major)", value: "o4-major" },
+  { label: "O-5 (Lieutenant Colonel)", value: "o5-lieutenant-colonel" },
+  { label: "O-6 (Colonel)", value: "o6-colonel" },
+  { label: "O-7 (Brigadier General)", value: "o7-brigadier-general" },
+  { label: "O-8 (Major General)", value: "o8-major-general" },
+  { label: "O-9 (Lieutenant General)", value: "o9-lieutenant-general" },
+  { label: "O-10 (General)", value: "o10-general" },
+];
+
+export const allRankOptions = [];

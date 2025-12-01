@@ -3,11 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Paperclip } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { Avatar } from "@/components/avatar";
 import {
   DropdownButtons,
   type DropdownMenuItemConfig,
 } from "@/components/dropdown";
-import { icons } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import Reaction from "@/components/reaction-bubble";
 import { AddReaction } from "@/components/reaction-bubble/add-reaction";
@@ -36,7 +36,7 @@ type MessageReaction = {
 type PostedCardProps = {
   channelId: number;
   postId: number;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   name: string;
   rank: string;
   content: string;
@@ -51,17 +51,10 @@ type PostedCardProps = {
 
 type AttachmentStatus = "idle" | "uploading" | "uploaded" | "error";
 
-const UserIcon = icons.user;
-
-const Avatar = () => (
-  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
-    <UserIcon className="h-7 w-7" />
-  </div>
-);
-
 export const PostedCard = ({
   channelId,
   postId,
+  avatarUrl,
   name,
   rank,
   content,
@@ -295,18 +288,23 @@ export const PostedCard = ({
             triggerClassName="scale-90 sm:scale-100"
           />
         </div>
-        <div className="flex items-start gap-4 px-2 pt-6 sm:px-4 sm:pt-4">
-          <div className="flex justify-start sm:pt-2">
-            <Avatar />
-          </div>
-          <div className="flex flex-col gap-2 w-full">
-            <div className="text-secondary text-base font-semibold sm:text-subheader">
-              {name}
-              <div className="text-secondary text-xs font-semibold italic sm:text-sm">
-                {rank}
+        <div className="flex flex-col gap-3 px-2 pt-6 sm:gap-4 sm:px-4 sm:pt-4">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="flex-shrink-0 self-start">
+              <Avatar avatarUrl={avatarUrl ?? undefined} />
+            </div>
+            <div className="min-w-0 self-center">
+              <div className="text-secondary text-base font-semibold leading-tight text-left sm:text-subheader">
+                <span className="block">{name}</span>
+                <div className="text-secondary text-xs font-semibold italic sm:text-sm">
+                  {rank}
+                </div>
               </div>
             </div>
-            <div className="text-secondary text-sm font-normal break-words">
+          </div>
+
+          <div className="flex w-full flex-col gap-2 pl-0 sm:pl-[calc(theme(spacing.14)+theme(spacing.3))]">
+            <div className="text-secondary text-sm font-normal break-words text-left">
               {content}
             </div>
 
@@ -340,7 +338,7 @@ export const PostedCard = ({
             ) : null}
 
             {reactions.length ? (
-              <div className="flex flex-wrap items-center gap-2 mt-2">
+              <div className="mt-1 flex flex-wrap items-center gap-2">
                 {reactions.map((reaction, index) => (
                   <Reaction
                     key={`${postId}-${reaction.emoji}-${index}`}
@@ -368,7 +366,7 @@ export const PostedCard = ({
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2 mt-2">
+              <div className="mt-1 flex items-center gap-2">
                 <AddReaction
                   disabled={!onReactionToggle}
                   onSelect={(emoji) =>
@@ -391,6 +389,8 @@ export const PostedCard = ({
 
       <Modal
         open={isEditModalOpen}
+        className="max-w-[calc(100%-2rem)] sm:max-w-lg"
+        headerAlign="left"
         onOpenChange={(newOpen) => {
           if (!newOpen) {
             handleCancelEdit();
@@ -429,7 +429,7 @@ export const PostedCard = ({
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             placeholder="Edit your post..."
-            className="min-h-32 resize-none"
+            className="min-h-32 max-h-[65vh] w-full max-w-full resize-none overflow-y-auto break-words ![field-sizing:fixed] text-left"
             maxLength={maxLength}
             disabled={editPost.isPending}
           />

@@ -2,11 +2,13 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import { DragReorderFrame } from "@/components/drag-and-drop";
+import { icons } from "@/components/icons";
 import { MultiSelect, type MultiSelectOption } from "@/components/multi-select";
 import { TextInput } from "@/components/text-input";
 import {
@@ -193,11 +195,20 @@ const rankOptions = [
 ];
 
 export default function MentorshipApplyMenteePage() {
-  const trpc = useTRPC();
+  const _trpc = useTRPC();
   const trpcClient = useTRPCClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: sessionData } = authClient.useSession();
   const userId = sessionData?.user?.id ?? null;
+  const backHref = useMemo(
+    () =>
+      searchParams.get("from") === "dashboard"
+        ? "/mentorship/dashboard"
+        : "/mentorship",
+    [searchParams],
+  );
+  const BackIcon = icons.arrowLeft;
 
   const [positionSelection, setPositionSelection] = useState<string>("");
   const [menteeRankSelection, setMenteeRankSelection] = useState<string>("");
@@ -214,9 +225,11 @@ export default function MentorshipApplyMenteePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Aligned with server `appRouter.mentorship.createMentee`
-  const createMentee = useMutation(
-    trpc.mentorship.createMentee.mutationOptions(),
-  );
+  const createMentee = useMutation({
+    mutationFn: async (
+      input: Parameters<typeof trpcClient.mentorship.createMentee.mutate>[0],
+    ) => trpcClient.mentorship.createMentee.mutate(input),
+  });
 
   const uploadResume = useCallback(
     async (file: File) => {
@@ -372,9 +385,18 @@ export default function MentorshipApplyMenteePage() {
   return (
     <div className="flex flex-col flex-wrap w-full relative items-left justify-center sm:gap-16 px-8 sm:px-10 lg:px-20 py-10 mx-4">
       <section className="flex flex-col items-left space-y-8">
-        <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl mt-4">
-          Mentee Onboarding Application
-        </h1>
+        <div className="flex items-center gap-3 mt-2">
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-2 text-accent hover:underline"
+            aria-label="Back"
+          >
+            <BackIcon className="h-6 w-6" />
+          </Link>
+          <h1 className="text-3xl font-semibold text-secondary sm:text-4xl lg:text-5xl">
+            Mentee Onboarding Application
+          </h1>
+        </div>
         <h1 className="text-s sm:text-sm text-secondary mb-2">
           Thank you for your interest in the mentorship program. Give yourself
           20–25 minutes to thoughtfully complete this application. Your
@@ -412,7 +434,7 @@ export default function MentorshipApplyMenteePage() {
         </section>
 
         <section>
-          <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm mb-3">
+          <h1 className="max-w-3xl mb-3 text-left text-xs font-large text-secondary sm:text-sm">
             3. Upload a resume to share with mentors once matched.
           </h1>
           <Dropzone
@@ -465,10 +487,10 @@ export default function MentorshipApplyMenteePage() {
 
         <section>
           <h1 className="max-w-3xl text-left text-xs font-large text-secondary sm:text-sm mt-3 mb-3">
-            6. What do you hope to get out of the mentorship program?*
+            6. What do you hope to get out of the mentorship program?
             <div className="italic font-normal text-secondary sm:text-sm mt-1">
-              Rank the following reasons from most important (top) to least
-              important (bottom).
+              Rank the following reasons from most important (1) to least
+              important (5).
             </div>
           </h1>
           <DragReorderFrame

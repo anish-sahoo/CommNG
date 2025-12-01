@@ -156,9 +156,7 @@ export default function Page() {
                   disabled={stage === "password"}
                   className="w-full"
                 />
-              </div>
 
-              {stage === "password" ? (
                 <div>
                   <label
                     htmlFor="login-password"
@@ -178,6 +176,7 @@ export default function Page() {
                     }}
                     className="w-full"
                   />
+
                   <Link href="/forgot-password">
                     <div className="flex justify-end">
                       <Button
@@ -190,7 +189,7 @@ export default function Page() {
                     </div>
                   </Link>
                 </div>
-              ) : null}
+              </div>
             </div>
 
             {errorMessage ? (
@@ -213,6 +212,15 @@ export default function Page() {
                 {(isCheckingEmail || isSigningIn) && <Spinner />}
                 {stage === "email" ? "Continue" : "Sign in"}
               </Button>
+
+              <p className="text-sm text-secondary">
+                Don't have an account?{" "}
+                <Link href="/sign-up">
+                  <span className="cursor-pointer text-primary underline-offset-4 hover:underline">
+                    Sign up
+                  </span>
+                </Link>
+              </p>
 
               {stage === "password" ? (
                 <div className="flex flex-col items-center gap-2">

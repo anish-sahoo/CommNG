@@ -2,6 +2,8 @@
 
 import type { RoleKey } from "@server/data/roles";
 import { useEffect } from "react";
+import { icons } from "@/components/icons";
+import { cn } from "@/lib/utils";
 import { PERMISSION_GROUPS } from "../types";
 import {
   getAllDescendants,
@@ -9,6 +11,8 @@ import {
   getExpandedRoleKeys,
   isRoleImplied,
 } from "../utils/permission-helpers";
+
+const CheckIcon = icons.done;
 
 type PermissionTreeProps = {
   selectedRoles: Set<RoleKey>;
@@ -69,6 +73,7 @@ export function PermissionTree({
               const isSelected = selectedRoles.has(roleKey);
               const implied = isRoleImplied(roleKey, selectedRoles);
               const isDisabled = false; // Allow unchecking implied permissions to "break out"
+              const isChecked = isSelected || implied;
               const indentLevel = permission.impliedBy ? 1 : 0;
 
               return (
@@ -80,39 +85,55 @@ export function PermissionTree({
                       indentLevel > 0 ? `${indentLevel * 1}rem` : "0",
                   }}
                 >
-                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <label
+                    htmlFor={permission.key}
+                    className="group relative flex items-start gap-2 sm:gap-3 flex-1 min-w-0 rounded-lg border border-transparent px-2 py-1.5 transition hover:bg-primary/5 cursor-pointer"
+                  >
                     <input
                       type="checkbox"
                       id={permission.key}
-                      checked={isSelected || implied}
+                      checked={isChecked}
                       disabled={isDisabled}
                       onChange={(e) =>
                         handleCheckboxChange(roleKey, e.target.checked)
                       }
-                      className="h-4 w-4 mt-0.5 sm:mt-0 flex-shrink-0 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     />
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-5 w-5 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded-sm border-2 text-transparent transition",
+                        isChecked
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-secondary/40 bg-background",
+                        !isChecked &&
+                          !isDisabled &&
+                          "group-hover:border-primary group-hover:bg-primary/10",
+                      )}
+                      aria-hidden="true"
+                    >
+                      {isChecked ? (
+                        <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
+                      ) : null}
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <label
-                        htmlFor={permission.key}
-                        className="block text-sm font-medium break-words text-secondary cursor-pointer"
-                      >
+                      <div className="block text-sm font-medium break-words text-secondary">
                         {permission.label}
                         {implied && !isSelected && (
                           <span className="ml-1 sm:ml-2 text-xs text-secondary/60 whitespace-nowrap">
                             (auto-granted)
                           </span>
                         )}
-                      </label>
+                      </div>
                       <p className="mt-1 text-xs text-secondary/70 break-words">
                         {permission.description}
                       </p>
                       {permission.impliedBy && (
-                        <p className="mt-0.5 text-xs text-blue-600/80 break-words">
+                        <p className="mt-0.5 text-xs text-primary break-words">
                           ↳ Granted by: {getDisplayName(permission.impliedBy)}
                         </p>
                       )}
                     </div>
-                  </div>
+                  </label>
                 </div>
               );
             })}

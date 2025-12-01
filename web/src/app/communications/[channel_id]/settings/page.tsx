@@ -22,6 +22,7 @@ import {
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { authClient } from "@/lib/auth-client";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
+import { resizeImage } from "@/utils/resize";
 
 type ChannelSettingsPageProps = {
   params: Promise<{
@@ -189,16 +190,27 @@ export default function ChannelSettingsPage({
     setBannerError(null);
     setBannerUploading(true);
     try {
+      // Resize image if it's an image file
+      let processedFile = file;
+      if (file.type.startsWith("image/")) {
+        processedFile = await resizeImage(file, {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1200,
+        });
+      }
+
       const presign = await trpcClient.files.createPresignedUpload.mutate({
-        fileName: file.name,
-        contentType: file.type,
-        fileSize: file.size,
+        fileName: processedFile.name,
+        contentType: processedFile.type,
+        fileSize: processedFile.size,
       });
 
       const res = await fetch(presign.uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-        body: file,
+        headers: {
+          "Content-Type": processedFile.type || "application/octet-stream",
+        },
+        body: processedFile,
       });
       if (!res.ok) {
         throw new Error("Upload failed. Please try again.");
@@ -206,9 +218,9 @@ export default function ChannelSettingsPage({
 
       await trpcClient.files.confirmUpload.mutate({
         fileId: presign.fileId,
-        fileName: file.name,
+        fileName: processedFile.name,
         storedName: presign.storedName,
-        contentType: file.type || undefined,
+        contentType: processedFile.type || undefined,
       });
 
       setChannelBannerFileId(presign.fileId);
@@ -492,7 +504,7 @@ export default function ChannelSettingsPage({
               type="button"
               variant="destructive"
               size="lg"
-              className="text-sm font-semibold bg-error text-white hover:bg-error/90 focus-visible:ring-error/30 w-full sm:w-auto"
+              className="text-sm font-semibold bg-error text-white hover:bg-error/80 focus-visible:ring-error/30 w-full sm:w-auto"
               onClick={handleSelect}
               aria-label={isAdmin ? "Delete channel" : "Leave channel"}
             >
