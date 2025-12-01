@@ -37,7 +37,37 @@ async function ensureUser(input: SeedUserInput): Promise<UserRow> {
     .limit(1);
 
   if (existing) {
-    return existing;
+    const needsUpdate =
+      existing.name !== input.name ||
+      existing.email !== input.email ||
+      existing.rank !== input.rank ||
+      existing.positionType !== input.positionType ||
+      existing.location !== input.location ||
+      existing.phoneNumber !== input.phoneNumber;
+
+    if (!needsUpdate) {
+      return existing;
+    }
+
+    const [updated] = await db
+      .update(users)
+      .set({
+        name: input.name,
+        email: input.email,
+        rank: input.rank,
+        positionType: input.positionType,
+        location: input.location,
+        phoneNumber: input.phoneNumber,
+        emailVerified: true,
+      })
+      .where(eq(users.id, input.id))
+      .returning();
+
+    if (!updated) {
+      throw new Error(`Failed to update user ${input.id}`);
+    }
+
+    return updated as UserRow;
   }
 
   const [created] = await db
@@ -71,7 +101,22 @@ async function ensurePasswordAccount(userId: string): Promise<AccountRow> {
     .limit(1);
 
   if (existing) {
-    return existing;
+    const hashed = await hashPassword(DEFAULT_PASSWORD);
+    const [updated] = await db
+      .update(account)
+      .set({
+        providerId: "credential",
+        accountId: userId,
+        password: hashed,
+      })
+      .where(eq(account.id, existing.id))
+      .returning();
+
+    if (!updated) {
+      throw new Error(`Failed to update credential account for ${userId}`);
+    }
+
+    return updated as AccountRow;
   }
 
   const hashed = await hashPassword(DEFAULT_PASSWORD);
@@ -269,38 +314,38 @@ async function main() {
 
   const mentorA = await ensureUser({
     id: "mock-mentor-1",
-    name: "Captain Alice Mentor",
-    email: "alice.mentor@example.com",
-    rank: "O-3",
-    positionType: "active",
+    name: "Caroline Pham",
+    email: "caroline@example.com",
+    rank: "Frontend",
+    positionType: "part-time",
     location: "Boise, ID",
-    phoneNumber: "555-0101",
+    phoneNumber: "123-4567",
   });
   const mentorB = await ensureUser({
     id: "mock-mentor-2",
-    name: "Sgt. Bob Guide",
-    email: "bob.guide@example.com",
-    rank: "E-6",
+    name: "Anish Sahoo",
+    email: "anish@example.com",
+    rank: "Tech Lead",
     positionType: "part-time",
-    location: "Salt Lake City, UT",
+    location: "Boston,MA",
     phoneNumber: "555-0102",
   });
   const mentee = await ensureUser({
     id: "mock-mentee-1",
-    name: "Spc. Casey Learner",
-    email: "casey.learner@example.com",
-    rank: "E-4",
+    name: "Olivia Sedarski",
+    email: "olivia@example.com",
+    rank: "PM/Frontend",
     positionType: "part-time",
-    location: "Boise, ID",
-    phoneNumber: "555-0103",
+    location: "Boston, MA",
+    phoneNumber: "890-123",
   });
   const mentorC = await ensureUser({
     id: "mock-mentor-3",
-    name: "Lt. Dana Support",
-    email: "dana.support@example.com",
-    rank: "O-2",
-    positionType: "active",
-    location: "Portland, OR",
+    name: "Natasha Sun",
+    email: "natasha@example.com",
+    rank: "PM/Frontend",
+    positionType: "part-time",
+    location: "Boston, MA",
     phoneNumber: "555-0104",
   });
 

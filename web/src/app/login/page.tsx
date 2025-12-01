@@ -23,9 +23,7 @@ export default function Page() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [stage, setStage] = useState<"email" | "password">("email");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
@@ -40,35 +38,13 @@ export default function Page() {
 
   const trimmedEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
-  const handleEmailSubmit = async () => {
+  const handleSubmit = async () => {
     const parsed = emailSchema.safeParse(trimmedEmail);
     if (!parsed.success) {
       setErrorMessage("Enter a valid email address to continue.");
       return;
     }
 
-    try {
-      setErrorMessage(null);
-      setIsCheckingEmail(true);
-      const exists = await trpcClient.user.checkEmailExists.query({
-        email: parsed.data,
-      });
-
-      if (exists) {
-        setPassword("");
-        setStage("password");
-      } else {
-        router.replace(`/sign-up?email=${encodeURIComponent(parsed.data)}`);
-      }
-    } catch (error) {
-      console.error("Failed to check email", error);
-      toast.error("We couldn't verify that email. Please try again.");
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  };
-
-  const handlePasswordSubmit = async () => {
     if (!password.trim()) {
       setErrorMessage("Please enter your password.");
       return;
@@ -77,8 +53,18 @@ export default function Page() {
     try {
       setErrorMessage(null);
       setIsSigningIn(true);
+
+      const exists = await trpcClient.user.checkEmailExists.query({
+        email: parsed.data,
+      });
+
+      if (!exists) {
+        router.replace(`/sign-up?email=${encodeURIComponent(parsed.data)}`);
+        return;
+      }
+
       const res = await authClient.signIn.email({
-        email: trimmedEmail,
+        email: parsed.data,
         password,
       });
 
@@ -119,19 +105,13 @@ export default function Page() {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            if (stage === "email") {
-              void handleEmailSubmit();
-            } else {
-              void handlePasswordSubmit();
-            }
+            void handleSubmit();
           }}
           className="w-full max-w-md"
         >
           <div className="border border-primary rounded-xl bg-white px-7 py-9 shadow-xl sm:px-10 sm:py-12">
             <div className="mb-6 text-left">
-              <h2 className="text-xl font-semibold text-secondary">
-                {stage === "email" ? "Sign In or Create Account" : "Sign In"}
-              </h2>
+              <h2 className="text-xl font-semibold text-secondary">Sign In</h2>
             </div>
 
             <div className="flex flex-col gap-5">
@@ -149,11 +129,8 @@ export default function Page() {
                   value={email}
                   onChange={(value) => {
                     setEmail(value);
-                    if (stage === "email") {
-                      setErrorMessage(null);
-                    }
+                    setErrorMessage(null);
                   }}
-                  disabled={stage === "password"}
                   className="w-full"
                 />
 
@@ -200,14 +177,11 @@ export default function Page() {
                 variant="outline"
                 className="px-10"
                 disabled={
-                  (stage === "email" &&
-                    (isCheckingEmail || trimmedEmail === "")) ||
-                  (stage === "password" &&
-                    (isSigningIn || password.trim() === ""))
+                  isSigningIn || trimmedEmail === "" || password.trim() === ""
                 }
               >
-                {(isCheckingEmail || isSigningIn) && <Spinner />}
-                {stage === "email" ? "Continue" : "Sign in"}
+                {isSigningIn && <Spinner />}
+                Sign in
               </Button>
 
               <p className="text-sm text-secondary">
@@ -218,23 +192,6 @@ export default function Page() {
                   </span>
                 </Link>
               </p>
-
-              {stage === "password" ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-sm font-semibold text-primary underline-offset-4"
-                    onClick={() => {
-                      setStage("email");
-                      setPassword("");
-                      setIsSigningIn(false);
-                    }}
-                  >
-                    Use a different email
-                  </Button>
-                </div>
-              ) : null}
             </div>
           </div>
         </form>
