@@ -1,5 +1,11 @@
 import Image from "next/image";
-import { type CSSProperties, useId, useState } from "react";
+import { type CSSProperties, useId, useMemo, useState } from "react";
+import { locationOptions } from "@/app/login/create-account/MA-towns";
+import {
+  airForceRanks,
+  allRankOptions,
+  armyRanks,
+} from "@/app/login/create-account/rankOptions";
 import { type IconName, icons } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +25,7 @@ import { cn } from "@/lib/utils";
 type BranchKey = "army" | "airforce" | "default";
 
 type BranchTheme = {
+  label: string | null;
   base: string;
   dark: string;
   pastel: string;
@@ -36,6 +43,7 @@ type ProfileCardThemeStyles = CSSProperties & {
 
 const branchThemes: Record<BranchKey, BranchTheme> = {
   army: {
+    label: "Army",
     base: "#d28a1b",
     dark: "#a46d16",
     pastel: "#f0d7a4",
@@ -43,6 +51,7 @@ const branchThemes: Record<BranchKey, BranchTheme> = {
     text: "#543506",
   },
   airforce: {
+    label: "Air Force",
     base: "#283396",
     dark: "#202978",
     pastel: "#d7dcff",
@@ -50,6 +59,7 @@ const branchThemes: Record<BranchKey, BranchTheme> = {
     text: "#162268",
   },
   default: {
+    label: null,
     base: "#283396",
     dark: "#202978",
     pastel: "#d7dcff",
@@ -208,8 +218,21 @@ export default function ProfileCard({
   headerActions = [],
   className,
 }: ProfileCardProps) {
-  const branchKey = resolveBranchKey(branch);
-  const theme = branchThemes[branchKey];
+  const { rankLabel, branchLabel, theme } = useMemo(() => {
+    const branchKey = resolveBranchKey(branch);
+
+    const rankLabel =
+      (branchKey === "army"
+        ? armyRanks.find((r) => r.value === rank)?.label
+        : branchKey === "airforce"
+          ? airForceRanks.find((r) => r.value === rank)?.label
+          : null) ?? rank;
+
+    const { label: branchLabel, ...theme } = branchThemes[branchKey];
+
+    return { rankLabel, branchLabel: branchLabel ?? branch, theme };
+  }, [branch, rank]);
+
   const [aboutOpen, setAboutOpen] = useState(false);
   const aboutSectionId = useId();
 
@@ -266,15 +289,16 @@ export default function ProfileCard({
                   {name}
                 </h2>
                 <p className="text-sm text-secondary sm:text-base">
-                  {rank}
-                  {branch ? `, ${branch}` : null}
+                  {rankLabel}
+                  {branchLabel ? `, ${branchLabel}` : null}
                 </p>
                 {unit ? (
                   <p className="text-sm text-secondary sm:text-base">{unit}</p>
                 ) : null}
                 {location ? (
                   <p className="text-sm text-secondary sm:text-base">
-                    {location}
+                    {locationOptions.find((option) => option.value === location)
+                      ?.label ?? location}
                   </p>
                 ) : null}
               </div>
