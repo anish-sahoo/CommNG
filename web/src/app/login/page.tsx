@@ -177,17 +177,14 @@ export default function Page() {
                     className="w-full"
                   />
 
-                  <Link href="/forgot-password">
-                    <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="text-xs text-primary underline-offset-4 p-0"
-                      >
-                        Forgot password?
-                      </Button>
-                    </div>
-                  </Link>
+                  <div className="flex justify-end mt-4">
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs text-primary underline-offset-4 hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
