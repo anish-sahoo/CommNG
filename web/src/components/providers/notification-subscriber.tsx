@@ -96,12 +96,12 @@ async function sendCurrentSubscriptionToBackend(
   if (!("serviceWorker" in navigator) || !("Notification" in window)) return;
 
   try {
-    const reg = await navigator.serviceWorker.getRegistration();
+    let reg = await navigator.serviceWorker.getRegistration();
     if (!reg) {
-      console.warn(
-        "sendCurrentSubscriptionToBackend: no service worker registration",
-      );
-      return;
+      console.debug("No service worker registration found; registering...");
+      reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      console.debug("Service worker registration succeeded:", reg);
     }
     const existingSub = await reg.pushManager.getSubscription();
     if (!existingSub) {
