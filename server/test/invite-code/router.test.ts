@@ -63,6 +63,9 @@ function createMockContext(userId: string, roles: RoleKey[] = []) {
         department: "user",
         branch: "user",
         phoneNumber: null,
+        emailVisibility: "private",
+        signalVisibility: "private",
+        positionType: "active",
       },
       session: {
         id: "session-id",
