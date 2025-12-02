@@ -248,20 +248,20 @@ Secrets for workflows are managed via AWS Secrets Manager; refer to `docs/SECRET
 
     > ██████████ **100%**
 
-### Phase 2  (Current)
+### Phase 2  
 - [x] Mentorship system
-- [ ] Matching algorithm
-- [ ] Admin dashboard
-- [ ] Unit channels
+- [x] Matching algorithm
+- [x] Admin dashboard
+- [x] Unit channels
 
-    > ████░░░░░░ *25%*
+    > ██████████ **100%**
 
 ### Phase 3 
-- [ ] Advanced reporting
-- [ ] Mobile optimization
+- [x] Advanced reporting
+- [x] Mobile optimization
 - [x] Push notifications
 
-    > ███░░░░░░░ *33%*
+    > ██████████ **100%**
 
 ---
 
