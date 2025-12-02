@@ -17,7 +17,7 @@ const cards = [
     title: "Leadership and Professional Growth",
     src: professional_growth,
     quote:
-      "”Men and women make history and not the other way around. In periods where there is no leadership, society stands still. Progress occurs when courageous, skillful leaders seize the opportunity to change things for the better.” —Harry S. Truman",
+      "”Men and women make history and not the other way around. In periods where there is no leadership, society stands still. Progress occurs when courageous, skillful leaders seize the opportunity to change things for the better.” – Harry S. Truman",
   },
   {
     title: "Service and Community Responsibility",
