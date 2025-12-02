@@ -327,10 +327,10 @@ async function main() {
     email: "anish@example.com",
     rank: "Tech Lead",
     positionType: "part-time",
-    location: "Boston,MA",
+    location: "Boston, MA",
     phoneNumber: "555-0102",
   });
-  const mentee = await ensureUser({
+  const menteeA = await ensureUser({
     id: "mock-mentee-1",
     name: "Olivia Sedarski",
     email: "olivia@example.com",
@@ -339,8 +339,8 @@ async function main() {
     location: "Boston, MA",
     phoneNumber: "890-123",
   });
-  const mentorC = await ensureUser({
-    id: "mock-mentor-3",
+  const menteeB = await ensureUser({
+    id: "mock-mentee-2",
     name: "Natasha Sun",
     email: "natasha@example.com",
     rank: "PM/Frontend",
@@ -351,23 +351,26 @@ async function main() {
 
   await ensureMentor(mentorA.id);
   await ensureMentor(mentorB.id);
-  await ensureMentor(mentorC.id);
-  await ensureMentee(mentee.id);
+  await ensureMentee(menteeA.id);
+  await ensureMentee(menteeB.id);
   await ensurePasswordAccount(mentorA.id);
   await ensurePasswordAccount(mentorB.id);
-  await ensurePasswordAccount(mentorC.id);
-  await ensurePasswordAccount(mentee.id);
+  await ensurePasswordAccount(menteeA.id);
+  await ensurePasswordAccount(menteeB.id);
 
-  await ensureMatch(mentee.id, mentorA.id, "accepted"); // shows as active match
-  await ensureMatch(mentee.id, mentorB.id, "pending"); // shows as pending request
-  await upsertRecommendation(mentee.id, [mentorC.id]); // suggested mentor
+  // Only pending requests (no accepted matches yet), plus suggestions.
+  // Keep Caroline (mentorA) unrequested so you can test sending a new request.
+  await ensureMatch(menteeA.id, mentorB.id, "pending");
+  await ensureMatch(menteeB.id, mentorB.id, "pending");
+  await upsertRecommendation(menteeA.id, [mentorA.id, mentorB.id]);
+  await upsertRecommendation(menteeB.id, [mentorA.id, mentorB.id]);
 
   console.log("Seed complete.");
   console.log("Users created:");
   console.log(` Mentor A: ${mentorA.email}`);
   console.log(` Mentor B: ${mentorB.email}`);
-  console.log(` Mentor C: ${mentorC.email}`);
-  console.log(` Mentee : ${mentee.email}`);
+  console.log(` Mentee A: ${menteeA.email}`);
+  console.log(` Mentee B: ${menteeB.email}`);
   console.log("");
   console.log(`Default password for all: ${DEFAULT_PASSWORD}`);
   console.log(

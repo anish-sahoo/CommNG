@@ -130,14 +130,15 @@ type ListViewProps<T extends ListViewItem> = {
   className?: string;
   rowOptions?: (item: T) => React.ReactNode;
   modalContent?: (item: T) => React.ReactNode;
+  modalFooter?: (item: T, closeModal: () => void) => React.ReactNode;
 };
 
 const UserIcon = icons.user;
 
 // default avatar until we get some photos
 const Avatar = () => (
-  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-primary-dark/30 bg-neutral/20 text-primary">
-    <UserIcon className="h-7 w-7" />
+  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-neutral/40 bg-neutral/10 text-secondary/80">
+    <UserIcon className="h-6 w-6" />
   </div>
 );
 
@@ -150,24 +151,20 @@ const ListViewRow = <T extends ListViewItem>({
   onClick: () => void;
   rowOptions?: React.ReactNode;
 }) => {
+  const subtitle = [item.rank, item.role].filter(Boolean).join(", ");
+
   return (
-    <li className="flex items-center gap-4 px-6 py-4 hover:bg-neutral/10 transition-colors">
+    <li className="flex flex-col gap-3 px-4 py-3 hover:bg-neutral/10 transition-colors sm:flex-row sm:items-center sm:gap-4 sm:px-6">
       <button
         type="button"
-        className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer text-left bg-transparent border-none p-0"
         onClick={onClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onClick();
-          }
-        }}
+        className="flex w-full flex-col items-center gap-2 rounded-md border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:flex-row sm:items-center sm:gap-3"
       >
         <Avatar />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-body font-semibold text-secondary">
-              {item.name}
+        <div className="min-w-0 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <p className="break-words text-body font-semibold text-secondary">
+              {item.name || "Unknown"}
             </p>
             {item.isCurrentUser ? (
               <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
@@ -175,18 +172,18 @@ const ListViewRow = <T extends ListViewItem>({
               </span>
             ) : null}
           </div>
-          <p className="truncate text-sm italic text-secondary/70">
-            (
-            {item.rank && item.role
-              ? `${item.rank}, ${item.role}`
-              : "No rank or role available"}
-            )
-          </p>
+          {subtitle ? (
+            <p className="break-words text-sm italic text-secondary/70">
+              {subtitle}
+            </p>
+          ) : null}
         </div>
       </button>
-      {rowOptions && (
-        <div className="flex items-center gap-2 ml-auto">{rowOptions}</div>
-      )}
+      {rowOptions ? (
+        <div className="flex items-center justify-center gap-2 sm:ml-auto">
+          {rowOptions}
+        </div>
+      ) : null}
     </li>
   );
 };
@@ -196,6 +193,7 @@ export function ListView<T extends ListViewItem = ListViewItem>({
   items = fallbackItems as T[],
   rowOptions,
   modalContent,
+  modalFooter,
 }: ListViewProps<T>) {
   const [selectedItem, setSelectedItem] = useState<T | null>(null);
 
@@ -205,19 +203,19 @@ export function ListView<T extends ListViewItem = ListViewItem>({
 
   return (
     <>
-      <section className="relative w-full max-w-4xl">
+      <section className="relative w-full max-w-full sm:max-w-4xl">
         <div
           className={`rounded-3xl bg-primary-dark ${
-            title ? "px-5 py-5" : "px-8 py-8"
+            title ? "px-4 py-5" : "px-6 py-7"
           }`}
         >
           <div className="rounded-xl" />
           {title ? (
             <h2 className="mb-4 text-xl font-semibold text-white">{title}</h2>
           ) : null}
-          <div className="flex flex-col gap-6 rounded-2xl bg-background px-6 py-6">
+          <div className="flex flex-col gap-6 rounded-2xl bg-background px-4 py-6">
             <div className="relative overflow-hidden rounded-xl bg-background">
-              <ul className="max-h-[28rem] overflow-y-auto divide-y divide-neutral/40 pr-4">
+              <ul className="max-h-[28rem] overflow-y-auto divide-y divide-neutral/40 pr-2">
                 {items.map((item) => (
                   <ListViewRow
                     key={item.id}
@@ -237,22 +235,34 @@ export function ListView<T extends ListViewItem = ListViewItem>({
           open={!!selectedItem}
           onOpenChange={(open) => !open && setSelectedItem(null)}
           title={
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-center sm:gap-3 sm:justify-start">
               <Avatar />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0 sm:flex-1 space-y-0.5 text-center sm:text-left">
+                <p className="text-body font-semibold text-secondary leading-tight">
                   {selectedItem.name}
-                  {selectedItem.isCurrentUser && (
-                    <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
+                  {selectedItem.isCurrentUser ? (
+                    <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-primary-foreground">
                       You
                     </span>
-                  )}
-                </div>
-                <p className="truncate text-sm font-normal italic text-secondary/70">
-                  {selectedItem.rank}, {selectedItem.role}
+                  ) : null}
                 </p>
+                {(() => {
+                  const subtitle = [selectedItem.rank, selectedItem.role]
+                    .filter(Boolean)
+                    .join(", ");
+                  return subtitle ? (
+                    <p className="break-words text-sm font-normal italic text-secondary/70 leading-tight">
+                      {subtitle}
+                    </p>
+                  ) : null;
+                })()}
               </div>
             </div>
+          }
+          footer={
+            selectedItem && modalFooter
+              ? modalFooter(selectedItem, () => setSelectedItem(null))
+              : undefined
           }
         >
           {modalContent ? modalContent(selectedItem) : null}

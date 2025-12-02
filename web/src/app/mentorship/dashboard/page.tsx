@@ -131,7 +131,7 @@ export default function MentorshipDashboard() {
 
     if (!hasMenteeProfile) {
       return (
-        <Card className="flex flex-col items-center">
+        <Card className="flex flex-col items-center text-center px-6 py-6">
           <div className="font-medium italic">
             You have not applied to be a mentee.
           </div>
@@ -140,7 +140,7 @@ export default function MentorshipDashboard() {
               type="button"
               variant="outline"
               size="lg"
-              className="inline-flex items-center gap-1"
+              className="mt-4 inline-flex items-center gap-1"
             >
               <span>Apply to be a</span>
               <span className="font-semibold">Mentee</span>
@@ -209,24 +209,17 @@ export default function MentorshipDashboard() {
     ) => {
       const requested = mentorInformation.hasRequested;
       return (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className={`inline-flex items-center gap-1 disabled:opacity-100 ${
-            requested
-              ? "bg-primary text-white border-primary cursor-not-allowed hover:bg-primary"
-              : ""
-          }`}
-          disabled={requested}
-          onClick={() =>
-            handleSendRequest.mutate({
-              mentorUserId: mentorInformation.id,
-            })
-          }
-        >
-          {requested ? "Requested" : "Send Request"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+              requested
+                ? "bg-primary/10 text-primary"
+                : "bg-muted text-secondary/70"
+            }`}
+          >
+            {requested ? "Requested" : "View Details"}
+          </span>
+        </div>
       );
     };
 
@@ -254,9 +247,15 @@ export default function MentorshipDashboard() {
               <p className="text-sm font-medium text-secondary/70">
                 Personal Interests
               </p>
-              <p className="font-semibold">
-                {mentor.personalInterests.join(", ")}
-              </p>
+              {mentor.personalInterests.length > 1 ? (
+                <ul className="list-disc space-y-1 pl-5 font-semibold">
+                  {mentor.personalInterests.map((interest) => (
+                    <li key={interest}>{interest}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-semibold">{mentor.personalInterests[0]}</p>
+              )}
             </div>
           )}
           {mentor.careerAdvice && (
@@ -267,6 +266,31 @@ export default function MentorshipDashboard() {
               <p className="font-semibold">{mentor.careerAdvice}</p>
             </div>
           )}
+        </div>
+      );
+    };
+
+    const renderSuggestedMentorModalFooter = (
+      mentor: MentorListViewItem,
+      closeModal: () => void,
+    ) => {
+      const requested = mentor.hasRequested;
+      return (
+        <div className="flex w-full justify-end gap-3">
+          <Button
+            type="button"
+            variant={requested ? "secondary" : "default"}
+            className={requested ? "cursor-not-allowed" : ""}
+            disabled={requested || handleSendRequest.isPending}
+            onClick={() =>
+              handleSendRequest.mutate(
+                { mentorUserId: mentor.id },
+                { onSuccess: () => closeModal() },
+              )
+            }
+          >
+            {requested ? "Request Sent" : "Send Request"}
+          </Button>
         </div>
       );
     };
@@ -286,6 +310,7 @@ export default function MentorshipDashboard() {
             items={suggestedMentors}
             rowOptions={renderSuggestedMentorRowOptions}
             modalContent={renderSuggestedMentorModal}
+            modalFooter={renderSuggestedMentorModalFooter}
           />
         ) : (
           <Card className="flex flex-col items-center">
@@ -327,24 +352,22 @@ export default function MentorshipDashboard() {
 
     if (!hasMentorProfile) {
       return (
-        <div>
-          <Card className="flex flex-col items-center">
-            <div className="font-medium italic">
-              You have not applied to be a mentor.
-            </div>
-            <Link href={"/mentorship/apply/mentor"}>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="inline-flex items-center gap-1"
-              >
-                <span>Apply to be a</span>
-                <span className="font-semibold">Mentor</span>
-              </Button>
-            </Link>
-          </Card>
-        </div>
+        <Card className="flex flex-col items-center text-center px-6 py-6">
+          <div className="font-medium italic">
+            You have not applied to be a mentor.
+          </div>
+          <Link href={"/mentorship/apply/mentor"}>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="mt-4 inline-flex items-center gap-1"
+            >
+              <span>Apply to be a</span>
+              <span className="font-semibold">Mentor</span>
+            </Button>
+          </Link>
+        </Card>
       );
     }
 
@@ -384,8 +407,15 @@ export default function MentorshipDashboard() {
 
     const renderMenteeRequestModal = (mentee: MenteeListViewItem) => {
       const personalInterests = Array.isArray(mentee.personalInterests)
-        ? mentee.personalInterests.join(", ")
-        : mentee.personalInterests;
+        ? mentee.personalInterests
+        : mentee.personalInterests
+          ? [mentee.personalInterests]
+          : [];
+      const hopeToGain = Array.isArray(mentee.hopeToGainResponses)
+        ? mentee.hopeToGainResponses
+        : mentee.hopeToGainResponses
+          ? [mentee.hopeToGainResponses]
+          : [];
 
       return (
         <div className="space-y-4">
@@ -407,12 +437,20 @@ export default function MentorshipDashboard() {
               </p>
             </div>
           )}
-          {mentee.personalInterests && (
+          {personalInterests.length > 0 && (
             <div>
               <p className="text-sm font-medium text-secondary/70">
                 What are your personal interests?
               </p>
-              <p className="font-semibold">{personalInterests}</p>
+              {personalInterests.length > 1 ? (
+                <ul className="list-disc space-y-1 pl-5 font-semibold">
+                  {personalInterests.map((interest) => (
+                    <li key={interest}>{interest}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-semibold">{personalInterests[0] ?? ""}</p>
+              )}
             </div>
           )}
           {mentee.roleModelInspiration && (
@@ -429,35 +467,67 @@ export default function MentorshipDashboard() {
                 <p className="text-sm font-medium text-secondary/70">
                   What do you hope to gain from the mentorship program?
                 </p>
-                <p className="font-semibold">{mentee.hopeToGainResponses}</p>
+                {hopeToGain.length > 1 ? (
+                  <ul className="list-disc space-y-1 pl-5 font-semibold">
+                    {hopeToGain.map((response) => (
+                      <li key={response}>{response}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="font-semibold">{hopeToGain[0] ?? ""}</p>
+                )}
               </div>
             )}
         </div>
       );
     };
 
-    const renderMenteeRequestRowOptions = (matchId: number) => {
+    const renderMenteeRequestRowOptions = () => {
       return (
-        <div className="flex items-center gap-2">
-          {/* TODO: check integration */}
+        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary/70">
+          View Details
+        </span>
+      );
+    };
+
+    const renderMenteeRequestModalFooter = (
+      mentee: MenteeListViewItem,
+      closeModal: () => void,
+    ) => {
+      return (
+        <div className="flex w-full justify-end gap-3">
           <Button
             type="button"
-            variant="outline"
-            size="icon"
-            className="rounded-full border-primary hover:bg-primary group"
-            onClick={() => acceptRequest.mutate({ matchId })}
+            variant="destructive"
+            disabled={rejectRequest.isPending || acceptRequest.isPending}
+            onClick={() =>
+              rejectRequest.mutate(
+                { matchId: mentee.matchId },
+                { onSuccess: () => closeModal() },
+              )
+            }
           >
-            <AcceptIcon className="h-5 w-5 text-primary group-hover:text-white transition-colors" />
+            <div className="flex items-center gap-2">
+              <RejectIcon className="h-4 w-4" />
+              <span>Deny</span>
+            </div>
           </Button>
-          {/* TODO: check integration */}
           <Button
             type="button"
-            variant="outline"
-            size="icon"
-            className="rounded-full border-accent"
-            onClick={() => rejectRequest.mutate({ matchId })}
+            variant="default"
+            className="bg-primary text-white hover:bg-primary/90"
+            disabled={acceptRequest.isPending || rejectRequest.isPending}
+            onClick={() =>
+              acceptRequest.mutate(
+                { matchId: mentee.matchId },
+                { onSuccess: () => closeModal() },
+              )
+            }
           >
-            <RejectIcon className="h-5 w-5 text-accent" />
+            <div className="flex items-center gap-2">
+              <AcceptIcon className="h-4 w-4" />
+              <span>Accept</span>
+            </div>
           </Button>
         </div>
       );
@@ -493,9 +563,8 @@ export default function MentorshipDashboard() {
             title="Pending Requests"
             items={pendingRequests}
             modalContent={renderMenteeRequestModal}
-            rowOptions={(request) =>
-              renderMenteeRequestRowOptions(request.matchId as number)
-            }
+            rowOptions={renderMenteeRequestRowOptions}
+            modalFooter={renderMenteeRequestModalFooter}
           />
         )}
 
