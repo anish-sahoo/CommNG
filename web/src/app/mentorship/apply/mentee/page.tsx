@@ -335,27 +335,27 @@ export default function MentorshipApplyMenteePage() {
             options={[
               {
                 label:
-                  "Receive guidance on career advancement and professional goals (National Guard career)",
+                  "Receive guidance on career advancement and professional goals",
                 value: "career",
               },
               {
                 label:
-                  "Get support discovering educational opportunities (Education)",
+                  "Get support discovering educational opportunities",
                 value: "education",
               },
               {
                 label:
-                  "Develop a sense of belonging in the National Guard community (Community)",
+                  "Develop a sense of belonging in the National Guard community",
                 value: "community",
               },
               {
                 label:
-                  "Expand my professional network within the National Guard (Network)",
+                  "Expand my professional network within the National Guard",
                 value: "network",
               },
               {
                 label:
-                  "Connect with Guardsmen with different perspectives and experiences (Diversity)",
+                  "Connect with Guardsmen with different perspectives and experiences",
                 value: "diversity",
               },
             ]}
