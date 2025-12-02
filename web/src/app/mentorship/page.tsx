@@ -81,20 +81,21 @@ export default function MentorshipLanding() {
       scrollableContent={false}
       contentClassName="md:pr-0"
     >
-      <section className="mx-auto flex w-full app-content-width flex-col gap-10 py-4 sm:py-6">
+      <section className="mx-auto flex w-full app-content-width flex-col gap-10 px-4 py-4 sm:px-6 sm:py-6">
         <header className="text-center text-3xl font-semibold leading-tight text-primary sm:text-4xl">
           Begin <span className="italic font-bold text-accent">YOUR</span>{" "}
           Mentorship Journey
         </header>
 
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-6 sm:flex-row">
-          <Link href={"/mentorship/apply/mentor"} className="w-full sm:w-auto">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-1 items-stretch gap-4 md:grid-cols-2 md:gap-6">
+          <Link href={"/mentorship/apply/mentor"} className="w-full">
             <Button
               type="button"
               size="lg"
               className="
-                inline-flex w/full items-center justify-center gap-3
-                px-12 py-5 text-xl font-semibold sm:text-2xl
+                inline-flex w-full items-center justify-center gap-1
+                px-6 py-4 text-base font-semibold sm:px-8 sm:py-5 sm:text-lg
+                whitespace-nowrap text-center
                 bg-primary text-white
                 transition-colors
                 hover:bg-accent hover:text-white
@@ -106,13 +107,14 @@ export default function MentorshipLanding() {
             </Button>
           </Link>
 
-          <Link href={"/mentorship/apply/mentee"} className="w-full sm:w-auto">
+          <Link href={"/mentorship/apply/mentee"} className="w-full">
             <Button
               type="button"
               size="lg"
               className="
-                inline-flex w/full items-center justify-center gap-3
-                px-12 py-5 text-xl font-semibold sm:text-2xl
+                inline-flex w-full items-center justify-center gap-1
+                px-6 py-4 text-base font-semibold sm:px-8 sm:py-5 sm:text-lg
+                whitespace-nowrap text-center
                 bg-primary text-white
                 transition-colors
                 hover:bg-accent hover:text-white
@@ -125,16 +127,15 @@ export default function MentorshipLanding() {
           </Link>
         </div>
 
-        <div className="mx-auto flex w/full app-content-width flex-col gap-12">
+        <div className="mx-auto flex w-full app-content-width flex-col gap-12">
           {cards.map((card) => (
             <article
               key={card.title}
               className="
-                grid grid-cols-1 gap-4
+                grid grid-cols-1 gap-6
                 md:grid-cols-[auto_minmax(0,1fr)]
-                md:gap-10
+                md:gap-8
                 md:items-start
-                md:ml-6
               "
             >
               <div className="relative mx-auto h-44 w-44 overflow-hidden rounded-3xl bg-muted shadow-lg shadow-black/10 sm:h-48 sm:w-48 md:mx-0 md:col-start-1 md:row-start-1 md:row-span-2">
@@ -149,9 +150,9 @@ export default function MentorshipLanding() {
 
               <h3
                 className="
-                  text-center text-xl font-semibold text-secondary sm:text-4xl
+                  text-center text-2xl font-semibold text-secondary sm:text-3xl
                   md:text-left md:col-start-2 md:row-start-1
-                  md:mt-3
+                  md:mt-2
                 "
               >
                 {card.title}
@@ -162,7 +163,7 @@ export default function MentorshipLanding() {
                   whitespace-pre-line
                   text-center text-lg leading-relaxed text-secondary/80
                   md:text-left md:col-start-2 md:row-start-2
-                  md:-mt-18
+                  md:mt-0
                 "
               >
                 {card.quote}
