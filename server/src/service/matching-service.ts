@@ -1,5 +1,5 @@
 import {
-  RANDOM_ALGORITHM,
+  HYBRID_ALGORITHM,
   recommendationQuery,
 } from "../data/db/recommendation-queries.js";
 import { db } from "../data/db/sql.js";
@@ -107,32 +107,10 @@ export class MatchingService {
 
   async generateMentorRecommendations(
     userId: string,
-  ): Promise<SuggestedMentor[]> {
+  ): Promise<void> {
     log.info({ userId }, "generate recommendation");
-    const result = await db.execute(
-      recommendationQuery(RANDOM_ALGORITHM, MatchingService.MAX_MATCH_REQUESTS),
+    await db.execute(
+      recommendationQuery(HYBRID_ALGORITHM, MatchingService.MAX_MATCH_REQUESTS),
     );
-    return result.rows.map((row) => ({
-      mentor: {
-        mentorId: row.mentor_id,
-        userId: row.user_id,
-        mentorshipPreferences: row.mentorship_preferences,
-        yearsOfService: row.years_of_service,
-        eligibilityData: row.eligibility_data,
-        status: row.status,
-        resumeFileId: row.resume_file_id,
-        strengths: row.strengths,
-        personalInterests: row.personal_interests,
-        whyInterestedResponses: row.why_interested_responses,
-        careerAdvice: row.career_advice,
-        preferredMenteeCareerStages: row.preferred_mentee_career_stages,
-        preferredMeetingFormat: row.preferred_meeting_format,
-        hoursPerMonthCommitment: row.hours_per_month_commitment,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-      },
-      status: "suggested",
-      hasRequested: row.has_requested,
-    })) as SuggestedMentor[];
   }
 }

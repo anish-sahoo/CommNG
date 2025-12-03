@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,7 +16,7 @@ import {
   DropzoneEmptyState,
 } from "@/components/ui/shadcn-io/dropzone";
 import { authClient } from "@/lib/auth-client";
-import { useTRPCClient } from "@/lib/trpc";
+import { useTRPC, useTRPCClient } from "@/lib/trpc";
 
 type ResumeState = null | {
   file: File;
@@ -61,7 +61,9 @@ const mentorMeetingFormat: MultiSelectOption[] = [
 ];
 
 export default function MentorshipApplyMenteePage() {
+  const trpc = useTRPC();
   const trpcClient = useTRPCClient();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: sessionData } = authClient.useSession();
@@ -88,10 +90,14 @@ export default function MentorshipApplyMenteePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Aligned with server `appRouter.mentorship.createMentee`
+  const mentorshipQueryKey = trpc.mentorship.getMentorshipData.queryKey();
   const createMentee = useMutation({
     mutationFn: async (
       input: Parameters<typeof trpcClient.mentorship.createMentee.mutate>[0],
     ) => trpcClient.mentorship.createMentee.mutate(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mentorshipQueryKey });
+    },
   });
 
   const uploadResume = useCallback(
