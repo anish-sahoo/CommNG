@@ -6,7 +6,7 @@ import { ReportRepository } from "../src/data/repository/reports-repo.js";
 /**
  * Seeds a placeholder report for a given user email. Usage:
  *   cd server
- *   npx dotenv -e .env -- tsx scripts/seed-report.ts basic@basic.basic "Report title" "Report description"
+ *   npx tsx --env-file=.env scripts/seed-report.ts basic@basic.basic "Report title" "Report description"
  */
 async function seedReport() {
   const emailArg = process.argv[2];

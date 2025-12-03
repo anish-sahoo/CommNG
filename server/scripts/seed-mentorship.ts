@@ -306,7 +306,7 @@ async function ensureMatch(
  *
  * Usage:
  *   cd server
- *   npx dotenv -e .env -- tsx scripts/seed-mentorship.ts
+ *   npx tsx --env-file=.env scripts/seed-mentorship.ts
  */
 async function main() {
   console.log("Seeding mock mentorship data...");

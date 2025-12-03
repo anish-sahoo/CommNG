@@ -11,7 +11,7 @@
  *
  * Run example (loads .env):
  *
- *   npx dotenv -e .env -- tsx scripts/create-roles.ts
+ *   npx tsx --env-file=.env scripts/create-roles.ts
  *
  * This is idempotent: existing roles are skipped.
  */

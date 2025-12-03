@@ -8,7 +8,7 @@ import { connectPostgres, shutdownPostgres } from "../src/data/db/sql.js";
  *
  * Usage:
  *   cd server
- *   npx dotenv -e .env -- tsx scripts/create-user.ts
+ *   npx tsx --env-file=.env scripts/create-user.ts
  */
 
 async function createUser() {
@@ -16,9 +16,9 @@ async function createUser() {
   await connectPostgres();
   // Edit this object to create a new user
   const userData = {
-    email: "admin@admin.admin",
+    email: "basic@basic.basic",
     password: "password",
-    name: "Admin User",
+    name: "Basic User",
     phoneNumber: "555-123-1234", // optional
     rank: "Captain", // optional
     department: "Engineering", // optional

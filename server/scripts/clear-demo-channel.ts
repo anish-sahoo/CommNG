@@ -5,7 +5,7 @@ import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
 /**
  * Script to clear demo channel until we implement deleting posts
  * cd/server
- * run: `npx dotenv -e .env -- tsx scripts/clear-demo-channel.ts`
+ * run: `npx tsx --env-file=.env scripts/clear-demo-channel.ts`
  */
 
 async function clearDemoChannel() {

@@ -10,7 +10,7 @@ import { channelRole, type RoleKey } from "../src/data/roles.js";
  * Create a channel and grant admin/post/read roles to a target user.
  *
  * Usage:
- *   npx dotenv -e .env -- tsx scripts/create-channel.ts "Channel Name" target@example.com "Optional description"
+ *   npx tsx --env-file=.env scripts/create-channel.ts "Channel Name" target@example.com "Optional description"
  *
  * Notes:
  * - Requires roles to exist (run scripts/create-roles.ts once if not).
