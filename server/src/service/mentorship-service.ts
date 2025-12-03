@@ -100,7 +100,7 @@ export class MentorshipService {
         hopeToGainResponses: input.hopeToGainResponses,
         mentorQualities: input.mentorQualities,
       });
-      
+
       await this.matchingService.generateMentorRecommendations(input.userId);
     }
   }

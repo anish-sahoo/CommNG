@@ -21,7 +21,10 @@ class EmbeddingService {
     this.embeddingsEnabled = process.env.EMBEDDINGS_ENABLED !== "false";
     if (this.embeddingsEnabled) {
       this.client = new BedrockRuntimeClient({ region });
-      log.info({model, region, embeddingsEnabled: this.embeddingsEnabled}, "Connected to AWS Bedrock")
+      log.info(
+        { model, region, embeddingsEnabled: this.embeddingsEnabled },
+        "Connected to AWS Bedrock",
+      );
     }
   }
 
