@@ -20,22 +20,19 @@ const LOAD_BALANCING_WEIGHT = 0.2;
 
 /**
  * Recommendation query using the hybrid algorithm for mentor recommendations.
- * 
+ *
  * Scoring components:
  * 1. Vector similarity (${VECTOR_SIMILARITY_WEIGHT} weight) - cosine similarity between mentee and mentor embeddings
  * 2. Meeting format compatibility (${MEETING_FORMAT_WEIGHT} weight) - soft match with diffusion
  * 3. Hours commitment compatibility (${HOURS_COMMITMENT_WEIGHT} weight) - soft match with tolerance
  * 4. Mentor load balancing (${LOAD_BALANCING_WEIGHT} weight) - boost mentors with fewer active mentees
- * 
+ *
  * Uses diffusion for soft filtering - even without exact matches, candidates still get scores.
- * 
+ *
  * @param userId - The mentee user ID requesting recommendations
  * @param limit - Maximum number of recommendations to return
  */
-export const recommendationQuery = (
-  userId: string,
-  limit: number,
-) => sql`
+export const recommendationQuery = (userId: string, limit: number) => sql`
 WITH
 -- ------------------------------------------------------------
 -- 1. Mentors user already matched with

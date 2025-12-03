@@ -7,6 +7,7 @@ import type {
   EmbedResponse,
   InvokeModelBody,
 } from "../types/embedding-types.js";
+import log from "../utils/logger.js";
 
 class EmbeddingService {
   private model: string;
@@ -17,9 +18,10 @@ class EmbeddingService {
 
   constructor(region = "us-east-1", model = "amazon.titan-embed-text-v2:0") {
     this.model = model;
-    this.embeddingsEnabled = process.env.EMBEDDINGS_ENABLED !== 'false';
+    this.embeddingsEnabled = process.env.EMBEDDINGS_ENABLED !== "false";
     if (this.embeddingsEnabled) {
       this.client = new BedrockRuntimeClient({ region });
+      log.info({model, region, embeddingsEnabled: this.embeddingsEnabled}, "Connected to AWS Bedrock")
     }
   }
 
@@ -28,7 +30,7 @@ class EmbeddingService {
     input: string | string[],
   ): Promise<T> {
     if (!this.client) {
-      throw new Error('Bedrock client not initialized');
+      throw new Error("Bedrock client not initialized");
     }
     const body: InvokeModelBody = {
       inputText: input,
@@ -52,9 +54,13 @@ class EmbeddingService {
    */
   async embed(text: string): Promise<number[]> {
     if (!this.embeddingsEnabled) {
+      log.warn("Embeddings not enabled, returning default value");
       return new Array(512).fill(0);
     }
-    const embeddingPromise = this.invokeModel<EmbedResponse>(this.model, text).then(json => json.embedding);
+    const embeddingPromise = this.invokeModel<EmbedResponse>(
+      this.model,
+      text,
+    ).then((json) => json.embedding);
     const timeoutPromise = new Promise<number[]>((resolve) => {
       setTimeout(() => resolve(new Array(512).fill(0)), this.TIMEOUT_MS);
     });
@@ -66,9 +72,12 @@ class EmbeddingService {
    */
   async embedBatch(texts: string[]): Promise<number[][]> {
     if (!this.embeddingsEnabled) {
+      log.warn("Embeddings not enabled, returning default value");
       return texts.map(() => new Array(512).fill(0));
     }
-    const embeddingPromise = Promise.all(texts.map((text) => this.limit(() => this.embed(text))));
+    const embeddingPromise = Promise.all(
+      texts.map((text) => this.limit(() => this.embed(text))),
+    );
     const timeoutPromise = new Promise<number[][]>((resolve) => {
       setTimeout(() => resolve([]), this.TIMEOUT_MS);
     });

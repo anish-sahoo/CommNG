@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 /* eslint-disable no-console */
 import { eq } from "drizzle-orm";
+import { auth } from "../src/auth.js";
 import {
   account,
   mentees,
@@ -11,7 +12,6 @@ import {
 } from "../src/data/db/schema.js";
 import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
 import { MatchingService } from "../src/service/matching-service.js";
-import { auth } from "../src/auth.js";
 
 const DEFAULT_PASSWORD = "password";
 
@@ -68,7 +68,7 @@ async function ensureUser(input: SeedUserInput) {
       })
       .where(eq(users.id, existing.id))
       .returning();
-    return updated!;
+    return updated as NonNullable<typeof updated>;
   }
 
   // Use auth.api.signUpEmail to create user with password
@@ -99,7 +99,7 @@ async function ensureUser(input: SeedUserInput) {
     .where(eq(users.id, result.user.id))
     .returning();
 
-  return updated!;
+  return updated as NonNullable<typeof updated>;
 }
 
 async function ensureMentor(userId: string, input: MentorInput) {
@@ -118,7 +118,7 @@ async function ensureMentor(userId: string, input: MentorInput) {
       })
       .where(eq(mentors.userId, userId))
       .returning();
-    return updated!;
+    return updated as NonNullable<typeof updated>;
   }
 
   const [created] = await db
@@ -129,7 +129,7 @@ async function ensureMentor(userId: string, input: MentorInput) {
       ...input,
     })
     .returning();
-  return created!;
+  return created as NonNullable<typeof created>;
 }
 
 async function ensureMentee(userId: string, input: MenteeInput) {
@@ -148,7 +148,7 @@ async function ensureMentee(userId: string, input: MenteeInput) {
       })
       .where(eq(mentees.userId, userId))
       .returning();
-    return updated!;
+    return updated as NonNullable<typeof updated>;
   }
 
   const [created] = await db
@@ -159,7 +159,7 @@ async function ensureMentee(userId: string, input: MenteeInput) {
       ...input,
     })
     .returning();
-  return created!;
+  return created as NonNullable<typeof created>;
 }
 
 // 15 diverse mentors with different profiles
@@ -274,7 +274,11 @@ const MENTOR_DATA: Array<{ user: SeedUserInput; mentor: MentorInput }> = [
         "Diversity makes our force stronger.",
       ],
       careerAdvice: "Your background is your strength, not a limitation.",
-      preferredMenteeCareerStages: ["new-soldiers", "junior-ncos", "transitioning"],
+      preferredMenteeCareerStages: [
+        "new-soldiers",
+        "junior-ncos",
+        "transitioning",
+      ],
       preferredMeetingFormat: "hybrid",
       hoursPerMonthCommitment: 4,
     },
@@ -359,7 +363,11 @@ const MENTOR_DATA: Array<{ user: SeedUserInput; mentor: MentorInput }> = [
     },
     mentor: {
       yearsOfService: 4,
-      strengths: ["work-life-balance", "civilian-military-integration", "education"],
+      strengths: [
+        "work-life-balance",
+        "civilian-military-integration",
+        "education",
+      ],
       personalInterests: "yoga, graduate school, startup culture",
       whyInterestedResponses: [
         "Balancing civilian career and Guard service is challenging but rewarding.",
@@ -480,7 +488,8 @@ const MENTOR_DATA: Array<{ user: SeedUserInput; mentor: MentorInput }> = [
         "First Sergeants shape unit culture.",
         "I want to develop future senior NCOs.",
       ],
-      careerAdvice: "Take care of your soldiers and they will take care of the mission.",
+      careerAdvice:
+        "Take care of your soldiers and they will take care of the mission.",
       preferredMenteeCareerStages: ["junior-ncos", "senior-ncos"],
       preferredMeetingFormat: "in-person",
       hoursPerMonthCommitment: 4,
@@ -535,7 +544,11 @@ const TEST_MENTEE: { user: SeedUserInput; mentee: MenteeInput } = {
       "Work-life balance strategies",
       "Networking within the Guard",
     ],
-    mentorQualities: ["strong-communicator", "experienced-leader", "encouraging-and-empathetic"],
+    mentorQualities: [
+      "strong-communicator",
+      "experienced-leader",
+      "encouraging-and-empathetic",
+    ],
     preferredMeetingFormat: "hybrid",
     hoursPerMonthCommitment: 3,
   },
@@ -565,7 +578,11 @@ const TEST_MENTEE_TECH: { user: SeedUserInput; mentee: MenteeInput } = {
       "Networking in tech industry",
       "Education opportunities",
     ],
-    mentorQualities: ["creative-problem-solver", "open-minded-and-approachable", "motivated-and-ambitious"],
+    mentorQualities: [
+      "creative-problem-solver",
+      "open-minded-and-approachable",
+      "motivated-and-ambitious",
+    ],
     preferredMeetingFormat: "virtual",
     hoursPerMonthCommitment: 2,
   },
@@ -573,7 +590,7 @@ const TEST_MENTEE_TECH: { user: SeedUserInput; mentee: MenteeInput } = {
 
 async function clearTestData() {
   console.log("Clearing existing test data...");
-  
+
   // Get all test user IDs
   const testUserIds = [
     ...MENTOR_DATA.map((m) => m.user.id),
@@ -583,9 +600,15 @@ async function clearTestData() {
 
   // Delete in order due to foreign key constraints
   for (const userId of testUserIds) {
-    await db.delete(mentorRecommendations).where(eq(mentorRecommendations.userId, userId));
-    await db.delete(mentorshipMatches).where(eq(mentorshipMatches.requestorUserId, userId));
-    await db.delete(mentorshipMatches).where(eq(mentorshipMatches.mentorUserId, userId));
+    await db
+      .delete(mentorRecommendations)
+      .where(eq(mentorRecommendations.userId, userId));
+    await db
+      .delete(mentorshipMatches)
+      .where(eq(mentorshipMatches.requestorUserId, userId));
+    await db
+      .delete(mentorshipMatches)
+      .where(eq(mentorshipMatches.mentorUserId, userId));
     await db.delete(mentees).where(eq(mentees.userId, userId));
     await db.delete(mentors).where(eq(mentors.userId, userId));
     await db.delete(account).where(eq(account.userId, userId));
@@ -610,7 +633,9 @@ async function seedMentors() {
       careerAdvice: data.mentor.careerAdvice,
     });
 
-    console.log(`  ✓ ${data.user.name} (${data.user.rank}) - ${data.mentor.preferredMeetingFormat}, ${data.mentor.hoursPerMonthCommitment}h/mo`);
+    console.log(
+      `  ✓ ${data.user.name} (${data.user.rank}) - ${data.mentor.preferredMeetingFormat}, ${data.mentor.hoursPerMonthCommitment}h/mo`,
+    );
   }
 }
 
@@ -655,7 +680,7 @@ async function generateRecommendations() {
     .from(users)
     .where(eq(users.email, TEST_MENTEE.user.email))
     .limit(1);
-  
+
   const [mentee2User] = await db
     .select()
     .from(users)
@@ -669,7 +694,7 @@ async function generateRecommendations() {
   // Generate for main mentee
   console.log(`  Generating for ${TEST_MENTEE.user.name}...`);
   await matchingService.generateMentorRecommendations(mentee1User.id);
-  
+
   // Generate for tech mentee
   console.log(`  Generating for ${TEST_MENTEE_TECH.user.name}...`);
   await matchingService.generateMentorRecommendations(mentee2User.id);
@@ -687,8 +712,12 @@ async function generateRecommendations() {
     .where(eq(mentorRecommendations.userId, mentee2User.id))
     .limit(1);
 
-  console.log(`\n  ${TEST_MENTEE.user.name}'s recommendations: ${recs1?.recommendedMentorIds?.length ?? 0} mentors`);
-  console.log(`  ${TEST_MENTEE_TECH.user.name}'s recommendations: ${recs2?.recommendedMentorIds?.length ?? 0} mentors`);
+  console.log(
+    `\n  ${TEST_MENTEE.user.name}'s recommendations: ${recs1?.recommendedMentorIds?.length ?? 0} mentors`,
+  );
+  console.log(
+    `  ${TEST_MENTEE_TECH.user.name}'s recommendations: ${recs2?.recommendedMentorIds?.length ?? 0} mentors`,
+  );
 }
 
 /**
@@ -699,13 +728,13 @@ async function generateRecommendations() {
  * Usage:
  *   cd server
  *   npx tsx --env-file=.env scripts/test-recommendations.ts
- *   
+ *
  * To clear and reseed:
  *   npx tsx --env-file=.env scripts/test-recommendations.ts --clear
  */
 async function main() {
   const shouldClear = process.argv.includes("--clear");
-  
+
   console.log("=".repeat(60));
   console.log("Mentor Recommendation Test Data Seeder");
   console.log("=".repeat(60));
@@ -720,14 +749,16 @@ async function main() {
   await seedMentees();
   await generateRecommendations();
 
-  console.log("\n" + "=".repeat(60));
+  console.log(`\n${"=".repeat(60)}`);
   console.log("SEED COMPLETE!");
   console.log("=".repeat(60));
   console.log("\nTest accounts created:");
   console.log(`  Mentee 1: ${TEST_MENTEE.user.email} (leadership-focused)`);
   console.log(`  Mentee 2: ${TEST_MENTEE_TECH.user.email} (tech-focused)`);
   console.log(`\nPassword for all accounts: ${DEFAULT_PASSWORD}`);
-  console.log("\nLog in as a mentee to see their personalized mentor recommendations.");
+  console.log(
+    "\nLog in as a mentee to see their personalized mentor recommendations.",
+  );
   console.log("The algorithm should rank mentors based on:");
   console.log("  - Vector similarity (embeddings match)");
   console.log("  - Meeting format compatibility");

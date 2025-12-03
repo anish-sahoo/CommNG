@@ -2,7 +2,6 @@ import { recommendationQuery } from "../data/db/recommendation-queries.js";
 import { db } from "../data/db/sql.js";
 import { MentorshipEmbeddingRepository } from "../data/repository/mentorship-embedding-repo.js";
 import type { CreateMentorshipEmbeddingInput } from "../types/mentorship-embedding-types.js";
-import type { SuggestedMentor } from "../types/mentorship-types.js";
 import { buildText } from "../utils/embedding.js";
 import log from "../utils/logger.js";
 import { embeddingService } from "./embedding-service.js";
@@ -102,9 +101,7 @@ export class MatchingService {
     }
   }
 
-  async generateMentorRecommendations(
-    userId: string,
-  ): Promise<void> {
+  async generateMentorRecommendations(userId: string): Promise<void> {
     log.info({ userId }, "generate recommendation");
     await db.execute(
       recommendationQuery(userId, MatchingService.MAX_MATCH_REQUESTS),

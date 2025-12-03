@@ -23,10 +23,16 @@ async function main() {
     console.log("\nEmbedding text:", `"${input}"`);
     console.log("Calling Titan...");
 
-    const vector: number[][] = await embeddingService.embedBatch([input, input, input]);
+    const vector: number[][] = await embeddingService.embedBatch([
+      input,
+      input,
+      input,
+    ]);
 
-    vector.forEach((v) => console.log("Embedding (length", `${v.length}):`))
-    vector.forEach((v) => console.log("First 10 values:", v.slice(0, 10)));
+    vector.forEach(
+      (v) => void console.log("Embedding (length", `${v.length}):`),
+    );
+    vector.forEach((v) => void console.log("First 10 values:", v.slice(0, 10)));
     console.log();
   } catch (err) {
     // try to detect common AWS access errors and output helpful guidance

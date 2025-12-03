@@ -57,13 +57,7 @@ async function grantRole(email: string, role: string): Promise<boolean> {
   return new Promise((resolve) => {
     const child = spawn(
       "npx",
-      [
-        "tsx",
-        "--env-file=.env",
-        "scripts/grant-role.ts",
-        email,
-        role,
-      ],
+      ["tsx", "--env-file=.env", "scripts/grant-role.ts", email, role],
       {
         stdio: "inherit",
         cwd: process.cwd(),
