@@ -43,7 +43,7 @@ const AppNavBarItem = ({
         aria-label={item.label}
         aria-current={isActive ? "page" : undefined}
         onClick={onNavigate}
-        className={`group relative flex h-16 w-16 items-center justify-center rounded-3xl transition-all duration-300
+        className={`group relative flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl transition-all duration-300
           ${
             isActive
               ? "bg-accent ring-3 ring-background scale-105"
@@ -83,135 +83,140 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
   );
 
   const circleButtonClasses =
-    "group relative flex h-12 w-12 items-center justify-center rounded-full border-2 transition-colors duration-200";
+    "group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200";
 
   return (
     <nav
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-24 flex-col items-center bg-primary px-3 py-6 shadow-lg shadow-black/20",
+        // Dynamic viewport height; only the action buttons scroll so top icons stay fixed.
+        "fixed inset-y-0 left-0 z-40 flex w-24 max-h-[100dvh] flex-col items-center overflow-hidden overflow-x-hidden bg-primary px-3 py-6 shadow-lg shadow-black/20",
         className,
       )}
     >
-      <Link
-        href="/communications"
-        aria-label="Go to My Channels"
-        onClick={onNavigate}
-        className="flex h-16 w-16 items-center justify-center rounded-3xl transition-transform hover:scale-110"
-      >
-        <Image
-          src="/icons/favicon_yellow.svg"
-          alt="CommNG app switcher logo"
-          width={52}
-          height={52}
-          className="h-12 w-12"
-          priority
-        />
-      </Link>
-
-      <ul className="mt-10 flex flex-col items-center gap-6">
-        {navItems.map((item) => (
-          <AppNavBarItem
-            key={item.id}
-            item={item}
-            isActive={pathname.startsWith(item.href)}
-            onNavigate={onNavigate}
+      <div className="flex w-full flex-col items-center">
+        <Link
+          href="/communications"
+          aria-label="Go to My Channels"
+          onClick={onNavigate}
+          className="flex h-16 w-16 items-center justify-center rounded-3xl transition-transform hover:scale-110"
+        >
+          <Image
+            src="/icons/favicon_yellow.svg"
+            alt="CommNG app switcher logo"
+            width={52}
+            height={52}
+            className="h-12 w-12"
+            priority
           />
-        ))}
-      </ul>
+        </Link>
 
-      <div className="mt-auto flex w-full flex-col items-center gap-2 pb-3">
-        <Protected requiredRole="broadcast:create">
+        <ul className="mt-10 flex flex-col items-center gap-6">
+          {navItems.map((item) => (
+            <AppNavBarItem
+              key={item.id}
+              item={item}
+              isActive={pathname.startsWith(item.href)}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-8 flex w-full flex-1 min-h-0 flex-col items-center overflow-hidden">
+        <div className="mt-auto flex w-full flex-col items-center gap-3 overflow-y-auto overflow-x-hidden overscroll-contain pb-6 md:pb-10">
+          <Protected requiredRole="broadcast:create">
+            <Link
+              href="/communications/broadcasts/new"
+              aria-label="Create broadcast"
+              aria-current={isCreateBroadcastActive ? "page" : undefined}
+              className={cn(
+                circleButtonClasses,
+                isCreateBroadcastActive
+                  ? "border-accent bg-accent text-primary"
+                  : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+              )}
+              onClick={onNavigate}
+            >
+              <MegaphoneIcon className="h-6 w-6" aria-hidden="true" />
+              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+                Broadcast
+              </span>
+            </Link>
+          </Protected>
+
           <Link
-            href="/communications/broadcasts/new"
-            aria-label="Create broadcast"
-            aria-current={isCreateBroadcastActive ? "page" : undefined}
+            href="/communications/broadcasts"
+            aria-label="Active broadcasts"
+            aria-current={isBroadcastsActive ? "page" : undefined}
             className={cn(
               circleButtonClasses,
-              isCreateBroadcastActive
+              isBroadcastsActive
                 ? "border-accent bg-accent text-primary"
                 : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
             )}
             onClick={onNavigate}
           >
-            <MegaphoneIcon className="h-6 w-6" aria-hidden="true" />
+            <BellIcon className="h-6 w-6" aria-hidden="true" />
             <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
-              Broadcast
+              Active Broadcasts
             </span>
           </Link>
-        </Protected>
 
-        <Link
-          href="/communications/broadcasts"
-          aria-label="Active broadcasts"
-          aria-current={isBroadcastsActive ? "page" : undefined}
-          className={cn(
-            circleButtonClasses,
-            isBroadcastsActive
-              ? "border-accent bg-accent text-primary"
-              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
-          )}
-          onClick={onNavigate}
-        >
-          <BellIcon className="h-6 w-6" aria-hidden="true" />
-          <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
-            Active Broadcasts
-          </span>
-        </Link>
-
-        <Link
-          href="/help-page"
-          aria-label="Help"
-          className={cn(
-            circleButtonClasses,
-            isHelpActive
-              ? "border-accent bg-accent text-primary"
-              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
-          )}
-          onClick={onNavigate}
-        >
-          <HelpIcon className="h-6 w-6" />
-          <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
-            Help
-          </span>
-        </Link>
-
-        <Protected requiredRole="global:create-invite">
           <Link
-            href="/admin"
-            aria-label="Admin"
-            aria-current={isAdminActive ? "page" : undefined}
+            href="/help-page"
+            aria-label="Help"
             className={cn(
               circleButtonClasses,
-              isAdminActive
+              isHelpActive
                 ? "border-accent bg-accent text-primary"
                 : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
             )}
             onClick={onNavigate}
           >
-            <AdminIcon className="h-6 w-6" />
+            <HelpIcon className="h-6 w-6" />
             <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
-              Admin
+              Help
             </span>
           </Link>
-        </Protected>
 
-        <Link
-          href="/profile"
-          aria-label="Profile"
-          aria-current={isProfileActive ? "page" : undefined}
-          className={cn(
-            circleButtonClasses,
-            isProfileActive
-              ? "border-accent bg-accent text-primary"
-              : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
-          )}
-          onClick={onNavigate}
-        >
-          <ProfileIcon className="h-6 w-6" strokeWidth={2} />
-          <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
-            Profile
-          </span>
-        </Link>
+          <Protected requiredRole="global:create-invite">
+            <Link
+              href="/admin"
+              aria-label="Admin"
+              aria-current={isAdminActive ? "page" : undefined}
+              className={cn(
+                circleButtonClasses,
+                isAdminActive
+                  ? "border-accent bg-accent text-primary"
+                  : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+              )}
+              onClick={onNavigate}
+            >
+              <AdminIcon className="h-6 w-6" />
+              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+                Admin
+              </span>
+            </Link>
+          </Protected>
+
+          <Link
+            href="/profile"
+            aria-label="Profile"
+            aria-current={isProfileActive ? "page" : undefined}
+            className={cn(
+              circleButtonClasses,
+              isProfileActive
+                ? "border-accent bg-accent text-primary"
+                : "border-primary bg-accent text-primary hover:bg-primary-dark hover:text-background",
+            )}
+            onClick={onNavigate}
+          >
+            <ProfileIcon className="h-6 w-6" strokeWidth={2} />
+            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+              Profile
+            </span>
+          </Link>
+        </div>
       </div>
     </nav>
   );
