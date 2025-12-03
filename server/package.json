@@ -1,7 +1,7 @@
 {
   "name": "server",
   "type": "module",
-  "version": "0.21.0-SNAPSHOT",
+  "version": "0.22.0-SNAPSHOT",
   "description": "",
   "main": "index.ts",
   "scripts": {
