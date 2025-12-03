@@ -5,10 +5,10 @@
  *
  * Usage:
  *   # Remove ALL channel roles for the user
- *   npx dotenv -e .env -- npx tsx scripts/clear-channel-roles.ts user@example.com
+ *   npx tsx --env-file=.env scripts/clear-channel-roles.ts user@example.com
  *
  *   # Remove channel roles only for channel 1 and 2
- *   npx dotenv -e .env -- npx tsx scripts/clear-channel-roles.ts user@example.com 1,2
+ *   npx tsx --env-file=.env scripts/clear-channel-roles.ts user@example.com 1,2
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { roles, userRoles, users } from "../src/data/db/schema.js";

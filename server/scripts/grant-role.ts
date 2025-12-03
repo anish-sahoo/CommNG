@@ -7,7 +7,7 @@ import type { RoleKey } from "../src/data/roles.js";
 
 /**
  * Usage:
- *   npx dotenv -e .env -- tsx scripts/grant-role.ts admin@admin.admin reporting:admin
+ *   npx tsx --env-file=.env scripts/grant-role.ts admin@admin.admin reporting:admin
  *
  * Codes:
  * Broadcast: broadcast:create

@@ -101,7 +101,6 @@ export class MentorshipService {
         mentorQualities: input.mentorQualities,
       });
 
-      // Generate and store recommendations
       await this.matchingService.generateMentorRecommendations(input.userId);
     }
   }

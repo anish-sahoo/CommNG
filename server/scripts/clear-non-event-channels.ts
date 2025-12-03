@@ -7,7 +7,7 @@ import { connectPostgres, db, shutdownPostgres } from "../src/data/db/sql.js";
  *
  * Usage:
  *   cd server
- *   npx dotenv -e .env -- tsx scripts/clear-non-event-channels.ts
+ *   npx tsx --env-file=.env scripts/clear-non-event-channels.ts
  */
 const EVENT_CHANNEL_NAME = "Events";
 

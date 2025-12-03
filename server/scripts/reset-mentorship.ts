@@ -5,7 +5,7 @@
  *
  * Usage:
  *   cd server
- *   npx dotenv -e .env -- tsx scripts/reset-mentorship.ts
+ *   npx tsx --env-file=.env scripts/reset-mentorship.ts
  */
 import { sql } from "drizzle-orm";
 import {

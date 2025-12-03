@@ -6,7 +6,7 @@
  *
  * Example usage (with .env loaded):
  *
- *   npx dotenv -e .env -- tsx scripts/fix-channel-permissions.ts 31 admin@example.com admin
+ *   npx tsx --env-file=.env scripts/fix-channel-permissions.ts 31 admin@example.com admin
  *
  * Parameters:
  *   1) channelId - numeric id of the channel (see channels table)
