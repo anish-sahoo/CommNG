@@ -41,7 +41,7 @@ export function TitleShell<T extends string>({
     }
     if (typeof title === "string") {
       return (
-        <span className="flex items-center text-[1.75rem] font-semibold leading-tight text-secondary sm:text-[2.25rem]">
+        <span className="flex items-center text-[clamp(1.4rem,5vw,1.75rem)] font-semibold leading-tight text-secondary truncate whitespace-nowrap md:text-[2.25rem]">
           {title}
         </span>
       );
