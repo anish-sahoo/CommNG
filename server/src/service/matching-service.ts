@@ -1,8 +1,4 @@
-import {
-  HYBRID_ALGORITHM_CTES,
-  HYBRID_ALGORITHM_SELECT,
-  recommendationQueryWithCTEs,
-} from "../data/db/recommendation-queries.js";
+import { recommendationQuery } from "../data/db/recommendation-queries.js";
 import { db } from "../data/db/sql.js";
 import { MentorshipEmbeddingRepository } from "../data/repository/mentorship-embedding-repo.js";
 import type { CreateMentorshipEmbeddingInput } from "../types/mentorship-embedding-types.js";
@@ -111,12 +107,7 @@ export class MatchingService {
   ): Promise<void> {
     log.info({ userId }, "generate recommendation");
     await db.execute(
-      recommendationQueryWithCTEs(
-        userId,
-        HYBRID_ALGORITHM_CTES,
-        HYBRID_ALGORITHM_SELECT,
-        MatchingService.MAX_MATCH_REQUESTS,
-      ),
+      recommendationQuery(userId, MatchingService.MAX_MATCH_REQUESTS),
     );
   }
 }
