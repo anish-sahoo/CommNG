@@ -100,13 +100,7 @@ export class MentorshipService {
         hopeToGainResponses: input.hopeToGainResponses,
         mentorQualities: input.mentorQualities,
       });
-
-      // update the generate recommendations so that
-      // - if no recs exist in db, generate
-      // - else retrieve the ones that exist
-      // split this into 2 api calls -> 1 for createMentee and 1 for getRecommendations
-
-      // Generate and store recommendations
+      
       await this.matchingService.generateMentorRecommendations(input.userId);
     }
   }

@@ -10,10 +10,17 @@ import { embeddingService } from "./embedding-service.js";
  * Service to handle mentorship matching logic
  */
 export class MatchingService {
-  // Maximum number of match requests to fan out per trigger
+  /** Maximum number of match requests to fan out per trigger */
   static readonly MAX_MATCH_REQUESTS = 10;
   private readonly embeddingRepo = new MentorshipEmbeddingRepository();
 
+  /**
+   * Embeds the given texts and saves the embeddings for the user.
+   * @param userId - The ID of the user.
+   * @param userType - The type of the user ('mentor' or 'mentee').
+   * @param texts - The texts to embed.
+   * @returns A promise that resolves when the embeddings are saved.
+   */
   private async embedAndSave(
     userId: string,
     userType: "mentor" | "mentee",
@@ -34,6 +41,16 @@ export class MatchingService {
     await this.embeddingRepo.createOrUpdateEmbedding(data);
   }
 
+  /**
+   * Creates or updates embeddings for a mentor based on the provided input.
+   * @param input - The input data for the mentor.
+   * @param input.userId - The ID of the mentor.
+   * @param input.whyInterestedResponses - Responses about why interested.
+   * @param input.strengths - Strengths of the mentor.
+   * @param input.personalInterests - Personal interests.
+   * @param input.careerAdvice - Career advice.
+   * @returns A promise that resolves when the embeddings are created or updated.
+   */
   async createOrUpdateMentorEmbeddings(input: {
     userId: string;
     whyInterestedResponses?: string[] | string | undefined;
@@ -65,6 +82,17 @@ export class MatchingService {
     }
   }
 
+  /**
+   * Creates or updates embeddings for a mentee based on the provided input.
+   * @param input - The input data for the mentee.
+   * @param input.userId - The ID of the mentee.
+   * @param input.learningGoals - Learning goals.
+   * @param input.personalInterests - Personal interests.
+   * @param input.roleModelInspiration - Role model inspiration.
+   * @param input.hopeToGainResponses - Responses about hope to gain.
+   * @param input.mentorQualities - Qualities looked for in a mentor.
+   * @returns A promise that resolves when the embeddings are created or updated.
+   */
   async createOrUpdateMenteeEmbeddings(input: {
     userId: string;
     learningGoals?: string | undefined;
@@ -88,7 +116,7 @@ export class MatchingService {
       const profileText = profileParts.join(" ") || "mentee-profile";
       const texts = [whyInterestedText, hopeText, profileText];
       await this.embedAndSave(userId, "mentee", texts);
-      log.info(
+      log.debug(
         { userId },
         "Created or updated mentee embeddings (match service)",
       );
@@ -101,8 +129,13 @@ export class MatchingService {
     }
   }
 
+  /**
+   * Generates and stores mentor recommendations for the given user.
+   * @param userId - The ID of the user to generate recommendations for.
+   * @returns A promise that resolves when the recommendations are generated + stored.
+   */
   async generateMentorRecommendations(userId: string): Promise<void> {
-    log.info({ userId }, "generate recommendation");
+    log.debug({ userId }, "generate recommendation");
     await db.execute(
       recommendationQuery(userId, MatchingService.MAX_MATCH_REQUESTS),
     );
