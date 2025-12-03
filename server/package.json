@@ -12,7 +12,7 @@
     "format": "npx @biomejs/biome format --write",
     "lint": "npx @biomejs/biome check",
     "lintfix": "npx @biomejs/biome check --write",
-    "start": "node --import tsx/esm --env-file=.env src/index.ts"
+    "start": "node --import tsx/esm src/index.ts"
   },
   "author": "",
   "license": "ISC",
