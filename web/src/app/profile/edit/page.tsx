@@ -682,11 +682,12 @@ export default function ProfileEditPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
             <Button
               type="submit"
               size="lg"
               disabled={isSaving || avatarStatus === "uploading"}
+              className="w-full sm:w-auto"
             >
               {isSaving ? "Saving…" : "Save changes"}
             </Button>
@@ -694,7 +695,7 @@ export default function ProfileEditPage() {
               type="button"
               variant="outline"
               size="lg"
-              className="text-secondary"
+              className="w-full sm:w-auto text-secondary"
               disabled={isSaving}
               onClick={handleCancelClick}
             >
