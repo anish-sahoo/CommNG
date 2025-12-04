@@ -210,15 +210,19 @@ export default function MentorshipDashboard() {
       const requested = mentorInformation.hasRequested;
       return (
         <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+          <Button
+            type="button"
+            size="sm"
+            variant="default"
+            className={`rounded-md px-4 text-xs font-semibold uppercase tracking-wide shadow-sm ${
               requested
-                ? "bg-primary/10 text-primary"
-                : "bg-muted text-secondary/70"
+                ? "bg-primary/20 text-primary hover:bg-primary/20"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
             }`}
+            disabled={requested}
           >
             {requested ? "Requested" : "View Details"}
-          </span>
+          </Button>
         </div>
       );
     };
@@ -484,9 +488,14 @@ export default function MentorshipDashboard() {
 
     const renderMenteeRequestRowOptions = () => {
       return (
-        <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-secondary/70">
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          className="rounded-md px-4 text-xs font-semibold uppercase tracking-wide shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           View Details
-        </span>
+        </Button>
       );
     };
 

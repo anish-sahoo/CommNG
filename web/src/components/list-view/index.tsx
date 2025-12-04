@@ -181,7 +181,13 @@ const ListViewRow = <T extends ListViewItem>({
       </button>
       {rowOptions ? (
         <div className="flex items-center justify-center gap-2 sm:ml-auto">
-          {rowOptions}
+          <button
+            type="button"
+            onClick={onClick}
+            className="rounded-md border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            {rowOptions}
+          </button>
         </div>
       ) : null}
     </li>
