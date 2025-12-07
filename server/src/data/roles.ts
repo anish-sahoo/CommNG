@@ -58,6 +58,29 @@ export const ROLE_HIERARCHIES = {
   global: globalActionsEnum.options,
 } as const satisfies Record<RoleNamespace, readonly string[]>;
 
+const reportingRoleKeySchema = z.templateLiteral([
+  z.literal("reporting:"),
+  reportingActionsEnum,
+]);
+const channelRoleKeySchema = z.templateLiteral([
+  z.literal("channel:"),
+  z.number(),
+  z.literal(":"),
+  channelActionsEnum,
+]);
+const broadcastRoleKeySchema = z.templateLiteral([
+  z.literal("broadcast:"),
+  broadcastActionsEnum,
+]);
+const globalAdminKeySchema = z.templateLiteral([
+  z.literal("global:"),
+  globalActionsEnum,
+]);
+
+type ReportingRoleKey = z.infer<typeof reportingRoleKeySchema>;
+type ChannelRoleKey = z.infer<typeof channelRoleKeySchema>;
+type BroadcastRoleKey = z.infer<typeof broadcastRoleKeySchema>;
+
 /**
  * Builds a role key for a channel-specific resource/action.
  *
@@ -68,11 +91,12 @@ export const ROLE_HIERARCHIES = {
  * @param id - The channel's unique numeric identifier.
  * @returns Role key string of shape `channel:<id>:<action>`, eg. "channel:42:post"
  */
-export const channelRole = (action: ChannelActions, id: number) => {
+export const channelRole = (
+  action: ChannelActions,
+  id: number,
+): ChannelRoleKey => {
   return `channel:${id}:${action}` as const;
 };
-/** A role key for actions scoped to a channel (e.g. "channel:13:admin") */
-export type ChannelRoleKey = ReturnType<typeof channelRole>;
 
 /**
  * Builds a role key for broadcast (mass communication) features.
@@ -80,11 +104,9 @@ export type ChannelRoleKey = ReturnType<typeof channelRole>;
  * @param action - Only "create": Ability to initiate/broadcast a message blast.
  * @returns Role key string, e.g., "broadcast:create"
  */
-export const broadcastRole = (action: BroadcastActions) => {
+export const broadcastRole = (action: BroadcastActions): BroadcastRoleKey => {
   return `broadcast:${action}` as const;
 };
-/** A role key for broadcast-related global permissions ("broadcast:create") */
-type BroadcastRoleKey = ReturnType<typeof broadcastRole>;
 
 /**
  * Builds a role key for reporting/analytics features.
@@ -97,11 +119,9 @@ type BroadcastRoleKey = ReturnType<typeof broadcastRole>;
  *   - "assign": Ability to assign reports to users.
  * @returns Role key string, e.g., "reporting:read"
  */
-export const reportingRole = (action: ReportingActions) => {
+export const reportingRole = (action: ReportingActions): ReportingRoleKey => {
   return `reporting:${action}` as const;
 };
-/** A role key for reporting-related permissions ("reporting:read", "reporting:create") */
-type ReportingRoleKey = ReturnType<typeof reportingRole>;
 
 /**
  * The global admin role key.
@@ -135,63 +155,6 @@ export type RoleKey =
   | ReportingRoleKey
   | GlobalAdminKey
   | GlobalCreateInviteKey;
-
-/**
- * Zod schemas for validating role keys at runtime
- * All derived from the action enums above (single source of truth)
- */
-
-/**
- * Validates a channel role key pattern: "channel:<number>:<action>"
- * Dynamically builds regex from channelActionsEnum
- */
-const channelActionsPattern = channelActionsEnum.options.join("|");
-export const channelRoleKeySchema = z
-  .string()
-  .regex(
-    new RegExp(`^channel:\\d+:(${channelActionsPattern})$`),
-    `Channel role must be in format 'channel:<id>:<action>' where action is ${channelActionsEnum.options.join(", ")}`,
-  )
-  .transform((val) => val as ChannelRoleKey);
-
-/**
- * Validates a broadcast role key pattern: "broadcast:<action>"
- * Dynamically builds regex from broadcastActionsEnum
- */
-const broadcastActionsPattern = broadcastActionsEnum.options.join("|");
-export const broadcastRoleKeySchema = z
-  .string()
-  .regex(
-    new RegExp(`^broadcast:(${broadcastActionsPattern})$`),
-    `Broadcast role must be in format 'broadcast:<action>' where action is ${broadcastActionsEnum.options.join(", ")}`,
-  )
-  .transform((val) => val as BroadcastRoleKey);
-
-/**
- * Validates a reporting role key pattern: "reporting:<action>"
- * Dynamically builds regex from reportingActionsEnum
- */
-const reportingActionsPattern = reportingActionsEnum.options.join("|");
-export const reportingRoleKeySchema = z
-  .string()
-  .regex(
-    new RegExp(`^reporting:(${reportingActionsPattern})$`),
-    `Reporting role must be in format 'reporting:<action>' where action is ${reportingActionsEnum.options.join(", ")}`,
-  )
-  .transform((val) => val as ReportingRoleKey);
-
-/**
- * Validates the global admin role key: "global:admin"
- * Dynamically builds from globalActionsEnum
- */
-const globalActionsPattern = globalActionsEnum.options.join("|");
-export const globalAdminKeySchema = z
-  .string()
-  .regex(
-    new RegExp(`^global:(${globalActionsPattern})$`),
-    `Global role must be in format 'global:<action>' where action is ${globalActionsEnum.options.join(", ")}`,
-  )
-  .transform((val) => val as GlobalAdminKey);
 
 /**
  * Master role key schema that validates any valid role key

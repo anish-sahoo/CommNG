@@ -128,7 +128,7 @@ export const users = pgTable(
     positionType: positionTypeEnum("position_type"),
     location: text("location"),
     about: text("about"),
-    interests: jsonb("interests"), // comma separated string
+    interests: jsonb("interests").$type<string[]>().default([]),
     civilianCareer: text("civilian_career"),
     linkedin: text("linkedin"),
 

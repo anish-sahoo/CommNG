@@ -309,7 +309,7 @@ export class UserRepository {
     if (userData.interests) {
       await db
         .update(users)
-        .set({ interests: userData.interests.join(", ") })
+        .set({ interests: userData.interests })
         .where(eq(users.id, res.user.id));
     }
 
