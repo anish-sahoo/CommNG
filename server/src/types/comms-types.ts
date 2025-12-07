@@ -148,6 +148,7 @@ export const toggleReactionOutputSchema = z.object({
 });
 
 const subscriptionSchema = z.object({
+  userId: z.string(),
   subscriptionId: z.number(),
   channelId: z.number(),
   notificationsEnabled: z.boolean(),
@@ -156,7 +157,7 @@ const subscriptionSchema = z.object({
 
 export const getUserSubscriptionsOutputSchema = z.array(
   subscriptionSchema
-    .omit({ createdAt: true })
+    .omit({ createdAt: true, userId: true })
     .extend(z.object({ channelName: z.string() }).shape),
 );
 
