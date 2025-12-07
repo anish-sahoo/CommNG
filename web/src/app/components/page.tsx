@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Avatar } from "@/components/avatar";
 import { SingleSelectButtonGroup } from "@/components/button-single-select";
 import { SelectableButton } from "@/components/buttons";
 import ChannelCard from "@/components/channel-card";
 import ChipSelect from "@/components/chip-select";
 import { DragReorderFrame } from "@/components/drag-and-drop";
+import DragDropCards from "@/components/drag-cards";
 import type { DropdownMenuItemConfig } from "@/components/dropdown";
 import { DropdownButtons } from "@/components/dropdown";
 import DropdownSelect from "@/components/dropdown-select";
 import CollapsibleCard from "@/components/expanding-card";
 import { icons } from "@/components/icons";
+import { TitleShell } from "@/components/layouts/title-shell";
 import LinkedCard from "@/components/linked-card";
 import ListView from "@/components/list-view";
 import {
@@ -28,7 +31,16 @@ import { AddReaction } from "@/components/reaction-bubble/add-reaction";
 import SearchBar from "@/components/search-bar";
 import { ReportsTable } from "@/components/table-view";
 import { TextInput } from "@/components/text-input";
+import { DeleteChannelModal } from "@/components/modal/delete-channel-modal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   Dropzone,
   DropzoneContent,
@@ -215,6 +227,8 @@ const Components = () => {
   const [demoReactions, setDemoReactions] = useState<
     { emoji: string; count: number; reactedByUser: boolean }[]
   >([{ emoji: "👍", count: 1, reactedByUser: false }]);
+  const [deleteChannelModalOpen, setDeleteChannelModalOpen] = useState(false);
+  const [isDeletingChannel, setIsDeletingChannel] = useState(false);
 
   const handleDemoToggle = (emoji: string, active: boolean) => {
     setDemoReactions((previous) =>
@@ -283,6 +297,35 @@ const Components = () => {
     { label: "Third Item", value: "3" },
   ];
   const [order, setOrder] = useState(dragOptions.map((o) => o.value));
+  const [cardItems, setCardItems] = useState<
+    { id: string; data: { title: string; description: string } }[]
+  >([
+    {
+      id: "1",
+      data: {
+        title: "Welcome and introductions",
+        description:
+          "Share context on why you're gathering and what success looks like.",
+      },
+    },
+    {
+      id: "2",
+      data: {
+        title: "Share updates",
+        description:
+          "Review blockers and highlights so everyone leaves aligned.",
+      },
+    },
+    {
+      id: "3",
+      data: {
+        title: "Assign action items",
+        description:
+          "Capture owners and due dates before the meeting wraps up.",
+      },
+    },
+  ]);
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <>
@@ -326,10 +369,37 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
-                Button
+                Buttons
               </h2>
+              <p className="text-sm text-secondary/70">
+                Core button variants and the rounded selectable button.
+              </p>
             </div>
-            <SelectableButton text="Button" />
+            <div className="flex flex-wrap items-center gap-3">
+              <Button>Primary</Button>
+              <Button variant="outline">Outline</Button>
+              <Button variant="secondary">Secondary</Button>
+              <Button variant="ghost">Ghost</Button>
+              <Button variant="link">Text link</Button>
+            </div>
+            <SelectableButton text="Selectable Button" />
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Badges
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Lightweight labels for statuses and filters.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge>Default</Badge>
+              <Badge variant="secondary">Secondary</Badge>
+              <Badge variant="outline">Outline</Badge>
+              <Badge variant="destructive">Destructive</Badge>
+            </div>
           </section>
 
           <section className="space-y-6">
@@ -424,6 +494,23 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
+                Avatar
+              </h2>
+              <p className="text-sm text-secondary/70">
+                User avatar with TRPC-backed image loading and a fallback icon.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Avatar />
+              <p className="text-sm text-secondary/70">
+                Without an uploaded photo we show the default user icon.
+              </p>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
                 Collapsible Card
               </h2>
             </div>
@@ -481,6 +568,35 @@ const Components = () => {
                 }
               />
               <DropdownButtons items={actionMenuItems} />
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Page Title Shell
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Sticky page header with actions for consistent page framing.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/60 p-3">
+              <TitleShell
+                title="Unit readiness overview"
+                backHref="/components"
+                scrollableContent={false}
+                className="h-auto"
+                contentClassName="pr-0"
+              >
+                <p className="text-sm text-secondary/80">
+                  Use the TitleShell for full-page layouts so back navigation,
+                  actions, and content spacing stay consistent.
+                </p>
+                <p className="text-sm text-secondary/80">
+                  You can pass pinned content to sit under the header or enable
+                  scrollable content for long forms.
+                </p>
+              </TitleShell>
             </div>
           </section>
 
@@ -588,6 +704,43 @@ const Components = () => {
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
+                Tabs
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Switch between related views without leaving the page.
+              </p>
+            </div>
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full max-w-2xl"
+            >
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
+              </TabsList>
+              <TabsContent value="overview" className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-secondary/80">
+                  Show the essentials up front so users can make quick decisions.
+                </p>
+              </TabsContent>
+              <TabsContent value="details" className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-secondary/80">
+                  Provide supporting info or secondary settings in a dedicated tab.
+                </p>
+              </TabsContent>
+              <TabsContent value="activity" className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-secondary/80">
+                  Keep audit trails and recent actions close to the primary context.
+                </p>
+              </TabsContent>
+            </Tabs>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
                 File dropzone
               </h2>
               <p className="text-sm text-secondary/70">
@@ -606,6 +759,23 @@ const Components = () => {
               <DropzoneEmptyState />
               <DropzoneContent />
             </Dropzone>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Spinner
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Inline loader for async states and button progress.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3">
+              <Spinner className="h-6 w-6 text-primary" />
+              <p className="text-sm text-secondary/80" aria-live="polite">
+                Fetching data from the server...
+              </p>
+            </div>
           </section>
 
           <section className="space-y-6">
@@ -656,6 +826,33 @@ const Components = () => {
               </pre>
             </div>
           </section>
+
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-subheader font-semibold text-secondary">
+                Drag-and-Drop Cards
+              </h2>
+              <p className="text-sm text-secondary/70">
+                Reorder full cards with a grab handle and keep state in sync.
+              </p>
+            </div>
+            <div className="max-w-2xl space-y-3">
+              <DragDropCards
+                cards={cardItems}
+                onReorder={setCardItems}
+                renderCard={(card, index) => (
+                  <div className="space-y-1">
+                    <p className="font-medium text-secondary">
+                      {index + 1}. {card.title}
+                    </p>
+                    <p className="text-sm text-secondary/70">
+                      {card.description}
+                    </p>
+                  </div>
+                )}
+              />
+            </div>
+          </section>
           <section className="space-y-6">
             <div className="space-y-2">
               <h2 className="text-subheader font-semibold text-secondary">
@@ -681,6 +878,10 @@ const Components = () => {
               <SelectableButton
                 text="Remove Member Modal"
                 onClick={() => setRemoveMemberModalOpen(true)}
+              />
+              <SelectableButton
+                text="Delete Channel Modal"
+                onClick={() => setDeleteChannelModalOpen(true)}
               />
             </div>
           </section>
@@ -715,6 +916,17 @@ const Components = () => {
               console.log("Leaving channel");
               await new Promise((resolve) => setTimeout(resolve, 500));
             }}
+          />
+
+          <DeleteChannelModal
+            open={deleteChannelModalOpen}
+            onOpenChange={setDeleteChannelModalOpen}
+            onLeave={async () => {
+              setIsDeletingChannel(true);
+              await new Promise((resolve) => setTimeout(resolve, 900));
+              setIsDeletingChannel(false);
+            }}
+            isLeaving={isDeletingChannel}
           />
 
           <RemoveMemberModal
