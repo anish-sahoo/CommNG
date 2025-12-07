@@ -113,18 +113,20 @@ export type CreateMessageBlastOutput = {
   updatedAt: string | Date;
 };
 
-export type GetMessageBlastOutput = {
-  blastId: number;
-  senderId: string;
-  title: string;
-  content: string;
-  targetAudience: TargetAudience | null;
-  sentAt: string | Date | null;
-  validUntil: string | Date;
-  status: "draft" | "sent" | "failed";
-  createdAt: string | Date;
-  updatedAt: string | Date;
-};
+export const getMessageBlastOutputSchema = z.object({
+  blastId: z.number(),
+  senderId: z.string(),
+  title: z.string(),
+  content: z.string(),
+  targetAudience: targetAudienceSchema.nullable(),
+  sentAt: z.union([z.string(), z.date()]).nullable(),
+  validUntil: z.union([z.string(), z.date()]),
+  status: z.enum(["draft", "sent", "failed"]),
+  createdAt: z.union([z.string(), z.date()]),
+  updatedAt: z.union([z.string(), z.date()]),
+});
+
+export type GetMessageBlastOutput = z.infer<typeof getMessageBlastOutputSchema>;
 
 export type UpdateMessageBlastOutput = {
   blastId: number;

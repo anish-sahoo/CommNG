@@ -1,3 +1,4 @@
+import z from "zod";
 import { MessageBlastRepository } from "../data/repository/message-blast-repo.js";
 import { UserRepository } from "../data/repository/user-repo.js";
 import { broadcastRole } from "../data/roles.js";
@@ -7,6 +8,7 @@ import { ensureHasRole, protectedProcedure, router } from "../trpc/trpc.js";
 import {
   createMessageBlastInputSchema,
   deleteMessageBlastInputSchema,
+  getMessageBlastOutputSchema,
 } from "../types/message-blast-types.js";
 
 const messageBlastRepository = new MessageBlastRepository();
@@ -18,6 +20,15 @@ const messageBlastService = new MessageBlastService(
 
 const createAndSendMessageBlast = protectedProcedure
   .input(createMessageBlastInputSchema)
+  .output(z.void())
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/messageBlasts.createAndSendMessageBlast",
+      summary: "Create and send a broadcast",
+      tags: ["Broadcasts"],
+    },
+  })
   .mutation(({ ctx, input }) =>
     withErrorHandling("sendMessageBlast", async () => {
       ensureHasRole(ctx, [broadcastRole("create")]);
@@ -26,14 +37,33 @@ const createAndSendMessageBlast = protectedProcedure
     }),
   );
 
-const getActiveMessageBlastsForUser = protectedProcedure.query(({ ctx }) =>
-  withErrorHandling("getActiveMessageBlastsForUser", async () => {
-    return await messageBlastService.getActiveBlastsForUser(ctx.auth.user.id);
-  }),
-);
+const getActiveMessageBlastsForUser = protectedProcedure
+  .output(z.array(getMessageBlastOutputSchema))
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/messageBlasts.getActiveMessageBlastsForUser",
+      summary: "Get all active broadcasts for a user",
+      tags: ["Broadcasts"],
+    },
+  })
+  .query(({ ctx }) =>
+    withErrorHandling("getActiveMessageBlastsForUser", async () => {
+      return await messageBlastService.getActiveBlastsForUser(ctx.auth.user.id);
+    }),
+  );
 
 const deleteMessageBlast = protectedProcedure
   .input(deleteMessageBlastInputSchema)
+  .output(z.void())
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/messageBlasts.deleteMessageBlast",
+      summary: "Delete a broadcast",
+      tags: ["Broadcasts"],
+    },
+  })
   .mutation(({ ctx, input }) =>
     withErrorHandling("deleteMessageBlast", async () => {
       ensureHasRole(ctx, [broadcastRole("create")]);
@@ -42,16 +72,26 @@ const deleteMessageBlast = protectedProcedure
     }),
   );
 
-const canManageBroadcasts = protectedProcedure.query(({ ctx }) =>
-  withErrorHandling("canManageBroadcasts", async () => {
-    try {
-      ensureHasRole(ctx, [broadcastRole("create")]);
-      return true;
-    } catch {
-      return false;
-    }
-  }),
-);
+const canManageBroadcasts = protectedProcedure
+  .output(z.boolean())
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/messageBlasts.canManageBroadcasts",
+      summary: "Check if the user can manage broadcasts",
+      tags: ["Broadcasts"],
+    },
+  })
+  .query(({ ctx }) =>
+    withErrorHandling("canManageBroadcasts", async () => {
+      try {
+        ensureHasRole(ctx, [broadcastRole("create")]);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
+  );
 
 export const messageBlastRouter = router({
   createAndSendMessageBlast,
