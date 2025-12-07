@@ -53,7 +53,7 @@ app.use(
 );
 
 // OpenAPI swagger docs
-app.use("/", swaggerUi.serve);
+app.use("/api/docs", swaggerUi.serve);
 app.get("/api/docs/openapi", swaggerUi.setup(openApiDocument));
 
 // Track connection status for health checks
