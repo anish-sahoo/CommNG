@@ -10,7 +10,6 @@ const ArrowLeftIcon = icons.arrowLeft;
 export type TitleShellProps<T extends string> = {
   title?: ReactNode;
   actions?: ReactNode;
-  sidebar?: ReactNode;
   children: ReactNode;
   className?: string;
   backHref?: Route<T> | null;
@@ -24,7 +23,6 @@ export type TitleShellProps<T extends string> = {
 export function TitleShell<T extends string>({
   title,
   actions,
-  sidebar,
   children,
   className,
   backHref = null,
@@ -34,14 +32,13 @@ export function TitleShell<T extends string>({
   scrollableContent = true,
   onBackClick,
 }: TitleShellProps<T>) {
-  const hasSidebar = Boolean(sidebar);
   const renderTitleContent = () => {
     if (!title) {
       return null;
     }
     if (typeof title === "string") {
       return (
-        <span className="flex items-center text-[clamp(1.4rem,5vw,1.75rem)] font-semibold leading-tight text-secondary truncate whitespace-nowrap md:text-[2.25rem]">
+        <span className="flex items-center text-[clamp(1.2rem,4vw,1.5rem)] font-semibold leading-tight text-secondary truncate whitespace-nowrap md:text-[2.25rem]">
           {title}
         </span>
       );
@@ -92,31 +89,16 @@ export function TitleShell<T extends string>({
           <div className="px-1 sm:px-0">{pinnedContent}</div>
         ) : null}
 
-        <div
+        <main
           className={cn(
-            "flex flex-1 gap-6",
-            hasSidebar ? "flex-col lg:flex-row" : "flex-col",
+            scrollableContent
+              ? "flex-1 pb-10 md:max-h-[calc(100vh-12rem)] md:overflow-y-auto md:pr-1 md:pb-12"
+              : "flex-1 pb-10",
+            contentClassName,
           )}
         >
-          {hasSidebar ? (
-            <aside className="lg:w-64 xl:w-72">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                {sidebar}
-              </div>
-            </aside>
-          ) : null}
-
-          <main
-            className={cn(
-              scrollableContent
-                ? "flex-1 pb-10 md:max-h-[calc(100vh-12rem)] md:overflow-y-auto md:pr-1 md:pb-12"
-                : "flex-1 pb-10",
-              contentClassName,
-            )}
-          >
-            <div className="flex flex-col gap-6 pb-12 pt-2">{children}</div>
-          </main>
-        </div>
+          <div className="flex flex-col gap-6 pb-12 pt-2">{children}</div>
+        </main>
       </div>
     </div>
   );

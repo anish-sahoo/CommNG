@@ -52,7 +52,7 @@ const AppNavBarItem = ({
       >
         <Icon className="h-7 w-7 text-background" />
         <span
-          className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20"
+          className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50"
           role="presentation"
         >
           {item.label}
@@ -81,13 +81,13 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
   const isCreateBroadcastActive = pathname.startsWith("/broadcasts/new");
 
   const circleButtonClasses =
-    "group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200";
+    "group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 overflow-visible";
 
   return (
     <nav
       className={cn(
         // Dynamic viewport height; only the action buttons scroll so top icons stay fixed.
-        "fixed inset-y-0 left-0 z-40 flex w-24 max-h-[100dvh] flex-col items-center overflow-hidden overflow-x-hidden bg-primary px-3 py-6 shadow-lg shadow-black/20",
+        "fixed inset-y-0 left-0 z-40 flex w-24 max-h-[100dvh] flex-col items-center overflow-visible bg-primary px-3 py-6 shadow-lg shadow-black/20",
         className,
       )}
     >
@@ -120,8 +120,8 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
         </ul>
       </div>
 
-      <div className="mt-8 flex w-full flex-1 min-h-0 flex-col items-center overflow-hidden">
-        <div className="mt-auto flex w-full flex-col items-center gap-3 overflow-y-auto overflow-x-hidden overscroll-contain pb-6 md:pb-10">
+      <div className="mt-8 flex w-full flex-1 min-h-0 flex-col items-center overflow-visible">
+        <div className="mt-auto flex w-full flex-col items-center gap-3 overflow-visible pb-6 md:pb-10">
           <Protected requiredRole="broadcast:create">
             <Link
               href="/broadcasts/new"
@@ -136,7 +136,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
               onClick={onNavigate}
             >
               <MegaphoneIcon className="h-6 w-6" aria-hidden="true" />
-              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50">
                 Broadcast
               </span>
             </Link>
@@ -155,7 +155,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
             onClick={onNavigate}
           >
             <BellIcon className="h-6 w-6" aria-hidden="true" />
-            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50">
               Active Broadcasts
             </span>
           </Link>
@@ -172,7 +172,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
             onClick={onNavigate}
           >
             <HelpIcon className="h-6 w-6" />
-            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50">
               Help
             </span>
           </Link>
@@ -191,7 +191,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
               onClick={onNavigate}
             >
               <AdminIcon className="h-6 w-6" />
-              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+              <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50">
                 Admin
               </span>
             </Link>
@@ -210,7 +210,7 @@ export const AppNavBar = ({ className, onNavigate }: AppNavBarProps = {}) => {
             onClick={onNavigate}
           >
             <ProfileIcon className="h-6 w-6" strokeWidth={2} />
-            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-20">
+            <span className="pointer-events-none absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-background px-3 py-1 text-sm font-semibold text-primary opacity-0 shadow-lg shadow-black/20 ring-1 ring-border transition-all duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-1 z-50">
               Profile
             </span>
           </Link>
