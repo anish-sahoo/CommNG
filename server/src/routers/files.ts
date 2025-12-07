@@ -1,3 +1,4 @@
+import z from "zod";
 import { FileRepository } from "../data/repository/file-repo.js";
 import { channelRole } from "../data/roles.js";
 import { FileService } from "../service/file-service.js";
@@ -10,11 +11,12 @@ import {
   router,
 } from "../trpc/trpc.js";
 import { InternalServerError } from "../types/errors.js";
-import type { FileDownloadPayload } from "../types/file-types.js";
 import {
   confirmUploadInputSchema,
   createPresignedUploadInputSchema,
+  createPresignedUploadOutputSchema,
   deleteFileInputSchema,
+  fileDownloadPayloadSchema,
   getFileInputSchema,
   uploadForChannelInputSchema,
   uploadForUserInputSchema,
@@ -38,8 +40,14 @@ const fileService = new FileService(fileRepository, adapter);
 
 const createPresignedUpload = protectedProcedure
   .input(createPresignedUploadInputSchema)
+  .output(createPresignedUploadOutputSchema)
   .meta({
-    description: "Get S3 presigned upload URL for a file (metadata only)",
+    openapi: {
+      method: "POST",
+      path: "/files.createPresignedUpload",
+      summary: "Get S3 presigned upload URL for a file (metadata only)",
+      tags: ["Files"],
+    },
   })
   .mutation(async ({ ctx, input }) =>
     withErrorHandling("createPresignedUpload", async () => {
@@ -61,9 +69,6 @@ const createPresignedUpload = protectedProcedure
 
 const confirmUpload = protectedProcedure
   .input(confirmUploadInputSchema)
-  .meta({
-    description: "Confirm S3 upload is complete and persist DB record",
-  })
   .mutation(async ({ ctx, input }) =>
     withErrorHandling("confirmUpload", async () => {
       ensureUsingAws("Cannot confirm upload without AWS");
@@ -90,10 +95,6 @@ const confirmUpload = protectedProcedure
 
 const uploadForUser = protectedProcedure
   .input(uploadForUserInputSchema)
-  .meta({
-    description:
-      "Upload a user-specific file in Filesystem (profile picture, etc.)",
-  })
   .mutation(async ({ ctx, input }) =>
     withErrorHandling("uploadForUser", async () => {
       ensureNOTUsingAws("FileSystem uploads not enabled");
@@ -117,10 +118,6 @@ const uploadForUser = protectedProcedure
 
 const uploadForChannel = protectedProcedure
   .input(uploadForChannelInputSchema)
-  .meta({
-    description:
-      "Upload a channel-specific file (post attachment, cover photo, etc.)",
-  })
   .mutation(async ({ ctx, input }) =>
     withErrorHandling("uploadForChannel", async () => {
       ensureNOTUsingAws("FileSystem uploads not enabled");
@@ -150,7 +147,15 @@ const uploadForChannel = protectedProcedure
 
 const getFile = procedure
   .input(getFileInputSchema)
-  .meta({ description: "Get a file stream from its UUID" })
+  .output(fileDownloadPayloadSchema)
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/files.getFile",
+      summary: "Get a file stream from its UUID",
+      tags: ["Files"],
+    },
+  })
   .query(async ({ input }) =>
     withErrorHandling("getFile", async () => {
       try {
@@ -158,13 +163,11 @@ const getFile = procedure
         // presigned-download logic separated from streaming concerns.
         const urlData = await fileService.getFileUrl(input.fileId);
 
-        const payload: FileDownloadPayload = {
+        return {
           fileName: urlData.fileName,
           contentType: urlData.contentType ?? "application/octet-stream",
           data: urlData.url,
         };
-
-        return payload;
       } catch (err) {
         log.error(err, "File retrieval failed");
         throw new InternalServerError("Failed to retrieve file");
@@ -174,7 +177,15 @@ const getFile = procedure
 
 const deleteFile = protectedProcedure
   .input(deleteFileInputSchema)
-  .meta({ description: "Delete a file and its DB record" })
+  .output(z.object({ ok: z.boolean() }))
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/files.deleteFile",
+      summary: "Delete a file and its DB record",
+      tags: ["Files"],
+    },
+  })
   .mutation(async ({ input }) =>
     withErrorHandling("deleteFile", async () => {
       try {

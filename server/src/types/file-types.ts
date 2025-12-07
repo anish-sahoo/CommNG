@@ -122,11 +122,11 @@ export type FileRecord = {
   metadata: FileMetadata | null;
 };
 
-export type FileDownloadPayload = {
-  fileName: string;
-  contentType: string;
-  data: string;
-};
+export const fileDownloadPayloadSchema = z.object({
+  fileName: z.string(),
+  contentType: z.string(),
+  data: z.string(),
+});
 
 export const fileStreamSchema = z.object({
   // stream is not validated at runtime, but kept for type completeness
@@ -140,6 +140,12 @@ export const createPresignedUploadInputSchema = z.object({
   fileName: z.string().min(1),
   contentType: z.string().optional(),
   fileSize: z.number().optional(),
+});
+
+export const createPresignedUploadOutputSchema = z.object({
+  fileId: z.string(),
+  uploadUrl: z.string(),
+  storedName: z.string(),
 });
 
 export const confirmUploadInputSchema = z.object({
