@@ -401,6 +401,61 @@ Then deploy normally - the workflow will bump from your new base version.
 
 ## GitHub Actions Setup
 
+You will have to create a IAM user with these policies:
+```json
+{
+    "PolicyVersion": {
+        "Document": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecr:GetAuthorizationToken",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:GetDownloadUrlForLayer",
+                        "ecr:BatchGetImage",
+                        "ecr:PutImage",
+                        "ecr:InitiateLayerUpload",
+                        "ecr:UploadLayerPart",
+                        "ecr:CompleteLayerUpload",
+                        "ecr:DescribeRepositories",
+                        "ecr:ListImages"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecs:DescribeTaskDefinition",
+                        "ecs:RegisterTaskDefinition",
+                        "ecs:UpdateService",
+                        "ecs:DescribeServices"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "iam:PassRole"
+                    ],
+                    "Resource": "*",
+                    "Condition": {
+                        "StringLike": {
+                            "iam:PassedToService": "ecs-tasks.amazonaws.com"
+                        }
+                    }
+                }
+            ]
+        },
+        "VersionId": "v1",
+        "IsDefaultVersion": true,
+        "CreateDate": "2025-11-04T17:13:03+00:00"
+    }
+}
+```
+
+
 ### Step 1: Create GitHub Secrets
 
 1. Go to your repository on GitHub
