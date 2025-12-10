@@ -35,6 +35,7 @@ The application uses AWS Secrets Manager for all sensitive configuration:
 |--------|---------|------------|-----------------|
 | Database Password | RDS connection | AWS (auto-generated) | Server |
 | Redis AUTH Token | ElastiCache auth | Terraform (auto-generated) | Server |
+| Better Auth Secret | Authentication | Terraform (auto-generated) | Server |
 | VAPID Keys | Push notifications | **Manual** | Server + Web |
 
 ## VAPID Keys Secret
@@ -237,7 +238,20 @@ aws secretsmanager rotate-secret \
   --rotation-lambda-arn <rotation-lambda-arn>
 ```
 
-### Redis AUTH Token
+#### Automatic Rotation Mechanism
+
+The application supports automatic database credential rotation using AWS Secrets Manager. When RDS rotates the master password, the application automatically detects the change and reconnects with new credentials without requiring a restart.
+
+**How It Works:**
+1. **Secrets Manager Integration**: RDS stores the password in Secrets Manager.
+2. **Auto-Refresh**: The application polls Secrets Manager every 5 minutes (configurable via `DB_SECRET_REFRESH_INTERVAL_MS`).
+3. **Graceful Reconnection**:
+   - Fetches new credentials.
+   - Creates a new connection pool.
+   - Swaps to the new pool.
+   - Allows existing queries 30 seconds to complete before closing the old pool.
+
+### Valkey/Redis AUTH Token
 
 Managed by Terraform. To rotate:
 
@@ -420,6 +434,36 @@ Before deploying to production:
 - [ ] Set up alerts for secret access
 - [ ] Review least-privilege IAM policies
 
+## Vulnerability Management
+
+### Critical RCE Vulnerability (CVE-2025-55182) - Resolved
+**Date**: 2025-02-24
+**Impact**: Remote Code Execution via React Server Components (RSC).
+**Resolution**:
+- Upgraded `next` to `15.5.7` (or later).
+- Upgraded `react` and `react-dom` to `19.2.1` (or later).
+- **Verification**: Ensure no vulnerable versions exist in `node_modules` or lockfiles.
+
+### Dependency Audits
+- Run `npm audit` or `pnpm audit` regularly.
+- Do not downgrade `next` or `react` below the patched versions mentioned above.
+
+## Infrastructure Security
+
+### Network Isolation
+- **Database (RDS)**: Deployed in private subnets. No public access.
+- **Cache (Valkey)**: Deployed in private subnets.
+- **ECS Tasks**: Deployed in private subnets. Outbound access via NAT Gateway.
+
+### Secrets Management
+- **Storage**: All sensitive keys (DB passwords, API keys) are stored in AWS Secrets Manager.
+- **Injection**: Secrets are injected into ECS tasks as environment variables at runtime.
+- **Policy**: Never commit `.env` files or hardcode secrets in the codebase.
+
+## Access Control
+- **IAM**: Least privilege principles applied to ECS Task Roles.
+- **Database**: IAM authentication is preferred where possible; otherwise, strong random passwords are used.
+
 ---
 
-**Last Updated**: November 2, 2025
+**Last Updated**: December 8, 2025

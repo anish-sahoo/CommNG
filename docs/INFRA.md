@@ -39,7 +39,7 @@ This document provides comprehensive instructions for setting up and managing th
 
 The CommNG application is deployed on AWS using:
 
-- **ECS Fargate**: Serverless container orchestration for `server` (Node.js) and `web` (Next.js)
+- **ECS Fargate**: Serverless container orchestration for `server` (Node.js 24) and `web` (Next.js 15)
 - **Application Load Balancer (ALB)**: Routes traffic to appropriate services
   - `/api/*` and `/trpc/*` → Server service
   - All other routes → Web service
@@ -52,6 +52,18 @@ The CommNG application is deployed on AWS using:
 - **ElastiCache Valkey**: Redis-compatible cache
 - **S3**: File storage
 - **CloudWatch**: Logs and monitoring
+
+### Application Routing & Configuration
+
+**ALB Path-Based Routing:**
+- `/api/*` and `/trpc/*` → **Server** (Node.js:3000)
+- `/*` (Default) → **Web** (Next.js:3001)
+
+**tRPC Configuration:**
+- **Web**: Uses `NEXT_PUBLIC_API_BASE_URL` to construct the tRPC endpoint.
+  - Local: `http://localhost:3000/api/trpc`
+  - Prod: `http://<alb-dns>/api/trpc` (routed by ALB to server)
+- **Server**: Listens on `/api/trpc` at port 3000.
 
 ### Resource Specifications
 
@@ -133,6 +145,28 @@ Create an IAM user with these managed policies:
    terraform init
    ```
 
+### File Structure
+
+```
+infra/
+├── provider.tf          # Terraform & AWS provider configuration
+├── variables.tf         # All configurable variables with descriptions
+├── locals.tf            # Local values and computed variables
+├── data.tf              # Data sources (VPC, subnets, etc.)
+├── networking.tf        # Security groups, ALB, target groups
+├── database.tf          # RDS PostgreSQL and ElastiCache
+├── secrets.tf           # Secrets Manager secrets
+├── storage.tf           # S3 buckets, ECR repositories
+├── ecs.tf               # ECS cluster, services, task definitions
+├── iam.tf               # IAM roles and policies
+├── monitoring.tf        # CloudWatch logs and EventBridge
+├── scheduler.tf         # Infrastructure scheduler Lambda
+├── outputs.tf           # Output values
+├── terraform.tfvars     # Checked-in dev defaults (can be copied)
+├── terraform.tfvars.dev.example   # Dev template for new environments
+└── terraform.tfvars.prod.example  # Prod environment template
+```
+
 ### Planning Changes
 
 Before applying changes, always review the execution plan:
@@ -174,6 +208,33 @@ terraform apply tfplan
 terraform apply -auto-approve
 ```
 
+### HTTPS & Domain Setup (ACM)
+
+If you have a custom domain, you can set up SSL/TLS using AWS Certificate Manager (ACM).
+
+1. **Configure Your Domain**
+   Edit `terraform.tfvars` and add your domain name:
+   ```hcl
+   domain_name = "dev.yourdomain.com"
+   ```
+
+2. **Apply Terraform**
+   ```bash
+   terraform apply
+   ```
+
+3. **Get DNS Validation CNAME Record**
+   Terraform will output the CNAME record needed for DNS validation:
+   ```bash
+   terraform output acm_certificate_validation_records
+   ```
+
+4. **Add CNAME to DNS**
+   Add the output CNAME record to your DNS provider (e.g., Route53, GoDaddy, Cloudflare).
+
+5. **Wait for Validation**
+   AWS will automatically validate the certificate once the DNS record propagates.
+
 ### Initial Deployment
 
 1. **Apply Infrastructure**
@@ -192,7 +253,7 @@ terraform apply -auto-approve
    - `ecr_server_repository_url` - Server ECR URL
    - `ecr_web_repository_url` - Web ECR URL
    - `db_instance_endpoint` - Database endpoint
-   - `cache_endpoint` - Redis endpoint
+   - `cache_endpoint` - Valkey/Redis endpoint
    - `ecs_cluster_name` - ECS cluster name
    - `ecs_server_service_name` - Server service name
    - `ecs_web_service_name` - Web service name
@@ -352,6 +413,31 @@ Add the following secrets:
 |------------|-------|-------------|
 | `AWS_ACCESS_KEY_ID` | Your AWS Access Key | IAM user access key |
 | `AWS_SECRET_ACCESS_KEY` | Your AWS Secret Key | IAM user secret key |
+| `DEPLOY_KEY` | SSH Private Key | SSH key for git operations (version bumping) |
+
+#### Setting up the DEPLOY_KEY
+
+The `DEPLOY_KEY` is required for the workflow to push version bumps back to the repository.
+
+1. **Generate an SSH Key Pair:**
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions" -f gh-deploy-key -N ""
+   ```
+
+2. **Add Public Key to Repository:**
+   - Go to **Settings** → **Deploy keys**
+   - Click **Add deploy key**
+   - Title: `GitHub Actions Deploy Key`
+   - Key: Paste content of `gh-deploy-key.pub`
+   - **Check "Allow write access"** (Crucial for version bumping)
+   - Click **Add key**
+
+3. **Add Private Key to Secrets:**
+   - Go to **Settings** → **Secrets and variables** → **Actions**
+   - Click **New repository secret**
+   - Name: `DEPLOY_KEY`
+   - Value: Paste content of `gh-deploy-key` (the private key)
+   - Click **Add secret**
 
 ### Step 2: Create GitHub Environments
 
@@ -381,6 +467,21 @@ Both workflows:
 - Deploy to ECS with zero-downtime rolling updates
 
 ## Deployment Guide
+
+### Pre-Deployment Checklist
+
+Before triggering a deployment, ensure:
+
+- [ ] **AWS Account**: Active, IAM user created, CLI configured.
+- [ ] **Local Tools**: Terraform (>=1.5.0), Docker, Node.js 24+ installed.
+- [ ] **App Config**:
+  - [ ] Server listens on port 3000, Web on 3001.
+  - [ ] `DATABASE_URL` and `REDIS_AUTH` handled via Secrets Manager.
+  - [ ] `NODE_ENV=production` set in task definitions.
+- [ ] **Terraform**: `terraform plan` runs without errors.
+- [ ] **GitHub**:
+  - [ ] Secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `DEPLOY_KEY`) configured.
+  - [ ] Environments (`dev`, `staging`, `production`) created.
 
 ### Manual Deployment via GitHub Actions
 
@@ -673,6 +774,42 @@ aws ecs update-service \
    - Enable ECR image scanning (already configured)
    - Review scan results before deployment
    - Keep base images updated
+
+## Cheat Sheet / Quick Reference
+
+### Common Commands
+
+**Terraform:**
+```bash
+cd infra
+terraform init      # Initialize
+terraform plan      # Preview changes
+terraform apply     # Apply changes
+terraform output    # View outputs
+```
+
+**AWS CLI:**
+```bash
+# View logs
+aws logs tail /ecs/dev-comm-ng-server --follow --since 10m
+
+# Force new deployment
+aws ecs update-service --cluster dev-comm-ng-cluster --service dev-comm-ng-server-service --force-new-deployment
+
+# Check service status
+aws ecs describe-services --cluster dev-comm-ng-cluster --services dev-comm-ng-server-service
+```
+
+**Docker:**
+```bash
+# Build locally
+docker build -t comm-ng-server ./server
+
+# Manual push (if needed)
+aws ecr get-login-password | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+docker tag comm-ng-server:latest <ecr-url>:latest
+docker push <ecr-url>:latest
+```
 
 ## Additional Resources
 

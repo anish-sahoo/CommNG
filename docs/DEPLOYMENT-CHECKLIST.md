@@ -38,7 +38,7 @@ Complete this checklist before deploying CommNG to AWS ECS Fargate.
 
 - [ ] Terraform installed (>= 1.5.0): `terraform --version`
 - [ ] Docker installed and running: `docker --version`
-- [ ] Node.js 20+ installed: `node --version`
+- [ ] Node.js 24+ installed: `node --version`
 - [ ] Git configured with repository access
 
 ## Application Configuration

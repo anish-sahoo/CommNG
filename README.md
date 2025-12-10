@@ -97,7 +97,7 @@ This platform allows for the Massachusetts National Guard to foster trust, clari
 
 ### 1. Project Orientation
 
-- **[Configuration Overview](./docs/CONFIGURATION.md)** – high-level architecture, shared domain routing, and environment variable strategy.
+- **[Quick Start Guide](./docs/QUICK-START.md)** – High-level overview of setup, deployment, and management.
 - **[Notification System](./docs/NOTIFICATIONS.md)** – Web Push/VAPID details and testing notes.
 
 ### 2. Local Development
@@ -162,7 +162,6 @@ npm run test       # execute unit/integration tests
 
 - **[Infrastructure Guide](./docs/INFRA.md)** – Terraform provisioning, GitHub Actions workflows, and deployment process.
 - **[Deployment Checklist](./docs/DEPLOYMENT-CHECKLIST.md)** – pre-flight verification before promoting changes.
-- **[Quick Reference](./docs/QUICK-REFERENCE.md)** – frequently-used CLI commands, ECS/ECR operations, and troubleshooting tips.
 
 <a id="documentation-hub"></a>
 
@@ -170,12 +169,12 @@ npm run test       # execute unit/integration tests
 
 | Topic                           | Reference                      |
 | ------------------------------- | ------------------------------ |
+| **Quick Start**                 | [`docs/QUICK-START.md`](docs/QUICK-START.md)            |
 | Local development workflow      | [`docs/LOCAL-SETUP.md`](docs/LOCAL-SETUP.md)          |
 | Environment variables & secrets | [`docs/SECRETS-SETUP.md`](docs/SECRETS-SETUP.md)        |
 | Infrastructure and Terraform    | [`docs/INFRA.md`](docs/INFRA.md)                |
 | Deployment checklist            | [`docs/DEPLOYMENT-CHECKLIST.md`](docs/DEPLOYMENT-CHECKLIST.md) |
 | Notifications & web push        | [`docs/NOTIFICATIONS.md`](docs/NOTIFICATIONS.md)        |
-| Quick troubleshooting commands  | [`docs/QUICK-REFERENCE.md`](docs/QUICK-REFERENCE.md)      |
 
 <a id="ci-cd-workflows"></a>
 
@@ -290,7 +289,6 @@ Secrets for workflows are managed via AWS Secrets Manager; refer to `docs/SECRET
 The application is deployed on AWS using ECS Fargate with auto-scaling capabilities. For detailed setup and deployment instructions, see:
 
 - **[Infrastructure Guide](docs/INFRA.md)** - Complete setup, Terraform, and GitHub Actions documentation
-- **[Quick Reference](docs/QUICK-REFERENCE.md)** - Common commands and troubleshooting
 
 ### Quick Deploy
 
