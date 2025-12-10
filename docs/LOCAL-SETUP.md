@@ -28,10 +28,11 @@ Follow this guide to run the CommNG applications locally for development and tes
 
 ## Prerequisites
 
-- **Node.js** 20 or newer (use nvm to manage versions)
-- **Docker Desktop** (for Redis and optional Postgres)
-- **PostgreSQL** (local instance or remote connection)
-- **npm** (repository uses npm lockfiles)
+- **Node.js**: v24.x (LTS recommended)
+- **pnpm**: v9.x or later
+- **Docker**: Desktop or Engine (for local database/cache)
+- **AWS CLI**: v2.x (configured with appropriate profile)
+- **Terraform**: v1.5.0+
 
 ## 1. Clone the Repository & Install Dependencies
 
