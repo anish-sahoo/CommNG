@@ -20,7 +20,6 @@ export const userSchema = z.object({
   interests: z.array(z.string()).nullable().optional(),
   image: z.uuid().nullable().optional(),
   linkedin: z
-    .string()
     .url()
     .refine((url) => url.startsWith("https://www.linkedin.com/in/"), {
       message: "LinkedIn URL must start with https://www.linkedin.com/in/",
@@ -51,6 +50,13 @@ export const userDataOutputSchema = z.object({
   interests: z.array(z.string()).nullable(),
   signalVisibility: z.enum(["private", "public"]),
   emailVisibility: z.enum(["private", "public"]),
+  linkedin: z
+    .url()
+    .refine((url) => url.startsWith("https://www.linkedin.com/in/"), {
+      message: "LinkedIn URL must start with https://www.linkedin.com/in/",
+    })
+    .nullable(),
+  linkedinVisibility: z.enum(["private", "public"]),
 });
 
 export const checkEmailExistsInputSchema = z.object({
@@ -74,7 +80,6 @@ export const createUserProfileInputSchema = z.object({
   about: z.string().nullable().optional(),
   interests: z.array(z.string()).nullable().optional(),
   linkedin: z
-    .string()
     .url()
     .refine((url) => url.startsWith("https://www.linkedin.com/in/"), {
       message: "LinkedIn URL must start with https://www.linkedin.com/in/",
@@ -102,7 +107,6 @@ export const updateUserProfileInputSchema = z.object({
   about: z.string().nullable().optional(),
   interests: z.array(z.string()).nullable().optional(),
   linkedin: z
-    .string()
     .url()
     .refine((url) => url.startsWith("https://www.linkedin.com/in/"), {
       message: "LinkedIn URL must start with https://www.linkedin.com/in/",
@@ -154,7 +158,6 @@ export const createUserInputSchema = z.object({
     linkedinVisibility: z.enum(["private", "public"]),
     interests: z.array(z.string()).optional(),
     linkedin: z
-      .string()
       .url()
       .refine((url) => url.startsWith("https://www.linkedin.com/in/"), {
         message: "LinkedIn URL must start with https://www.linkedin.com/in/",
