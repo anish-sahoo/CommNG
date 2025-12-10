@@ -20,6 +20,9 @@
 
 <a id="vision"></a>
 
+- Current Deployment: https://commng.nunext.dev
+- Github Actions Status: Operational ✅
+
 ## 🌟 Vision
 
 Establishing meaningful connections and organizational transparency between leaders and members through streamlined communication and mentorship.
