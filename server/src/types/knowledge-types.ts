@@ -99,4 +99,12 @@ export const deleteItemAttachmentInputSchema = z.object({
   itemId: uuidSchema,
 });
 
+export const deleteFolderInputSchema = z.object({
+  folderId: uuidSchema,
+});
+
+export const deleteItemInputSchema = z.object({
+  itemId: uuidSchema,
+});
+
 export const simpleOkSchema = z.object({ ok: z.boolean() });

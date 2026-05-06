@@ -9,7 +9,9 @@ import {
   createFolderInputSchema,
   createItemAttachmentInputSchema,
   createItemInputSchema,
+  deleteFolderInputSchema,
   deleteItemAttachmentInputSchema,
+  deleteItemInputSchema,
   getFolderAncestorsInputSchema,
   getFoldersInFolderInputSchema,
   getItemAttachmentInputSchema,
@@ -261,6 +263,40 @@ const replaceItemAttachment = protectedProcedure
     }),
   );
 
+const deleteFolder = protectedProcedure
+  .input(deleteFolderInputSchema)
+  .output(simpleOkSchema)
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/knowledge.deleteFolder",
+      summary: "Soft-delete a folder and all its contents",
+      tags: ["Knowledge"],
+    },
+  })
+  .mutation(({ input }) =>
+    withErrorHandling("deleteFolder", async () => {
+      return await knowledgeService.deleteFolder(input.folderId);
+    }),
+  );
+
+const deleteItem = protectedProcedure
+  .input(deleteItemInputSchema)
+  .output(simpleOkSchema)
+  .meta({
+    openapi: {
+      method: "POST",
+      path: "/knowledge.deleteItem",
+      summary: "Soft-delete a knowledge item",
+      tags: ["Knowledge"],
+    },
+  })
+  .mutation(({ input }) =>
+    withErrorHandling("deleteItem", async () => {
+      return await knowledgeService.deleteItem(input.itemId);
+    }),
+  );
+
 const deleteItemAttachment = protectedProcedure
   .input(deleteItemAttachmentInputSchema)
   .output(simpleOkSchema)
@@ -292,5 +328,7 @@ export const knowledgeRouter = router({
   updateItem,
   createItemAttachment,
   replaceItemAttachment,
+  deleteFolder,
+  deleteItem,
   deleteItemAttachment,
 });

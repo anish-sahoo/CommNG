@@ -12,6 +12,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   GripVertical,
+  Link2,
   Lock,
   Megaphone,
   Menu,
@@ -68,6 +69,7 @@ export const icons = {
   help: CircleQuestionMark,
   sort: ArrowRightLeft,
   externalLink: ExternalLink,
+  link: Link2,
   admin: ShieldUser,
 } satisfies Record<string, LucideIcon>;
 

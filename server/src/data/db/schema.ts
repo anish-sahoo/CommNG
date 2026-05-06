@@ -721,6 +721,7 @@ export const knowledgeFolders = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     index("ix_knowledge_folders_parent_folder_id").on(table.parentFolderId),
@@ -748,6 +749,7 @@ export const knowledgeItems = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     index("ix_knowledge_items_folder_id").on(table.folderId),

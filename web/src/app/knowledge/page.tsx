@@ -2,10 +2,18 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TRPCClientError } from "@trpc/client";
-import { ChevronRight, FileText, Folder, FolderOpen, Plus } from "lucide-react";
+import {
+  ChevronRight,
+  Ellipsis,
+  FileText,
+  Folder,
+  FolderOpen,
+  Plus,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { DropdownButtons } from "@/components/dropdown";
 import { TitleShell } from "@/components/layouts/title-shell";
 import { Modal } from "@/components/modal";
 import { Button } from "@/components/ui/button";
@@ -93,6 +101,20 @@ function KnowledgePage() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    kind: Row["kind"];
+    id: string;
+    name: string;
+  } | null>(null);
+  const [editTarget, setEditTarget] = useState<{
+    kind: Row["kind"];
+    id: string;
+  } | null>(null);
+  const [editFolderTitle, setEditFolderTitle] = useState("");
+  const [editItemName, setEditItemName] = useState("");
+  const [editItemDescription, setEditItemDescription] = useState("");
+  const [editItemBody, setEditItemBody] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const rootFoldersQuery = useQuery({
     queryKey: ["knowledge", "folders", "root"],
@@ -414,6 +436,96 @@ function KnowledgePage() {
 
   const openedItem = openedItemQuery.data ?? null;
 
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const openDeleteConfirm = (row: Row) => {
+    setDeleteTarget({ kind: row.kind, id: row.id, name: row.name });
+  };
+
+  const openEditFolder = (row: Row & { kind: "folder" }) => {
+    setEditFolderTitle(row.name);
+    setEditTarget({ kind: "folder", id: row.id });
+  };
+
+  const openEditItem = (row: Row & { kind: "item" }) => {
+    setEditItemName(row.raw.name);
+    setEditItemDescription(row.raw.description ?? "");
+    setEditItemBody(row.raw.body ?? "");
+    setEditTarget({ kind: "item", id: row.id });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setPendingAction("delete");
+    clearMessages();
+    try {
+      if (deleteTarget.kind === "folder") {
+        await trpcClient.knowledge.deleteFolder.mutate({
+          folderId: deleteTarget.id,
+        });
+      } else {
+        await trpcClient.knowledge.deleteItem.mutate({
+          itemId: deleteTarget.id,
+        });
+      }
+      await refreshKnowledge();
+      setSuccessMessage(`Deleted "${deleteTarget.name}".`);
+      setDeleteTarget(null);
+    } catch (error) {
+      setErrorMessage(toErrorMessage(error));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleEditFolder = async () => {
+    if (!editTarget || editTarget.kind !== "folder") return;
+    const title = editFolderTitle.trim();
+    if (!title) return;
+    setPendingAction("edit-folder");
+    clearMessages();
+    try {
+      await trpcClient.knowledge.updateFolderName.mutate({
+        folderId: editTarget.id,
+        title,
+      });
+      await refreshKnowledge();
+      setSuccessMessage(`Renamed folder to "${title}".`);
+      setEditTarget(null);
+    } catch (error) {
+      setErrorMessage(toErrorMessage(error));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleEditItem = async () => {
+    if (!editTarget || editTarget.kind !== "item") return;
+    const name = editItemName.trim();
+    if (!name) return;
+    setPendingAction("edit-item");
+    clearMessages();
+    try {
+      await trpcClient.knowledge.updateItem.mutate({
+        itemId: editTarget.id,
+        name,
+        description: editItemDescription.trim() || null,
+        body: editItemBody.trim() || null,
+      });
+      await refreshKnowledge();
+      setSuccessMessage(`Updated "${name}".`);
+      setEditTarget(null);
+    } catch (error) {
+      setErrorMessage(toErrorMessage(error));
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
   return (
     <TitleShell title="Knowledge Base">
       <div className="space-y-4">
@@ -470,6 +582,15 @@ function KnowledgePage() {
                   disabled={(!currentFolderId && !openedItemId) || isBusy}
                 >
                   Back
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleCopyLink()}
+                  disabled={(!currentFolderId && !openedItemId) || isBusy}
+                >
+                  {copied ? "Copied!" : "Copy Link"}
                 </Button>
                 <Button
                   type="button"
@@ -588,9 +709,12 @@ function KnowledgePage() {
                 </div>
 
                 <div>
-                  <div className="grid grid-cols-[minmax(0,1fr)_16rem] border-y bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    <span>Name</span>
-                    <span>Date Modified</span>
+                  <div className="flex border-y bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <div className="grid flex-1 grid-cols-[minmax(0,1fr)_16rem] px-4 py-2">
+                      <span>Name</span>
+                      <span>Date Modified</span>
+                    </div>
+                    <div className="w-10 shrink-0" />
                   </div>
                   <div className="max-h-[65vh] overflow-y-auto">
                     {loading ? (
@@ -609,47 +733,125 @@ function KnowledgePage() {
                           selectedRow?.kind === row.kind &&
                           selectedRow.id === row.id;
 
+                        const folderUrl = `${window.location.origin}/knowledge?folder=${row.id}`;
+                        const itemUrl = `${window.location.origin}/knowledge${currentFolderId ? `?folder=${currentFolderId}&item=${row.id}` : `?item=${row.id}`}`;
+
+                        const dropdownItems =
+                          row.kind === "folder"
+                            ? [
+                                {
+                                  id: "copy-link",
+                                  icon: "link" as const,
+                                  label: "Copy Link",
+                                  separator: true,
+                                  onClick: () => {
+                                    void navigator.clipboard.writeText(
+                                      folderUrl,
+                                    );
+                                    setSuccessMessage("Link copied.");
+                                  },
+                                },
+                                {
+                                  id: "edit",
+                                  icon: "edit" as const,
+                                  label: "Rename",
+                                  onClick: () =>
+                                    openEditFolder(
+                                      row as Row & { kind: "folder" },
+                                    ),
+                                },
+                                {
+                                  id: "delete",
+                                  icon: "trash" as const,
+                                  label: "Delete",
+                                  onClick: () => openDeleteConfirm(row),
+                                },
+                              ]
+                            : [
+                                {
+                                  id: "copy-link",
+                                  icon: "link" as const,
+                                  label: "Copy Link",
+                                  separator: true,
+                                  onClick: () => {
+                                    void navigator.clipboard.writeText(itemUrl);
+                                    setSuccessMessage("Link copied.");
+                                  },
+                                },
+                                {
+                                  id: "edit",
+                                  icon: "edit" as const,
+                                  label: "Edit",
+                                  onClick: () =>
+                                    openEditItem(row as Row & { kind: "item" }),
+                                },
+                                {
+                                  id: "delete",
+                                  icon: "trash" as const,
+                                  label: "Delete",
+                                  onClick: () => openDeleteConfirm(row),
+                                },
+                              ];
+
                         return (
-                          <button
+                          <div
                             key={`${row.kind}-${row.id}`}
-                            type="button"
                             className={cn(
-                              "grid w-full grid-cols-[minmax(0,1fr)_16rem] cursor-pointer items-center px-4 py-2 text-left",
+                              "flex w-full items-stretch",
                               isSelected
                                 ? "border-l-2 border-primary bg-primary/20"
                                 : "border-l-2 border-transparent hover:bg-primary/5",
                             )}
-                            onClick={() =>
-                              setSelectedRow({ kind: row.kind, id: row.id })
-                            }
-                            onDoubleClick={() => {
-                              if (row.kind === "folder") {
-                                handleOpenFolder(row.raw);
-                              } else {
-                                router.push(
-                                  currentFolderId
-                                    ? `/knowledge?folder=${currentFolderId}&item=${row.id}`
-                                    : `/knowledge?item=${row.id}`,
-                                );
-                              }
-                            }}
                           >
-                            <span className="flex min-w-0 items-center gap-2">
-                              {row.kind === "folder" ? (
-                                row.id === currentFolderId ? (
-                                  <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
+                            <button
+                              type="button"
+                              className="grid flex-1 grid-cols-[minmax(0,1fr)_16rem] cursor-pointer items-center px-4 py-2 text-left"
+                              onClick={() =>
+                                setSelectedRow({ kind: row.kind, id: row.id })
+                              }
+                              onDoubleClick={() => {
+                                if (row.kind === "folder") {
+                                  handleOpenFolder(row.raw);
+                                } else {
+                                  router.push(
+                                    currentFolderId
+                                      ? `/knowledge?folder=${currentFolderId}&item=${row.id}`
+                                      : `/knowledge?item=${row.id}`,
+                                  );
+                                }
+                              }}
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                {row.kind === "folder" ? (
+                                  row.id === currentFolderId ? (
+                                    <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
+                                  ) : (
+                                    <Folder className="h-4 w-4 shrink-0 text-primary" />
+                                  )
                                 ) : (
-                                  <Folder className="h-4 w-4 shrink-0 text-primary" />
-                                )
-                              ) : (
-                                <FileText className="h-4 w-4 shrink-0 text-accent" />
-                              )}
-                              <span className="truncate">{row.name}</span>
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {formatDate(row.updatedAt)}
-                            </span>
-                          </button>
+                                  <FileText className="h-4 w-4 shrink-0 text-accent" />
+                                )}
+                                <span className="truncate">{row.name}</span>
+                              </span>
+                              <span className="text-sm text-muted-foreground">
+                                {formatDate(row.updatedAt)}
+                              </span>
+                            </button>
+                            <div className="flex w-10 shrink-0 items-center justify-center">
+                              <DropdownButtons
+                                items={dropdownItems}
+                                triggerContent={
+                                  <button
+                                    type="button"
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                    aria-label="Row options"
+                                  >
+                                    <Ellipsis className="h-4 w-4" />
+                                  </button>
+                                }
+                              />
+                            </div>
+                          </div>
                         );
                       })
                     )}
@@ -779,6 +981,125 @@ function KnowledgePage() {
               />
             </label>
           </div>
+        </div>
+      </Modal>
+      <Modal
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        title={`Delete "${deleteTarget?.name ?? ""}"`}
+        description={`Are you sure you want to delete this ${deleteTarget?.kind ?? "item"}? This cannot be undone.`}
+        className="max-w-md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void handleDelete()}
+              disabled={isBusy}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      />
+
+      <Modal
+        open={editTarget?.kind === "folder"}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        title="Rename Folder"
+        className="max-w-md"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditTarget(null)}
+              disabled={isBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleEditFolder()}
+              disabled={isBusy || !editFolderTitle.trim()}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <Input
+          placeholder="Folder name"
+          value={editFolderTitle}
+          onChange={(e) => setEditFolderTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void handleEditFolder();
+          }}
+          disabled={isBusy}
+          autoFocus
+        />
+      </Modal>
+
+      <Modal
+        open={editTarget?.kind === "item"}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        title="Edit Item"
+        className="max-w-2xl"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setEditTarget(null)}
+              disabled={isBusy}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleEditItem()}
+              disabled={isBusy || !editItemName.trim()}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            placeholder="Title"
+            value={editItemName}
+            onChange={(e) => setEditItemName(e.target.value)}
+            disabled={isBusy}
+            autoFocus
+          />
+          <Input
+            placeholder="Description (optional)"
+            value={editItemDescription}
+            onChange={(e) => setEditItemDescription(e.target.value)}
+            disabled={isBusy}
+          />
+          <Textarea
+            placeholder="Body (optional)"
+            value={editItemBody}
+            onChange={(e) => setEditItemBody(e.target.value)}
+            className="min-h-32"
+            disabled={isBusy}
+          />
         </div>
       </Modal>
     </TitleShell>

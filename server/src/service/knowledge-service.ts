@@ -103,6 +103,16 @@ export class KnowledgeService {
     return attachment;
   }
 
+  async deleteFolder(folderId: string) {
+    await this.knowledgeRepo.deleteFolder(folderId);
+    return { ok: true };
+  }
+
+  async deleteItem(itemId: string) {
+    await this.knowledgeRepo.deleteItem(itemId);
+    return { ok: true };
+  }
+
   async deleteItemAttachment(itemId: string) {
     const oldFileId = await this.knowledgeRepo.deleteItemAttachment(itemId);
 

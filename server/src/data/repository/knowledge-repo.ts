@@ -1,4 +1,4 @@
-import { asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
   files,
   knowledgeAttachments,
@@ -41,7 +41,12 @@ export class KnowledgeRepository {
     return await db
       .select()
       .from(knowledgeFolders)
-      .where(isNull(knowledgeFolders.parentFolderId))
+      .where(
+        and(
+          isNull(knowledgeFolders.parentFolderId),
+          isNull(knowledgeFolders.deletedAt),
+        ),
+      )
       .orderBy(asc(knowledgeFolders.title));
   }
 
@@ -59,7 +64,12 @@ export class KnowledgeRepository {
       const [folder] = await db
         .select()
         .from(knowledgeFolders)
-        .where(eq(knowledgeFolders.folderId, cursor))
+        .where(
+          and(
+            eq(knowledgeFolders.folderId, cursor),
+            isNull(knowledgeFolders.deletedAt),
+          ),
+        )
         .limit(1);
       if (!folder) break;
       chain.push(folder);
@@ -76,7 +86,12 @@ export class KnowledgeRepository {
     return await db
       .select()
       .from(knowledgeFolders)
-      .where(eq(knowledgeFolders.parentFolderId, parentFolderId))
+      .where(
+        and(
+          eq(knowledgeFolders.parentFolderId, parentFolderId),
+          isNull(knowledgeFolders.deletedAt),
+        ),
+      )
       .orderBy(asc(knowledgeFolders.title));
   }
 
@@ -87,7 +102,12 @@ export class KnowledgeRepository {
     return await db
       .select()
       .from(knowledgeItems)
-      .where(eq(knowledgeItems.folderId, folderId))
+      .where(
+        and(
+          eq(knowledgeItems.folderId, folderId),
+          isNull(knowledgeItems.deletedAt),
+        ),
+      )
       .orderBy(asc(knowledgeItems.name));
   }
 
@@ -99,7 +119,12 @@ export class KnowledgeRepository {
     const [item] = await db
       .select()
       .from(knowledgeItems)
-      .where(eq(knowledgeItems.itemId, itemId))
+      .where(
+        and(
+          eq(knowledgeItems.itemId, itemId),
+          isNull(knowledgeItems.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!item) {
@@ -342,11 +367,66 @@ export class KnowledgeRepository {
     return deleted?.fileId ?? null;
   }
 
+  async deleteFolder(folderId: string) {
+    await this.ensureFolderExists(folderId);
+
+    const allFolderIds: string[] = [folderId];
+    const queue: string[] = [folderId];
+
+    while (queue.length > 0) {
+      const parentId = queue.shift()!;
+      const children = await db
+        .select({ folderId: knowledgeFolders.folderId })
+        .from(knowledgeFolders)
+        .where(
+          and(
+            eq(knowledgeFolders.parentFolderId, parentId),
+            isNull(knowledgeFolders.deletedAt),
+          ),
+        );
+      for (const child of children) {
+        allFolderIds.push(child.folderId);
+        queue.push(child.folderId);
+      }
+    }
+
+    const now = new Date();
+    await db.transaction(async (tx) => {
+      await tx
+        .update(knowledgeItems)
+        .set({ deletedAt: now })
+        .where(
+          and(
+            inArray(knowledgeItems.folderId, allFolderIds),
+            isNull(knowledgeItems.deletedAt),
+          ),
+        );
+      await tx
+        .update(knowledgeFolders)
+        .set({ deletedAt: now })
+        .where(inArray(knowledgeFolders.folderId, allFolderIds));
+    });
+  }
+
+  async deleteItem(itemId: string) {
+    await this.ensureItemExists(itemId);
+
+    await db
+      .update(knowledgeItems)
+      .set({ deletedAt: new Date() })
+      .where(eq(knowledgeItems.itemId, itemId));
+  }
+
   private async ensureFolderExists(folderId: string): Promise<void> {
     const [folder] = await db
       .select({ folderId: knowledgeFolders.folderId })
       .from(knowledgeFolders)
-      .where(eq(knowledgeFolders.folderId, folderId))
+      .where(
+        and(
+          eq(knowledgeFolders.folderId, folderId),
+          isNull(knowledgeFolders.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!folder) {
@@ -358,7 +438,12 @@ export class KnowledgeRepository {
     const [item] = await db
       .select({ itemId: knowledgeItems.itemId })
       .from(knowledgeItems)
-      .where(eq(knowledgeItems.itemId, itemId))
+      .where(
+        and(
+          eq(knowledgeItems.itemId, itemId),
+          isNull(knowledgeItems.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!item) {
