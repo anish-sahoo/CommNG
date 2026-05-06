@@ -708,7 +708,7 @@ function KnowledgePage() {
           if (!open) resetCreateItemForm();
         }}
         title="New Item"
-        className="max-w-2xl"
+        className="flex h-[80vh] max-w-2xl flex-col"
         footer={
           <>
             <Button
@@ -732,7 +732,7 @@ function KnowledgePage() {
           </>
         }
       >
-        <div className="space-y-3">
+        <div className="flex flex-1 flex-col gap-3 min-h-0">
           <Input
             placeholder="Title"
             value={newItemTitle}
@@ -750,7 +750,7 @@ function KnowledgePage() {
             placeholder="Body (optional)"
             value={newItemBody}
             onChange={(e) => setNewItemBody(e.target.value)}
-            className="min-h-32"
+            className="flex-1 min-h-0 resize-none overflow-y-auto"
             disabled={isBusy}
           />
           <div className="space-y-1">

@@ -1,7 +1,7 @@
 "use client";
 
 import type { RoleKey } from "@server/data/roles";
-import { BarChart2, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { BarChart2, ShieldCheck, UserPlus } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { AuthGuard } from "@/components/auth/auth-guard";
